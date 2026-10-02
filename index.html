@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Come back</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E8EFEB;
+    --ink: #14272C;
+    --muted: #536A70;
+    --line: rgba(20, 39, 44, 0.16);
+    --card: rgba(255, 255, 255, 0.55);
+    --orb-hi: #A9D3CC;
+    --orb-lo: #3C7D84;
+    --glow: rgba(60, 125, 132, 0.35);
+    --accent: #A9761C;
+    --btn-bg: #14272C;
+    --btn-ink: #E8EFEB;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1A1F;
+      --ink: #DCEAE5;
+      --muted: #8DA6A7;
+      --line: rgba(220, 234, 229, 0.16);
+      --card: rgba(220, 234, 229, 0.05);
+      --orb-hi: #8FD0C6;
+      --orb-lo: #245F67;
+      --glow: rgba(110, 200, 190, 0.28);
+      --accent: #E8C27A;
+      --btn-bg: #DCEAE5;
+      --btn-ink: #0D1A1F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D1A1F;
+    --ink: #DCEAE5;
+    --muted: #8DA6A7;
+    --line: rgba(220, 234, 229, 0.16);
+    --card: rgba(220, 234, 229, 0.05);
+    --orb-hi: #8FD0C6;
+    --orb-lo: #245F67;
+    --glow: rgba(110, 200, 190, 0.28);
+    --accent: #E8C27A;
+    --btn-bg: #DCEAE5;
+    --btn-ink: #0D1A1F;
+  }
+  /* Flame and eyes-closed sits are always dark, whatever the device theme. */
+  :root.dark-session {
+    --bg: #0A0F12;
+    --ink: #E6EDE9;
+    --muted: #8FA1A3;
+    --line: rgba(230, 237, 233, 0.16);
+    --card: rgba(230, 237, 233, 0.05);
+    --accent: #F0BF72;
+    --btn-bg: #E6EDE9;
+    --btn-ink: #0A0F12;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+  [hidden] { display: none !important; }
+
+  .screen { height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding: 1.25rem; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ---------- Home ---------- */
+  .home-wrap { width: 100%; max-width: 34rem; margin: 0 auto; padding: 2.5rem 0 2rem; }
+  h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(3.2rem, 11vw, 4.6rem); line-height: 0.95; margin: 0 0 1rem; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); font-size: 1.05rem; max-width: 30rem; margin: 0 0 2rem; }
+  fieldset { border: 0; padding: 0; margin: 0 0 1.5rem; min-width: 0; }
+  legend { font-weight: 600; font-size: 0.95rem; padding: 0; margin-bottom: 0.6rem; }
+  .choices { display: grid; gap: 0.6rem; }
+  .choice { position: relative; display: block; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.85rem 1rem; cursor: pointer; }
+  .choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .choice strong { display: block; font-weight: 600; }
+  .choice span { color: var(--muted); font-size: 0.93rem; }
+  .choice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .seg { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .seg .choice { padding: 0.55rem 1rem; border-radius: 999px; }
+  .seg .choice span { color: inherit; font-size: 0.95rem; }
+
+  details { margin: 0 0 1.25rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+  details p { color: var(--muted); font-size: 0.9rem; margin: 0.5rem 0; }
+  .check { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0.75rem 0 0; cursor: pointer; }
+  .check input { margin-top: 0.3rem; accent-color: var(--ink); width: 1.05rem; height: 1.05rem; flex: none; }
+  .check span { font-size: 0.95rem; }
+  .check small { display: block; color: var(--muted); font-size: 0.86rem; }
+  textarea, input[type="text"] {
+    width: 100%; font: inherit; font-size: 1rem; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.85rem;
+  }
+  textarea { min-height: 9rem; resize: vertical; line-height: 1.45; }
+  .link-btn { background: none; border: 0; padding: 0.25rem 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border: 1px solid var(--btn-bg); background: var(--btn-bg); color: var(--btn-ink);
+    padding: 0.8rem 1.7rem; border-radius: 999px; font-weight: 600; font-size: 1.02rem; cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+  .home-foot { margin-top: 2.25rem; color: var(--muted); font-size: 0.95rem; }
+  .home-foot q { font-family: "Instrument Serif", Georgia, serif; font-size: 1.35rem; line-height: 1.25; color: var(--ink); display: block; margin-bottom: 0.5rem; quotes: none; }
+
+  /* ---------- Session ---------- */
+  #session { cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; overflow: hidden; }
+  .bar { display: flex; justify-content: space-between; align-items: center; min-height: 2.75rem; }
+  .count { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .count b { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.7rem; color: var(--ink); margin-right: 0.3rem; display: inline-block; }
+  .count.bump b { animation: bump 0.6s ease-out; }
+  .count.off { visibility: hidden; }
+  @keyframes bump { 0% { transform: scale(1); color: var(--ink); } 25% { transform: scale(1.35); color: var(--accent); } 100% { transform: scale(1); color: var(--ink); } }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .orb-wrap { position: relative; width: min(66vmin, 26rem); aspect-ratio: 1; flex: none; }
+  .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--line); }
+  .orb {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 38% 34%, var(--orb-hi), var(--orb-lo) 78%);
+    box-shadow: 0 0 5rem var(--glow);
+    transform: scale(0.55); will-change: transform;
+  }
+  .flame-wrap { width: min(72vmin, 26rem); aspect-ratio: 1; flex: none; }
+  .flame-wrap canvas { display: block; width: 100%; height: 100%; }
+  .ripple { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; animation: ripple 1.5s ease-out forwards; }
+  @keyframes ripple { from { transform: scale(var(--s0, 0.6)); opacity: 0.95; } to { transform: scale(1.32); opacity: 0; } }
+  .slot { position: relative; width: min(92vw, 34rem); height: 6rem; margin-top: 1rem; flex: none; }
+  .phase, .reminder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; transition: opacity 0.9s ease; }
+  .phase { color: var(--muted); font-size: 0.98rem; letter-spacing: 0.03em; }
+  .reminder { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.3rem); line-height: 1.15; text-wrap: balance; opacity: 0; padding: 0 0.5rem; }
+  .slot.has-reminder .reminder { opacity: 1; }
+  .slot.has-reminder .phase { opacity: 0; }
+  .bottom { min-height: 7.5rem; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.5rem; }
+  .hint { color: var(--muted); font-size: 0.93rem; text-align: center; max-width: 25rem; transition: opacity 1.6s; }
+  .hint.dim { opacity: 0.45; }
+  .hint.gone { opacity: 0; }
+  .panel { width: min(100%, 30rem); cursor: default; }
+  .panel label { display: block; font-size: 0.93rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .panel .row { display: flex; gap: 0.5rem; }
+  .panel .btn { padding: 0.6rem 1.2rem; }
+  .panel small { display: block; color: var(--muted); margin-top: 0.35rem; font-size: 0.82rem; }
+  .listen { display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--muted); font-size: 0.95rem; }
+  .pulse { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(0.8); opacity: 0.6; } 50% { transform: scale(1.3); opacity: 1; } }
+  .heard { font-family: "Instrument Serif", Georgia, serif; font-size: 1.6rem; line-height: 1.15; min-height: 1.9rem; text-align: center; margin: 0.5rem 0 0.75rem; }
+  #voicePanel { text-align: center; }
+  #voicePanel .btn { padding: 0.5rem 1.4rem; }
+  .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 1rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+
+  /* ---------- End ---------- */
+  .end-wrap { width: 100%; max-width: 34rem; margin: 0 auto; padding: 3rem 0 2rem; }
+  .end-wrap h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(2.8rem, 10vw, 4.2rem); line-height: 1; margin: 0 0 0.9rem; }
+  .end-wrap .sub { color: var(--muted); font-size: 1.05rem; margin: 0 0 1.75rem; }
+  .list-head { font-weight: 600; font-size: 0.95rem; margin: 0 0 0.25rem; }
+  .often { color: var(--muted); font-size: 0.93rem; margin: 0 0 0.75rem; }
+  ol.log { list-style: none; margin: 0 0 2rem; padding: 0; max-height: 40vh; overflow-y: auto; border-top: 1px solid var(--line); }
+  ol.log li { display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  ol.log time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.9rem; padding-top: 0.1rem; }
+  ol.log .none { color: var(--muted); font-style: italic; }
+  .end-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ripple { display: none; }
+    .count.bump b { animation: none; }
+    .pulse { animation: none; }
+    .phase, .reminder, .hint { transition-duration: 0.01s; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section id="home" class="screen">
+  <div class="home-wrap">
+    <h1>Come back</h1>
+    <p class="lede">Settle in and breathe. Each time you notice your mind has wandered, tap. That noticing is the whole practice, and every tap counts as a point. You can't lose.</p>
+
+    <fieldset>
+      <legend>When you notice, you…</legend>
+      <div class="choices">
+        <label class="choice">
+          <input type="radio" name="mode" value="tap" checked>
+          <strong>Just tap</strong>
+          <span>Tap the screen or press space. That's all.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="mode" value="label">
+          <strong>Tap and type it</strong>
+          <span>Then type one or two words for where your mind went.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="mode" value="voice">
+          <strong>Tap and say it</strong>
+          <span>Then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text.<span id="voiceNote"></span></span>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>What do you rest on?</legend>
+      <div class="choices">
+        <label class="choice">
+          <input type="radio" name="anchor" value="circle" checked>
+          <strong>Breathing circle</strong>
+          <span>A slow circle sets the pace: 4 seconds in, 6 out.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="flame">
+          <strong>Candle flame</strong>
+          <span>A steady flame to rest your eyes on. Breathe at your own pace.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="dark">
+          <strong>Eyes closed</strong>
+          <span>The screen goes dark and you breathe at your own pace. Best with sound on.</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>How long?</legend>
+      <div class="seg">
+        <label class="choice"><input type="radio" name="len" value="300000"><span>5 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="600000" checked><span>10 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="1200000"><span>20 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="0"><span>No limit</span></label>
+      </div>
+    </fieldset>
+
+    <details>
+      <summary>Sound and display</summary>
+      <label class="check">
+        <input type="checkbox" id="sounds" checked>
+        <span>Soft sounds
+          <small>A bell to begin and end, and a quiet tone at each step. With Eyes closed, your reminders are also read aloud.</small>
+        </span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="showCount" checked>
+        <span>Show the count while I sit
+          <small>Turn this off if the number starts to feel like a score. You'll still see it at the end.</small>
+        </span>
+      </label>
+    </details>
+
+    <details>
+      <summary>Your reminders</summary>
+      <p>One per line. A different one appears each time you catch yourself.</p>
+      <textarea id="reminders" aria-label="Your reminders, one per line"></textarea>
+      <button class="link-btn" id="resetRem" type="button">Restore the starter set</button>
+    </details>
+
+    <button class="btn" id="begin" type="button">Begin</button>
+
+    <div class="home-foot">
+      <q>It's really just about the millions of times of just getting back.</q>
+      <span id="total"></span>
+    </div>
+  </div>
+</section>
+
+<!-- SESSION -->
+<section id="session" class="screen" hidden>
+  <div class="bar">
+    <div class="count" id="count" aria-live="polite"><b id="countNum">0</b><span id="countWord">returns</span></div>
+    <button class="finish" id="finish" type="button">Finish</button>
+  </div>
+  <div class="stage">
+    <div class="orb-wrap" id="orbWrap" aria-hidden="true">
+      <div class="ring"></div>
+      <div class="orb" id="orb"></div>
+    </div>
+    <div class="flame-wrap" id="flameWrap" aria-hidden="true" hidden>
+      <canvas id="flameCanvas"></canvas>
+    </div>
+    <div class="slot" id="slot">
+      <div class="phase" id="phase" aria-hidden="true">Breathe in</div>
+      <div class="reminder" id="reminder" role="status"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="hint" id="hint"></div>
+    <div class="panel" id="panel" hidden>
+      <label for="labelInput" id="labelText">What pulled you away? One or two words.</label>
+      <div class="row">
+        <input type="text" id="labelInput" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. email, dinner">
+        <button class="btn" id="saveLabel" type="button">Save</button>
+      </div>
+      <small>Enter saves. Blank is fine.</small>
+    </div>
+    <div class="panel" id="voicePanel" hidden>
+      <div class="listen"><span class="pulse"></span><span>Listening. Say a word or two.</span></div>
+      <div class="heard" id="heard" aria-live="polite"></div>
+      <button class="btn ghost" id="doneListen" type="button">Done</button>
+      <small>Or tap anywhere, or press space, to finish.</small>
+    </div>
+  </div>
+</section>
+
+<!-- END -->
+<section id="end" class="screen" hidden>
+  <div class="end-wrap">
+    <h2 id="endHead"></h2>
+    <p class="sub" id="endSub"></p>
+    <div id="logBlock" hidden>
+      <p class="list-head">Where your mind went</p>
+      <p class="often" id="often"></p>
+      <ol class="log" id="log"></ol>
+    </div>
+    <div class="end-actions">
+      <button class="btn" id="again" type="button">Sit again</button>
+      <button class="btn ghost" id="home2" type="button">Back to start</button>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  var DEFAULTS = [
+    "Nothing to fix. Just begin again.",
+    "Noticing is the practice.",
+    "There you are.",
+    "Welcome back.",
+    "This is the rep.",
+    "Gently, back to the breath."
+  ];
+  var KEY_REM = "come-back:reminders";
+  var KEY_TOTAL = "come-back:total";
+  var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
+  var MIN_SCALE = 0.55;
+  var LISTEN_MS = 7000;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var screens = { home: $("home"), session: $("session"), end: $("end") };
+  var els = {
+    reminders: $("reminders"), total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
+    orb: $("orb"), orbWrap: $("orbWrap"), flameWrap: $("flameWrap"), canvas: $("flameCanvas"),
+    slot: $("slot"), phase: $("phase"), reminder: $("reminder"),
+    hint: $("hint"), panel: $("panel"), voicePanel: $("voicePanel"), heard: $("heard"),
+    input: $("labelInput"), labelText: $("labelText"), begin: $("begin")
+  };
+
+  var S = {
+    mode: "tap", anchor: "circle", limit: 0, sound: true, speak: false, voiceOK: false, voiceReason: "", micDenied: false,
+    entries: [], startWall: 0, startPerf: 0, active: false, current: null,
+    list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
+    listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, wake: null
+  };
+
+  /* ---------- storage (guarded) ---------- */
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+  function loadReminders() {
+    var saved = lsGet(KEY_REM);
+    els.reminders.value = saved && saved.trim() ? saved : DEFAULTS.join("\n");
+  }
+  function loadTotal() {
+    var n = parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0;
+    els.total.textContent = n > 0 ? "Returns so far, across all sittings: " + n : "";
+  }
+  function show(name) {
+    Object.keys(screens).forEach(function (k) { screens[k].hidden = (k !== name); });
+    window.scrollTo(0, 0);
+  }
+  function blurActive() { try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {} }
+
+  /* ---------- sound ---------- */
+  var AC = null;
+  function initAudio() {
+    if (!S.sound) return;
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === "suspended") AC.resume();
+    } catch (e) { AC = null; }
+  }
+  function ping(freq, vol, dur, delay) {
+    if (!AC || !S.sound) return;
+    try {
+      var t0 = AC.currentTime + (delay || 0);
+      var o = AC.createOscillator(), g = AC.createGain();
+      o.type = "sine"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    } catch (e) {}
+  }
+  function bell(freq, vol) { ping(freq, vol, 3.4); ping(freq * 2.76, vol * 0.35, 2.4); ping(freq * 5.4, vol * 0.12, 1.4); }
+  function tCatch() { ping(587, 0.07, 0.9); }
+  function tListenStart() { ping(523, 0.08, 0.5); ping(784, 0.08, 0.7, 0.12); }
+  function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
+
+  function speakText(text) {
+    if (!S.speak) return;
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.82; u.pitch = 0.9; u.volume = 0.75;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  /* ---------- wake lock ---------- */
+  function lockScreen() {
+    try { if (navigator.wakeLock && navigator.wakeLock.request) { navigator.wakeLock.request("screen").then(function (l) { S.wake = l; }, function () {}); } } catch (e) {}
+  }
+  function unlockScreen() { try { if (S.wake) { S.wake.release(); S.wake = null; } } catch (e) {} }
+  document.addEventListener("visibilitychange", function () { if (S.active && document.visibilityState === "visible") lockScreen(); });
+
+  /* ---------- reminders cycle ---------- */
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function nextReminder() {
+    if (S.oi >= S.order.length) {
+      var last = S.order[S.order.length - 1];
+      S.order = shuffle(S.list);
+      if (S.order.length > 1 && S.order[0] === last) { S.order.push(S.order.shift()); }
+      S.oi = 0;
+    }
+    return S.order[S.oi++];
+  }
+  function showReminder() {
+    if (!S.active) return;
+    var text = nextReminder();
+    els.reminder.textContent = text;
+    els.slot.classList.add("has-reminder");
+    speakText(text);
+    clearTimeout(S.remTimer);
+    S.remTimer = setTimeout(function () { els.slot.classList.remove("has-reminder"); }, 4200);
+  }
+
+  /* ---------- breathing circle ---------- */
+  function ease(x) { return 0.5 - 0.5 * Math.cos(Math.PI * x); }
+  function currentScale() {
+    var t = (performance.now() - S.startPerf) % CYCLE, p;
+    if (t < IN_MS) p = ease(t / IN_MS); else p = 1 - ease((t - IN_MS) / OUT_MS);
+    return { s: MIN_SCALE + (1 - MIN_SCALE) * p, inhale: t < IN_MS };
+  }
+  function drawCircle() {
+    var c = currentScale();
+    els.orb.style.transform = "scale(" + c.s.toFixed(4) + ")";
+    var word = c.inhale ? "Breathe in" : "Breathe out";
+    if (word !== S.lastPhase) { els.phase.textContent = word; S.lastPhase = word; }
+  }
+  function ripple() {
+    var r = document.createElement("div");
+    r.className = "ripple";
+    r.style.setProperty("--s0", currentScale().s.toFixed(3));
+    els.orbWrap.appendChild(r);
+    var kill = function () { if (r.parentNode) r.parentNode.removeChild(r); };
+    r.addEventListener("animationend", kill);
+    setTimeout(kill, 1800);
+  }
+
+  /* ---------- candle flame ---------- */
+  var F = { ctx: null, size: 0, flare: 0, wind: 0, windTarget: 0, nextWind: 0, last: 0 };
+  function sizeFlame() {
+    var r = els.canvas.getBoundingClientRect();
+    if (!r.width) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    els.canvas.width = Math.round(r.width * dpr);
+    els.canvas.height = Math.round(r.width * dpr);
+    F.ctx = els.canvas.getContext("2d");
+    F.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    F.size = r.width;
+  }
+  window.addEventListener("resize", function () { if (S.active && S.anchor === "flame") sizeFlame(); });
+
+  function drawFlame(now) {
+    if (!F.ctx) return;
+    var ctx = F.ctx, W = F.size, t = now / 1000;
+    var dt = F.last ? Math.min(0.05, (now - F.last) / 1000) : 0.016;
+    F.last = now;
+    F.flare *= Math.exp(-dt * 1.6);
+    if (t > F.nextWind) { F.windTarget = (Math.random() - 0.5) * 2; F.nextWind = t + 1.5 + Math.random() * 2.5; }
+    F.wind += (F.windTarget - F.wind) * Math.min(1, dt * 1.2);
+
+    ctx.clearRect(0, 0, W, W);
+    var cx = W / 2, baseY = W * 0.62;
+    var fl = 1 + 0.025 * Math.sin(t * 6.1) + 0.018 * Math.sin(t * 10.7 + 1.3) + 0.015 * Math.sin(t * 3.1 + 0.4);
+    var h = W * 0.30 * fl * (1 + F.flare * 0.45);
+    var w = W * 0.075 * (1 + F.flare * 0.25) * (1 + 0.03 * Math.sin(t * 5.3));
+    var lean = (F.wind * 0.18 + 0.05 * Math.sin(t * 1.7)) * w * 2.2;
+
+    // glow
+    var gr = W * 0.55 * (1 + F.flare * 0.35);
+    var gx = cx + lean * 0.3, gy = baseY - h * 0.45;
+    var glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+    glow.addColorStop(0, "rgba(255,176,80," + (0.30 + 0.10 * F.flare + 0.03 * Math.sin(t * 7.7)).toFixed(3) + ")");
+    glow.addColorStop(0.5, "rgba(255,140,50,0.09)");
+    glow.addColorStop(1, "rgba(255,120,40,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, W);
+
+    // candle body, fading downward
+    var topY = baseY + W * 0.05;
+    var body = ctx.createLinearGradient(0, topY, 0, W);
+    body.addColorStop(0, "rgba(236,224,200,0.95)");
+    body.addColorStop(1, "rgba(236,224,200,0)");
+    ctx.fillStyle = body;
+    ctx.fillRect(cx - W * 0.065, topY, W * 0.13, W - topY);
+
+    // wick
+    ctx.strokeStyle = "#1b1210"; ctx.lineWidth = 2; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx + lean * 0.03, baseY - W * 0.004); ctx.stroke();
+
+    function layer(hs, ws, c0, c1, c2) {
+      var hh = h * hs, ww = w * ws;
+      var tipx = cx + lean * hs, tipy = baseY - hh;
+      ctx.beginPath();
+      ctx.moveTo(cx, baseY + hh * 0.02);
+      ctx.bezierCurveTo(cx - ww * 1.25, baseY - hh * 0.05, cx - ww * 0.95, baseY - hh * 0.62, tipx, tipy);
+      ctx.bezierCurveTo(cx + ww * 0.95, baseY - hh * 0.62, cx + ww * 1.25, baseY - hh * 0.05, cx, baseY + hh * 0.02);
+      var g = ctx.createLinearGradient(0, tipy, 0, baseY);
+      g.addColorStop(0, c0); g.addColorStop(0.55, c1); g.addColorStop(1, c2);
+      ctx.fillStyle = g; ctx.fill();
+    }
+    layer(1.00, 1.00, "rgba(255,150,50,0)", "rgba(255,138,43,0.88)", "rgba(235,90,25,0.95)");
+    layer(0.74, 0.70, "rgba(255,214,110,0)", "rgba(255,205,100,0.95)", "rgba(255,170,70,0.95)");
+    layer(0.42, 0.38, "rgba(255,250,225,0)", "rgba(255,248,220,0.98)", "rgba(255,236,190,0.98)");
+
+    // blue base
+    ctx.fillStyle = "rgba(110,150,255,0.42)";
+    ctx.beginPath(); ctx.ellipse(cx, baseY - h * 0.03, w * 0.55, h * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  /* ---------- main loop ---------- */
+  function loop(now) {
+    if (!S.active) return;
+    if (S.anchor === "circle") drawCircle();
+    else if (S.anchor === "flame") drawFlame(now);
+    S.raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------- session control ---------- */
+  function describeErr(code) {
+    if (code === "not-allowed" || code === "service-not-allowed") return "the microphone is blocked for this page";
+    if (code === "audio-capture") return "no microphone was found";
+    if (code === "network") return "the speech service couldn't be reached";
+    if (code === "language-not-supported") return "your language isn't supported";
+    return code ? "error: " + code : "unknown problem";
+  }
+
+  // Asks the browser for the microphone up front by briefly starting speech recognition.
+  function probeMic() {
+    return new Promise(function (resolve) {
+      if (!SR) { resolve({ ok: false, reason: "this browser has no speech recognition" }); return; }
+      var done = false, rec = null, timer = 0;
+      function end(ok, reason) {
+        if (done) return; done = true; clearTimeout(timer);
+        if (rec) { rec.onaudiostart = rec.onerror = rec.onend = null; try { rec.abort(); } catch (e) {} }
+        resolve({ ok: ok, reason: reason || "" });
+      }
+      timer = setTimeout(function () { end(false, "no response from the microphone prompt"); }, 20000);
+      try {
+        rec = new SR();
+        rec.lang = navigator.language || "en-US";
+        rec.continuous = false; rec.interimResults = false;
+        rec.onaudiostart = function () { end(true); };
+        rec.onerror = function (e) {
+          var c = e && e.error;
+          if (c === "no-speech" || c === "aborted") return;
+          end(false, describeErr(c));
+        };
+        rec.onend = function () { end(false, "speech recognition stopped before it started"); };
+        rec.start();
+      } catch (err) { end(false, (err && err.name) ? "error: " + err.name : "couldn't start"); }
+    });
+  }
+
+  function begin() {
+    var lines = els.reminders.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!lines.length) { lines = DEFAULTS.slice(); els.reminders.value = lines.join("\n"); }
+    lsSet(KEY_REM, els.reminders.value);
+    S.list = lines;
+    S.order = shuffle(lines); S.oi = 0;
+    S.mode = document.querySelector('input[name="mode"]:checked').value;
+    S.anchor = document.querySelector('input[name="anchor"]:checked').value;
+    S.limit = parseInt(document.querySelector('input[name="len"]:checked').value, 10) || 0;
+    S.sound = $("sounds").checked;
+    S.speak = S.sound && S.anchor === "dark" && ("speechSynthesis" in window);
+    initAudio(); // must run inside the click gesture
+
+    if (S.mode === "voice") {
+      els.begin.disabled = true;
+      els.begin.textContent = "Allow the microphone if asked…";
+      probeMic().then(function (r) {
+        S.voiceOK = r.ok; S.voiceReason = r.reason;
+        els.begin.disabled = false; els.begin.textContent = "Begin";
+        startSession();
+      });
+    } else {
+      S.voiceOK = false; S.voiceReason = "";
+      startSession();
+    }
+  }
+
+  function startSession() {
+    S.entries = []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
+    S.listening = false; S.heardText = "";
+    document.documentElement.classList.toggle("dark-session", S.anchor !== "circle");
+    $("session").setAttribute("data-anchor", S.anchor);
+    els.countNum.textContent = "0"; els.countWord.textContent = "returns";
+    els.count.classList.toggle("off", !$("showCount").checked);
+    els.slot.classList.remove("has-reminder");
+    els.reminder.textContent = "";
+    els.phase.hidden = S.anchor !== "circle";
+    els.orbWrap.hidden = S.anchor !== "circle";
+    els.flameWrap.hidden = S.anchor !== "flame";
+    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false;
+    els.hint.classList.remove("dim", "gone");
+
+    var base = {
+      circle: "Tap anywhere, or press space, when you notice your mind has wandered.",
+      flame: "Rest your eyes on the flame and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.",
+      dark: "Close your eyes and breathe at your own pace. Tap anywhere, or press space, when you notice your mind has wandered."
+    }[S.anchor];
+    var extra = "";
+    if (S.mode === "label") extra = " Then type where it went.";
+    if (S.mode === "voice") extra = S.voiceOK ? " Then say a word or two about where it went." : " Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so you'll type where it went.";
+    els.hint.textContent = base + extra;
+
+    show("session");
+    if (S.anchor === "flame") { F.flare = 0; F.last = 0; F.nextWind = 0; sizeFlame(); }
+    S.startWall = Date.now(); S.startPerf = performance.now(); S.active = true;
+    lockScreen();
+    if (S.sound) bell(396, 0.12);
+    clearTimeout(S.hintTimer);
+    S.hintTimer = setTimeout(function () {
+      if (!S.active) return;
+      els.hint.classList.add(S.anchor === "dark" ? "gone" : "dim");
+    }, 9000);
+    S.raf = requestAnimationFrame(loop);
+    S.tick = setInterval(function () {
+      if (S.limit && Date.now() - S.startWall >= S.limit) finish();
+    }, 500);
+  }
+
+  function restHint() {
+    if (!S.active) return;
+    els.hint.hidden = false;
+    els.hint.classList.remove("dim", "gone");
+    els.hint.classList.add(S.anchor === "dark" ? "gone" : "dim");
+  }
+
+  /* ---------- catching ---------- */
+  function catchIt() {
+    if (!S.active) return;
+    var now = Date.now();
+    if (now - S.lastCatch < 250) return;
+    S.lastCatch = now;
+    var entry = { at: now - S.startWall, label: "" };
+    S.entries.push(entry);
+    var n = S.entries.length;
+    els.countNum.textContent = n;
+    els.countWord.textContent = n === 1 ? "return" : "returns";
+    els.count.classList.remove("bump"); void els.count.offsetWidth; els.count.classList.add("bump");
+    if (S.anchor === "circle") ripple();
+    if (S.anchor === "flame") F.flare = Math.min(1, F.flare + 0.9);
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+    commitLabel();
+
+    if (S.mode === "voice" && S.voiceOK) {
+      startListening(entry); // the reminder arrives once you've spoken
+    } else {
+      tCatch();
+      showReminder();
+      if (S.mode === "label" || S.mode === "voice") openType(entry, S.mode === "voice");
+      else restHint();
+    }
+  }
+
+  /* ---------- typing ---------- */
+  function openType(entry, fallback) {
+    S.current = entry;
+    els.labelText.textContent = fallback
+      ? "Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so type it. One or two words."
+      : "What pulled you away? One or two words.";
+    els.hint.hidden = true; els.voicePanel.hidden = true; els.panel.hidden = false;
+    els.input.value = "";
+    els.input.focus({ preventScroll: true });
+  }
+  function commitLabel() {
+    if (S.current && !S.listening) { S.current.label = els.input.value.trim(); S.current = null; }
+    if (!els.panel.hidden) { els.panel.hidden = true; blurActive(); restHint(); }
+  }
+
+  /* ---------- listening ---------- */
+  function cleanHeard(s) {
+    s = (s || "").trim().replace(/[.,!?;:]+$/, "");
+    var words = s.split(/\s+/).filter(Boolean);
+    if (words.length > 8) words = words.slice(0, 8);
+    return words.join(" ").toLowerCase();
+  }
+
+  function startListening(entry) {
+    S.current = entry; S.listening = true; S.heardText = "";
+    els.heard.textContent = "";
+    els.hint.hidden = true; els.panel.hidden = true; els.voicePanel.hidden = false;
+    var cued = false;
+    function cue() { if (cued) return; cued = true; tListenStart(); }
+    setTimeout(cue, 700); // fallback if the browser never reports audio start
+    try {
+      var rec = new SR();
+      rec.lang = navigator.language || "en-US";
+      rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      rec.onaudiostart = cue;
+      rec.onresult = function (e) {
+        var txt = "";
+        for (var i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript + " ";
+        S.heardText = txt.trim();
+        els.heard.textContent = S.heardText;
+      };
+      rec.onerror = function (e) {
+        var c = e && e.error;
+        if (c && c !== "no-speech" && c !== "aborted") { S.voiceOK = false; S.micDenied = true; S.voiceReason = describeErr(c); }
+      };
+      rec.onend = function () { endListening(false); };
+      S.rec = rec;
+      rec.start();
+    } catch (err) {
+      S.voiceOK = false; S.micDenied = true; S.rec = null;
+      S.voiceReason = (err && err.name) ? "error: " + err.name : "couldn't start";
+      setTimeout(function () { endListening(false); }, 0);
+    }
+    clearTimeout(S.listenTimer);
+    S.listenTimer = setTimeout(stopListening, LISTEN_MS);
+  }
+
+  function stopListening() {
+    if (!S.listening) return;
+    if (S.rec) {
+      try { S.rec.stop(); } catch (e) {}
+      clearTimeout(S.stopSafety);
+      S.stopSafety = setTimeout(function () { endListening(false); }, 1500);
+    } else {
+      endListening(false);
+    }
+  }
+
+  function endListening(silent) {
+    if (!S.listening) return;
+    S.listening = false;
+    clearTimeout(S.listenTimer); clearTimeout(S.stopSafety);
+    var rec = S.rec; S.rec = null;
+    if (rec) { rec.onend = rec.onresult = rec.onerror = null; try { rec.abort(); } catch (e) {} }
+    var entry = S.current; S.current = null;
+    var txt = cleanHeard(S.heardText);
+    if (entry) entry.label = txt;
+    els.voicePanel.hidden = true; blurActive();
+    if (silent) return;
+    tListenEnd();
+    setTimeout(showReminder, 400);
+    if (S.micDenied && !txt && S.active) { openType(entry, true); }
+    else restHint();
+  }
+
+  /* ---------- finishing ---------- */
+  function fmtClock(ms) {
+    var s = Math.round(ms / 1000), m = Math.floor(s / 60);
+    return m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
+  }
+
+  function finish() {
+    if (!S.active) return;
+    if (S.listening) endListening(true);
+    commitLabel();
+    S.active = false;
+    cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer);
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    unlockScreen();
+    if (S.sound) bell(396, 0.12);
+    document.documentElement.classList.remove("dark-session");
+
+    var dur = Date.now() - S.startWall, n = S.entries.length;
+    var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
+    lsSet(KEY_TOTAL, String(total));
+
+    var mins = Math.round(dur / 60000);
+    var span = dur < 60000 ? "under a minute" : (mins + (mins === 1 ? " minute" : " minutes"));
+    var head = $("endHead"), sub = $("endSub");
+    if (n === 0) {
+      head.textContent = "You sat for " + span + ".";
+      sub.textContent = "Nothing to count this time, and nothing lost. When your mind does wander, the first return starts the count.";
+    } else {
+      head.textContent = n === 1 ? "You came back once." : "You came back " + n + " times.";
+      sub.textContent = "In " + span + " of sitting. Every one of those was the practice.";
+    }
+
+    var block = $("logBlock");
+    if (S.mode !== "tap" && n > 0) {
+      var log = $("log"); log.innerHTML = "";
+      var counts = {};
+      S.entries.forEach(function (e) {
+        var li = document.createElement("li");
+        var t = document.createElement("time"); t.textContent = fmtClock(e.at);
+        var d = document.createElement("span");
+        if (e.label) { d.textContent = e.label; var k = e.label.toLowerCase(); counts[k] = (counts[k] || 0) + 1; }
+        else { d.textContent = "unnamed"; d.className = "none"; }
+        li.appendChild(t); li.appendChild(d); log.appendChild(li);
+      });
+      var top = Object.keys(counts).filter(function (k) { return counts[k] > 1; })
+        .sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 3);
+      $("often").textContent = top.length
+        ? "Where you found yourself most: " + top.map(function (k) { return k + " (" + counts[k] + ")"; }).join(", ") + "."
+        : "";
+      $("often").hidden = !top.length;
+      block.hidden = false;
+    } else {
+      block.hidden = true;
+    }
+    loadTotal();
+    show("end");
+  }
+
+  /* ---------- events ---------- */
+  $("begin").addEventListener("click", begin);
+  $("again").addEventListener("click", begin);
+  $("home2").addEventListener("click", function () { show("home"); });
+  $("finish").addEventListener("click", function (e) { e.stopPropagation(); finish(); });
+  $("doneListen").addEventListener("click", function () { stopListening(); });
+  $("resetRem").addEventListener("click", function () { els.reminders.value = DEFAULTS.join("\n"); });
+
+  screens.session.addEventListener("click", function (e) {
+    if (!S.active) return;
+    if (e.target.closest("input")) return;
+    if (S.listening) { stopListening(); return; }
+    if (e.target.closest("button, .panel")) return;
+    if (!els.panel.hidden) { els.input.focus({ preventScroll: true }); return; }
+    catchIt();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!S.active) return;
+    if (e.code === "Space" || e.key === " ") {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (tag === "BUTTON" && !S.listening) return;
+      e.preventDefault();
+      if (e.repeat) return;
+      if (S.listening) stopListening();
+      else if (els.panel.hidden) catchIt();
+    }
+  });
+
+  els.input.addEventListener("input", function () {
+    var v = els.input.value.replace(/^\s+/, "");
+    var parts = v.split(/\s+/);
+    if (parts.length > 2) v = parts.slice(0, 2).join(" ");
+    if (v !== els.input.value) els.input.value = v;
+  });
+  els.input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); commitLabel(); }
+  });
+  $("saveLabel").addEventListener("click", function (e) { e.stopPropagation(); commitLabel(); });
+
+  if (!SR) { $("voiceNote").textContent = " Not supported in this browser, so you'd type instead."; }
+  loadReminders();
+  loadTotal();
+})();
+</script>
+</body>
+</html>
