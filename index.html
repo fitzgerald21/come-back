@@ -52,7 +52,7 @@
     --btn-bg: #DCEAE5;
     --btn-ink: #0D1A1F;
   }
-  /* Flame and eyes-closed sits are always dark, whatever the device theme. */
+  /* Every scene except the breathing circle is always dark, whatever the device theme. */
   :root.dark-session {
     --bg: #0A0F12;
     --ink: #E6EDE9;
@@ -88,15 +88,23 @@
   fieldset { border: 0; padding: 0; margin: 0 0 1.5rem; min-width: 0; }
   legend { font-weight: 600; font-size: 0.95rem; padding: 0; margin-bottom: 0.6rem; }
   .choices { display: grid; gap: 0.6rem; }
+  .choices.two { grid-template-columns: 1fr 1fr; }
   .choice { position: relative; display: block; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.85rem 1rem; cursor: pointer; }
   .choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
   .choice strong { display: block; font-weight: 600; }
   .choice span { color: var(--muted); font-size: 0.93rem; }
+  .choices.two .choice { padding: 0.7rem 0.85rem; }
+  .choices.two .choice span { font-size: 0.85rem; line-height: 1.35; display: block; }
   .choice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
   .seg { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .seg .choice { padding: 0.55rem 1rem; border-radius: 999px; }
   .seg .choice span { color: inherit; font-size: 0.95rem; }
+  .subnote { color: var(--muted); font-size: 0.88rem; margin: 0.6rem 0 0; }
+  .custom { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
+  .custom input { width: 7rem; }
+  .custom span { color: var(--muted); }
+  .custom small { color: var(--accent); }
 
   details { margin: 0 0 1.25rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
   summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
@@ -105,7 +113,7 @@
   .check input { margin-top: 0.3rem; accent-color: var(--ink); width: 1.05rem; height: 1.05rem; flex: none; }
   .check span { font-size: 0.95rem; }
   .check small { display: block; color: var(--muted); font-size: 0.86rem; }
-  textarea, input[type="text"] {
+  textarea, input[type="text"], input[type="number"] {
     width: 100%; font: inherit; font-size: 1rem; color: var(--ink);
     background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.85rem;
   }
@@ -123,13 +131,36 @@
   .home-foot { margin-top: 2.25rem; color: var(--muted); font-size: 0.95rem; }
   .home-foot q { font-family: "Instrument Serif", Georgia, serif; font-size: 1.35rem; line-height: 1.25; color: var(--ink); display: block; margin-bottom: 0.5rem; quotes: none; }
 
+  /* ---------- Calendar ---------- */
+  .cal { margin-top: 2.25rem; border-top: 1px solid var(--line); padding-top: 1.1rem; }
+  .cal h2 { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.7rem; }
+  .cal-months, .cal-grid { display: grid; grid-template-columns: repeat(17, 1fr); gap: 3px; }
+  .cal-months { height: 1.05rem; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .cal-months span { white-space: nowrap; }
+  .cal-grid { grid-template-rows: repeat(7, auto); grid-auto-flow: column; }
+  .cell { aspect-ratio: 1; border: 0; padding: 0; border-radius: 3px; background: rgba(127, 127, 127, 0.16); cursor: pointer; }
+  .cell.future { visibility: hidden; pointer-events: none; }
+  .cell.today { outline: 1.5px solid var(--ink); outline-offset: 1px; }
+  .cell.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cal-legend { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--muted); margin-top: 0.7rem; }
+  .cal-legend i { width: 0.8rem; height: 0.8rem; border-radius: 3px; display: inline-block; background: rgba(127, 127, 127, 0.16); }
+  .cal-legend .gap { flex: 1; }
+  .cal-detail { margin-top: 0.75rem; font-size: 0.92rem; color: var(--muted); min-height: 2.8rem; }
+  .cal-detail b { color: var(--ink); font-weight: 600; }
+  .cal-detail ul { margin: 0.4rem 0 0; padding-left: 1.1rem; color: var(--ink); }
+  .cal-detail li { overflow-wrap: anywhere; white-space: pre-wrap; }
+
   /* ---------- Session ---------- */
-  #session { cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; overflow: hidden; }
-  .bar { display: flex; justify-content: space-between; align-items: center; min-height: 2.75rem; }
-  .count { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #session { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: pan-y; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0; }
+  #session > .bar, #session > .stage, #session > .dots, #session > .bottom { position: relative; z-index: 1; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
+  .count { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .count b { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.7rem; color: var(--ink); margin-right: 0.3rem; display: inline-block; }
   .count.bump b { animation: bump 0.6s ease-out; }
-  .count.off { visibility: hidden; }
+  .count.off, .clock.off { visibility: hidden; }
+  .clock { flex: 1; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 1.05rem; letter-spacing: 0.03em; }
+  .bar-actions { display: flex; gap: 0.4rem; }
   @keyframes bump { 0% { transform: scale(1); color: var(--ink); } 25% { transform: scale(1.35); color: var(--accent); } 100% { transform: scale(1); color: var(--ink); } }
   .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .orb-wrap { position: relative; width: min(66vmin, 26rem); aspect-ratio: 1; flex: none; }
@@ -140,17 +171,23 @@
     box-shadow: 0 0 5rem var(--glow);
     transform: scale(0.55); will-change: transform;
   }
-  .flame-wrap { width: min(72vmin, 26rem); aspect-ratio: 1; flex: none; }
-  .flame-wrap canvas { display: block; width: 100%; height: 100%; }
+  .spacer { width: min(72vmin, 26rem); aspect-ratio: 1; flex: none; }
   .ripple { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; animation: ripple 1.5s ease-out forwards; }
   @keyframes ripple { from { transform: scale(var(--s0, 0.6)); opacity: 0.95; } to { transform: scale(1.32); opacity: 0; } }
   .slot { position: relative; width: min(92vw, 34rem); height: 6rem; margin-top: 1rem; flex: none; }
   .phase, .reminder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; transition: opacity 0.9s ease; }
   .phase { color: var(--muted); font-size: 0.98rem; letter-spacing: 0.03em; }
-  .reminder { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.3rem); line-height: 1.15; text-wrap: balance; opacity: 0; padding: 0 0.5rem; }
+  .reminder { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.3rem); line-height: 1.15; text-wrap: balance; opacity: 0; padding: 0 0.5rem; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5); }
+  #session[data-anchor="circle"] .reminder { text-shadow: none; }
   .slot.has-reminder .reminder { opacity: 1; }
   .slot.has-reminder .phase { opacity: 0; }
-  .bottom { min-height: 7.5rem; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.5rem; }
+  .dots { display: flex; justify-content: center; gap: 0.1rem; min-height: 1.6rem; flex: none; }
+  .dot { width: 1.5rem; height: 1.5rem; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
+  .dot::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--muted); opacity: 0.45; transition: opacity 0.3s, transform 0.3s; }
+  .dot.on::before { opacity: 1; background: var(--ink); transform: scale(1.25); }
+  .scene-name { position: absolute; top: 3.6rem; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.04em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 1; }
+  .scene-name.show { opacity: 1; }
+  .bottom { min-height: 6.5rem; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.25rem; }
   .hint { color: var(--muted); font-size: 0.93rem; text-align: center; max-width: 25rem; transition: opacity 1.6s; }
   .hint.dim { opacity: 0.45; }
   .hint.gone { opacity: 0; }
@@ -165,7 +202,16 @@
   .heard { font-family: "Instrument Serif", Georgia, serif; font-size: 1.6rem; line-height: 1.15; min-height: 1.9rem; text-align: center; margin: 0.5rem 0 0.75rem; }
   #voicePanel { text-align: center; }
   #voicePanel .btn { padding: 0.5rem 1.4rem; }
-  .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 1rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+  .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.9rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+
+  /* ---------- Note sheet ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; background: rgba(0, 0, 0, 0.5); padding: 1rem; padding-top: 10vh; cursor: default; }
+  .sheet-card { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 1.25rem; width: min(100%, 32rem); }
+  .sheet-card h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1; margin: 0 0 0.4rem; }
+  .sheet-card p { color: var(--muted); font-size: 0.93rem; margin: 0 0 0.8rem; }
+  .sheet-card textarea { min-height: 7rem; }
+  .sheet-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+  .sheet-actions .btn { padding: 0.65rem 1.3rem; font-size: 0.98rem; }
 
   /* ---------- End ---------- */
   .end-wrap { width: 100%; max-width: 34rem; margin: 0 auto; padding: 3rem 0 2rem; }
@@ -176,6 +222,7 @@
   ol.log { list-style: none; margin: 0 0 2rem; padding: 0; max-height: 40vh; overflow-y: auto; border-top: 1px solid var(--line); }
   ol.log li { display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
   ol.log time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.9rem; padding-top: 0.1rem; }
+  ol.log span { overflow-wrap: anywhere; white-space: pre-wrap; }
   ol.log .none { color: var(--muted); font-style: italic; }
   .end-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
@@ -183,7 +230,7 @@
     .ripple { display: none; }
     .count.bump b { animation: none; }
     .pulse { animation: none; }
-    .phase, .reminder, .hint { transition-duration: 0.01s; }
+    .phase, .reminder, .hint, .scene-name { transition-duration: 0.01s; }
   }
 </style>
 </head>
@@ -218,23 +265,44 @@
 
     <fieldset>
       <legend>What do you rest on?</legend>
-      <div class="choices">
+      <div class="choices two">
         <label class="choice">
           <input type="radio" name="anchor" value="circle" checked>
           <strong>Breathing circle</strong>
-          <span>A slow circle sets the pace: 4 seconds in, 6 out.</span>
+          <span>4 seconds in, 6 out. A slow circle sets the pace.</span>
         </label>
         <label class="choice">
           <input type="radio" name="anchor" value="flame">
           <strong>Candle flame</strong>
-          <span>A steady flame to rest your eyes on. Breathe at your own pace.</span>
+          <span>A steady flame to rest your eyes on.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="tree">
+          <strong>Tree in the wind</strong>
+          <span>Branches swaying in the breeze. A tap stirs a gust.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="rain">
+          <strong>Rain</strong>
+          <span>Soft rainfall on still water.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="ocean">
+          <strong>Night ocean</strong>
+          <span>Slow waves under the moon.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="anchor" value="stars">
+          <strong>Starry sky</strong>
+          <span>Twinkling stars. A tap sends a shooting star.</span>
         </label>
         <label class="choice">
           <input type="radio" name="anchor" value="dark">
           <strong>Eyes closed</strong>
-          <span>The screen goes dark and you breathe at your own pace. Best with sound on.</span>
+          <span>The screen goes dark. Best with sound on.</span>
         </label>
       </div>
+      <p class="subnote">During a sit, swipe left or right to change the scene.</p>
     </fieldset>
 
     <fieldset>
@@ -243,7 +311,13 @@
         <label class="choice"><input type="radio" name="len" value="300000"><span>5 min</span></label>
         <label class="choice"><input type="radio" name="len" value="600000" checked><span>10 min</span></label>
         <label class="choice"><input type="radio" name="len" value="1200000"><span>20 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="custom"><span>Custom</span></label>
         <label class="choice"><input type="radio" name="len" value="0"><span>No limit</span></label>
+      </div>
+      <div class="custom" id="customRow" hidden>
+        <input type="number" id="customMin" inputmode="decimal" min="0.1" step="any" placeholder="25" aria-label="Custom length in minutes">
+        <span>minutes</span>
+        <small id="customErr" hidden>Enter a number of minutes.</small>
       </div>
     </fieldset>
 
@@ -253,6 +327,12 @@
         <input type="checkbox" id="sounds" checked>
         <span>Soft sounds
           <small>A bell to begin and end, and a quiet tone at each step. With Eyes closed, your reminders are also read aloud.</small>
+        </span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="showClock" checked>
+        <span>Show the timer while I sit
+          <small>Counts down if you set a length, up if not.</small>
         </span>
       </label>
       <label class="check">
@@ -272,6 +352,14 @@
 
     <button class="btn" id="begin" type="button">Begin</button>
 
+    <div class="cal">
+      <h2>Your practice</h2>
+      <div class="cal-months" id="calMonths" aria-hidden="true"></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend" id="calLegend"></div>
+      <div class="cal-detail" id="calDetail" aria-live="polite"></div>
+    </div>
+
     <div class="home-foot">
       <q>It's really just about the millions of times of just getting back.</q>
       <span id="total"></span>
@@ -281,23 +369,28 @@
 
 <!-- SESSION -->
 <section id="session" class="screen" hidden>
+  <canvas id="scene" aria-hidden="true" hidden></canvas>
   <div class="bar">
     <div class="count" id="count" aria-live="polite"><b id="countNum">0</b><span id="countWord">returns</span></div>
-    <button class="finish" id="finish" type="button">Finish</button>
+    <div class="clock" id="clock" aria-label="Timer">0:00</div>
+    <div class="bar-actions">
+      <button class="finish" id="noteBtn" type="button">Note</button>
+      <button class="finish" id="finish" type="button">Finish</button>
+    </div>
   </div>
+  <div class="scene-name" id="sceneName" aria-live="polite"></div>
   <div class="stage">
     <div class="orb-wrap" id="orbWrap" aria-hidden="true">
       <div class="ring"></div>
       <div class="orb" id="orb"></div>
     </div>
-    <div class="flame-wrap" id="flameWrap" aria-hidden="true" hidden>
-      <canvas id="flameCanvas"></canvas>
-    </div>
+    <div class="spacer" id="spacer" aria-hidden="true" hidden></div>
     <div class="slot" id="slot">
       <div class="phase" id="phase" aria-hidden="true">Breathe in</div>
       <div class="reminder" id="reminder" role="status"></div>
     </div>
   </div>
+  <div class="dots" id="dots" role="group" aria-label="Scenes"></div>
   <div class="bottom">
     <div class="hint" id="hint"></div>
     <div class="panel" id="panel" hidden>
@@ -327,12 +420,29 @@
       <p class="often" id="often"></p>
       <ol class="log" id="log"></ol>
     </div>
+    <div id="noteBlock" hidden>
+      <p class="list-head">Notes to come back to</p>
+      <ol class="log" id="noteLog"></ol>
+    </div>
     <div class="end-actions">
       <button class="btn" id="again" type="button">Sit again</button>
       <button class="btn ghost" id="home2" type="button">Back to start</button>
     </div>
   </div>
 </section>
+
+<!-- NOTE SHEET (pauses the sit) -->
+<div id="noteSheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="noteTitle">
+  <div class="sheet-card">
+    <h3 id="noteTitle">Paused</h3>
+    <p>Jot down what's tugging at you so you can come back to it later. Your timer is stopped until you resume.</p>
+    <textarea id="noteText" aria-label="Your note" placeholder="e.g. email Sam about Friday"></textarea>
+    <div class="sheet-actions">
+      <button class="btn" id="noteSave" type="button">Save and resume</button>
+      <button class="btn ghost" id="noteSkip" type="button">Resume without saving</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -347,26 +457,39 @@
   ];
   var KEY_REM = "come-back:reminders";
   var KEY_TOTAL = "come-back:total";
+  var KEY_HIST = "come-back:sessions";
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
   var LISTEN_MS = 7000;
+  var MIN_RECORD_MS = 5000;   // shorter sits aren't added to the calendar
+  var CAL_WEEKS = 17;
+  var CAL_FULL_MIN = 60;      // a day at this many minutes gets the deepest orange
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  var ORDER = ["circle", "flame", "tree", "rain", "ocean", "stars", "dark"];
+  var NAMES = {
+    circle: "Breathing circle", flame: "Candle flame", tree: "Tree in the wind", rain: "Rain",
+    ocean: "Night ocean", stars: "Starry sky", dark: "Eyes closed"
+  };
+  var CANVAS_SCENES = ["flame", "tree", "rain", "ocean", "stars"];
 
   var $ = function (id) { return document.getElementById(id); };
   var screens = { home: $("home"), session: $("session"), end: $("end") };
   var els = {
     reminders: $("reminders"), total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
-    orb: $("orb"), orbWrap: $("orbWrap"), flameWrap: $("flameWrap"), canvas: $("flameCanvas"),
-    slot: $("slot"), phase: $("phase"), reminder: $("reminder"),
+    clock: $("clock"), orb: $("orb"), orbWrap: $("orbWrap"), spacer: $("spacer"), canvas: $("scene"),
+    slot: $("slot"), phase: $("phase"), reminder: $("reminder"), dots: $("dots"), sceneName: $("sceneName"),
     hint: $("hint"), panel: $("panel"), voicePanel: $("voicePanel"), heard: $("heard"),
-    input: $("labelInput"), labelText: $("labelText"), begin: $("begin")
+    input: $("labelInput"), labelText: $("labelText"), begin: $("begin"),
+    sheet: $("noteSheet"), noteText: $("noteText")
   };
 
   var S = {
-    mode: "tap", anchor: "circle", limit: 0, sound: true, speak: false, voiceOK: false, voiceReason: "", micDenied: false,
-    entries: [], startWall: 0, startPerf: 0, active: false, current: null,
+    mode: "tap", anchor: "circle", limit: 0, sound: true, voiceOK: false, voiceReason: "", micDenied: false,
+    entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
-    listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, wake: null
+    listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
+    nameTimer: 0, swipedAt: 0, wake: null
   };
 
   /* ---------- storage (guarded) ---------- */
@@ -380,6 +503,14 @@
     var n = parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0;
     els.total.textContent = n > 0 ? "Returns so far, across all sittings: " + n : "";
   }
+  // History is a list of { start, dur, returns, entries:[{at,label}], notes:[{at,text}], scene }.
+  // Today it lives in this browser's localStorage; renderCalendar only reads through loadHist(),
+  // so moving it to a real backend later means changing just these two functions.
+  function loadHist() {
+    try { var a = JSON.parse(lsGet(KEY_HIST) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function saveSession(rec) { var h = loadHist(); h.push(rec); lsSet(KEY_HIST, JSON.stringify(h)); }
+
   function show(name) {
     Object.keys(screens).forEach(function (k) { screens[k].hidden = (k !== name); });
     window.scrollTo(0, 0);
@@ -414,7 +545,7 @@
   function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
   function speakText(text) {
-    if (!S.speak) return;
+    if (!(S.sound && S.anchor === "dark" && "speechSynthesis" in window)) return;
     try {
       window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
@@ -478,57 +609,56 @@
     setTimeout(kill, 1800);
   }
 
-  /* ---------- candle flame ---------- */
-  var F = { ctx: null, size: 0, flare: 0, wind: 0, windTarget: 0, nextWind: 0, last: 0 };
-  function sizeFlame() {
+  /* ---------- full-screen scenes ---------- */
+  // V is shared scene state. pulse jumps on every tap and decays; wind drifts on its own.
+  var V = { ctx: null, w: 0, h: 0, cy: 0, last: 0, pulse: 0, wind: 0, windTarget: 0, nextWind: 0, shoot: false };
+  function hash(n) { var s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+  function sizeCanvas() {
     var r = els.canvas.getBoundingClientRect();
-    if (!r.width) return;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!r.width || !r.height) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     els.canvas.width = Math.round(r.width * dpr);
-    els.canvas.height = Math.round(r.width * dpr);
-    F.ctx = els.canvas.getContext("2d");
-    F.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    F.size = r.width;
+    els.canvas.height = Math.round(r.height * dpr);
+    V.ctx = els.canvas.getContext("2d");
+    V.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    V.w = r.width; V.h = r.height;
+    var sr = els.spacer.getBoundingClientRect();
+    V.cy = sr.height ? sr.top + sr.height / 2 : V.h * 0.42;
   }
-  window.addEventListener("resize", function () { if (S.active && S.anchor === "flame") sizeFlame(); });
+  window.addEventListener("resize", function () { if (S.active && CANVAS_SCENES.indexOf(S.anchor) >= 0) sizeCanvas(); });
 
-  function drawFlame(now) {
-    if (!F.ctx) return;
-    var ctx = F.ctx, W = F.size, t = now / 1000;
-    var dt = F.last ? Math.min(0.05, (now - F.last) / 1000) : 0.016;
-    F.last = now;
-    F.flare *= Math.exp(-dt * 1.6);
-    if (t > F.nextWind) { F.windTarget = (Math.random() - 0.5) * 2; F.nextWind = t + 1.5 + Math.random() * 2.5; }
-    F.wind += (F.windTarget - F.wind) * Math.min(1, dt * 1.2);
-
-    ctx.clearRect(0, 0, W, W);
-    var cx = W / 2, baseY = W * 0.62;
+  /* candle flame */
+  function sceneFlame(ctx, W, H, t) {
+    var u = Math.min(Math.min(W, H) * 0.72, 416), P = V.pulse;
+    var cx = W / 2, baseY = V.cy + u * 0.12;
     var fl = 1 + 0.025 * Math.sin(t * 6.1) + 0.018 * Math.sin(t * 10.7 + 1.3) + 0.015 * Math.sin(t * 3.1 + 0.4);
-    var h = W * 0.30 * fl * (1 + F.flare * 0.45);
-    var w = W * 0.075 * (1 + F.flare * 0.25) * (1 + 0.03 * Math.sin(t * 5.3));
-    var lean = (F.wind * 0.18 + 0.05 * Math.sin(t * 1.7)) * w * 2.2;
+    var h = u * 0.30 * fl * (1 + P * 0.45);
+    var w = u * 0.075 * (1 + P * 0.25) * (1 + 0.03 * Math.sin(t * 5.3));
+    var lean = (V.wind * 0.18 + 0.05 * Math.sin(t * 1.7)) * w * 2.2;
 
-    // glow
-    var gr = W * 0.55 * (1 + F.flare * 0.35);
+    // glow: fades to nothing well inside the screen, so there is no visible edge
+    var gr = u * 0.95 * (1 + P * 0.6);
     var gx = cx + lean * 0.3, gy = baseY - h * 0.45;
     var glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-    glow.addColorStop(0, "rgba(255,176,80," + (0.30 + 0.10 * F.flare + 0.03 * Math.sin(t * 7.7)).toFixed(3) + ")");
-    glow.addColorStop(0.5, "rgba(255,140,50,0.09)");
+    glow.addColorStop(0, "rgba(255,176,80," + (0.30 + 0.10 * P + 0.03 * Math.sin(t * 7.7)).toFixed(3) + ")");
+    glow.addColorStop(0.35, "rgba(255,150,60," + (0.14 + 0.05 * P).toFixed(3) + ")");
+    glow.addColorStop(0.65, "rgba(255,130,45,0.04)");
     glow.addColorStop(1, "rgba(255,120,40,0)");
     ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, W, W);
+    ctx.fillRect(0, 0, W, H);
 
     // candle body, fading downward
-    var topY = baseY + W * 0.05;
-    var body = ctx.createLinearGradient(0, topY, 0, W);
+    var topY = baseY + u * 0.05;
+    var body = ctx.createLinearGradient(0, topY, 0, topY + u * 0.55);
     body.addColorStop(0, "rgba(236,224,200,0.95)");
     body.addColorStop(1, "rgba(236,224,200,0)");
     ctx.fillStyle = body;
-    ctx.fillRect(cx - W * 0.065, topY, W * 0.13, W - topY);
+    ctx.fillRect(cx - u * 0.065, topY, u * 0.13, H - topY);
 
     // wick
     ctx.strokeStyle = "#1b1210"; ctx.lineWidth = 2; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx + lean * 0.03, baseY - W * 0.004); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx + lean * 0.03, baseY - u * 0.004); ctx.stroke();
 
     function layer(hs, ws, c0, c1, c2) {
       var hh = h * hs, ww = w * ws;
@@ -550,12 +680,238 @@
     ctx.beginPath(); ctx.ellipse(cx, baseY - h * 0.03, w * 0.55, h * 0.07, 0, 0, Math.PI * 2); ctx.fill();
   }
 
+  /* tree in the wind */
+  var treeTips = [], fallen = [];
+  function sceneTree(ctx, W, H, t, dt) {
+    var u = Math.min(W, H), D = 8, gy = H * 0.8, cx = W / 2;
+    var wd = V.wind * 0.5 + V.pulse * 1.0 + 0.1 * Math.sin(t * 0.7);
+
+    var mg = ctx.createRadialGradient(W * 0.8, H * 0.17, 0, W * 0.8, H * 0.17, u * 0.55);
+    mg.addColorStop(0, "rgba(205,230,225,0.20)");
+    mg.addColorStop(1, "rgba(205,230,225,0)");
+    ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(225,238,230,0.85)";
+    ctx.beginPath(); ctx.arc(W * 0.8, H * 0.17, u * 0.035, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = "#101c1e";
+    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, gy + u * 0.02);
+    ctx.quadraticCurveTo(W * 0.5, gy - u * 0.05, W, gy + u * 0.03);
+    ctx.lineTo(W, H); ctx.fill();
+
+    treeTips.length = 0;
+    ctx.strokeStyle = "rgba(96,132,124,0.95)"; ctx.lineCap = "round";
+    function branch(x, y, len, ang, d, id) {
+      var a = ang + (wd * 0.035 + 0.012 * Math.sin(t * 1.3 + id * 0.9)) * (1 + d * 0.15);
+      var x2 = x + Math.sin(a) * len, y2 = y - Math.cos(a) * len;
+      ctx.lineWidth = Math.max(0.8, (D - d) * u * 0.003 + 0.6);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
+      if (d >= D - 1) { treeTips.push(x2, y2, id); return; }
+      var spread = 0.34 + 0.22 * hash(id), l2 = len * (0.74 + 0.1 * hash(id + 0.5));
+      branch(x2, y2, l2, a - spread * (0.8 + 0.4 * hash(id + 1)), d + 1, id * 2 + 1);
+      branch(x2, y2, l2, a + spread * (0.8 + 0.4 * hash(id + 2)), d + 1, id * 2 + 2);
+    }
+    branch(cx, gy - u * 0.0125, u * 0.16, 0, 0, 1);
+
+    var r = u * 0.02, i, k, x, y;
+    for (k = 0; k < 2; k++) {
+      ctx.fillStyle = k ? "rgba(150,205,165,0.42)" : "rgba(105,175,150,0.55)";
+      for (i = 0; i < treeTips.length; i += 3) {
+        var id = treeTips[i + 2];
+        if ((id & 1) !== k) continue;
+        x = treeTips[i] + Math.sin(t * 2.4 + id) * 2; y = treeTips[i + 1] + Math.cos(t * 2.1 + id) * 1.5;
+        ctx.beginPath(); ctx.arc(x, y, r * (0.8 + 0.5 * hash(id)), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // a gust shakes a few leaves loose
+    if (V.pulse > 0.25 && treeTips.length && Math.random() < V.pulse * 0.12 && fallen.length < 40) {
+      var n = Math.floor(Math.random() * (treeTips.length / 3)) * 3;
+      fallen.push({ x: treeTips[n], y: treeTips[n + 1], vx: 20 + Math.random() * 30, vy: 12 + Math.random() * 20, ph: Math.random() * 6, r: u * 0.011 + Math.random() * 3 });
+    }
+    ctx.fillStyle = "rgba(140,200,160,0.7)";
+    for (i = fallen.length - 1; i >= 0; i--) {
+      var f = fallen[i];
+      f.x += (f.vx + wd * 60) * dt; f.y += f.vy * dt; f.ph += dt * 3;
+      if (f.y > gy + u * 0.03 || f.x > W + 20) { fallen.splice(i, 1); continue; }
+      ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.5, f.ph, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  /* rain */
+  var RAIN = null;
+  function sceneRain(ctx, W, H, t, dt) {
+    if (!RAIN || RAIN.w !== W || RAIN.h !== H) {
+      RAIN = { w: W, h: H, drops: [], rip: [] };
+      var n = Math.min(170, Math.round(W * H / 4500));
+      for (var i = 0; i < n; i++) RAIN.drops.push(newDrop(true));
+    }
+    function newDrop(anywhere) {
+      return { x: Math.random() * (W + 80) - 40, y: anywhere ? Math.random() * H : -20, l: 10 + Math.random() * 18, v: 520 + Math.random() * 420, gy: H * (0.76 + 0.22 * Math.random()) };
+    }
+    var g = ctx.createLinearGradient(0, H * 0.5, 0, H);
+    g.addColorStop(0, "rgba(70,110,125,0)");
+    g.addColorStop(1, "rgba(70,110,125,0.22)");
+    ctx.fillStyle = g; ctx.fillRect(0, H * 0.5, W, H * 0.5);
+
+    var slant = 0.16 + V.wind * 0.08, P = V.pulse, i;
+    ctx.lineCap = "round"; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(170,205,215," + (0.28 + 0.3 * P).toFixed(2) + ")";
+    ctx.beginPath();
+    for (i = 0; i < RAIN.drops.length; i++) {
+      var d = RAIN.drops[i], sp = d.v * (1 + P * 0.5);
+      d.y += sp * dt; d.x += sp * slant * dt;
+      if (d.y > d.gy) {
+        if (RAIN.rip.length < 50) RAIN.rip.push({ x: d.x, y: d.gy, r: 2, a: 1 });
+        RAIN.drops[i] = d = newDrop(false);
+      }
+      ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.l * slant, d.y - d.l);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    for (i = RAIN.rip.length - 1; i >= 0; i--) {
+      var p = RAIN.rip[i];
+      p.r += 38 * dt; p.a -= dt * 1.3;
+      if (p.a <= 0) { RAIN.rip.splice(i, 1); continue; }
+      ctx.strokeStyle = "rgba(170,205,215," + (p.a * 0.45).toFixed(2) + ")";
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 0.3, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+
+  /* night ocean */
+  var WAVE_FILL = ["rgba(70,120,135,0.35)", "rgba(50,100,118,0.5)", "rgba(36,82,100,0.65)", "rgba(26,64,82,0.8)", "rgba(18,48,64,0.95)"];
+  function sceneOcean(ctx, W, H, t) {
+    var u = Math.min(W, H), P = V.pulse;
+    var mx = W * 0.72, my = H * 0.2;
+    var mg = ctx.createRadialGradient(mx, my, 0, mx, my, u * 0.6);
+    mg.addColorStop(0, "rgba(215,235,230,0.26)");
+    mg.addColorStop(1, "rgba(215,235,230,0)");
+    ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(235,242,228,0.92)";
+    ctx.beginPath(); ctx.arc(mx, my, u * 0.06, 0, Math.PI * 2); ctx.fill();
+
+    for (var i = 0; i < WAVE_FILL.length; i++) {
+      var y0 = H * (0.52 + i * 0.09), amp = u * (0.012 + 0.006 * i) * (1 + P * 1.3);
+      var k = 0.006 + i * 0.0012, sp = 0.5 + i * 0.18;
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (var x = 0; x <= W + 8; x += 8) {
+        var y = y0 + amp * Math.sin(x * k + t * sp + i * 1.7) + amp * 0.5 * Math.sin(x * k * 2.3 - t * sp * 0.7 + i);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H); ctx.closePath();
+      ctx.fillStyle = WAVE_FILL[i]; ctx.fill();
+    }
+  }
+
+  /* starry sky */
+  var SKY = null, shooters = [];
+  function sceneStars(ctx, W, H, t, dt) {
+    if (!SKY || SKY.w !== W || SKY.h !== H) {
+      SKY = { w: W, h: H, list: [] };
+      var n = Math.min(240, Math.round(W * H / 2400));
+      for (var i = 0; i < n; i++) SKY.list.push({ x: Math.random() * W, y: Math.random() * H * 0.92, r: 0.5 + Math.random() * 1.4, tw: 0.6 + Math.random() * 1.8, ph: Math.random() * 6.3 });
+    }
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "rgba(30,45,95,0.0)");
+    g.addColorStop(1, "rgba(55,75,135,0.28)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    var i, s;
+    for (i = 0; i < SKY.list.length; i++) {
+      s = SKY.list[i];
+      var a = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph));
+      ctx.fillStyle = "rgba(230,238,255," + a.toFixed(2) + ")";
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    if (V.shoot) {
+      V.shoot = false;
+      if (shooters.length < 4) shooters.push({ x: W * (0.1 + Math.random() * 0.6), y: H * (0.05 + Math.random() * 0.3), vx: W * 0.8, vy: H * 0.3, life: 1 });
+    }
+    ctx.lineCap = "round"; ctx.lineWidth = 2;
+    for (i = shooters.length - 1; i >= 0; i--) {
+      s = shooters[i];
+      s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt * 1.1;
+      if (s.life <= 0) { shooters.splice(i, 1); continue; }
+      var tg = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 0.18, s.y - s.vy * 0.18);
+      tg.addColorStop(0, "rgba(255,255,255," + s.life.toFixed(2) + ")");
+      tg.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.strokeStyle = tg;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 0.18, s.y - s.vy * 0.18); ctx.stroke();
+    }
+  }
+
+  var SCENES = { flame: sceneFlame, tree: sceneTree, rain: sceneRain, ocean: sceneOcean, stars: sceneStars };
+
+  function drawScene(now) {
+    var fn = SCENES[S.anchor];
+    if (!V.ctx || !fn) return;
+    var dt = V.last ? Math.min(0.05, (now - V.last) / 1000) : 0.016;
+    V.last = now;
+    var t = now / 1000;
+    V.pulse *= Math.exp(-dt * 1.6);
+    if (t > V.nextWind) { V.windTarget = (Math.random() - 0.5) * 2; V.nextWind = t + 1.5 + Math.random() * 2.5; }
+    V.wind += (V.windTarget - V.wind) * Math.min(1, dt * 1.2);
+    V.ctx.clearRect(0, 0, V.w, V.h);
+    fn(V.ctx, V.w, V.h, t, dt);
+  }
+
+  /* ---------- scene switching ---------- */
+  function hintText() {
+    var base = {
+      circle: "Tap anywhere, or press space, when you notice your mind has wandered.",
+      dark: "Close your eyes and breathe at your own pace. Tap anywhere, or press space, when you notice your mind has wandered."
+    }[S.anchor] || "Rest your eyes here and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.";
+    var extra = "";
+    if (S.mode === "label") extra = " Then type where it went.";
+    if (S.mode === "voice") extra = S.voiceOK ? " Then say a word or two about where it went." : " Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so you'll type where it went.";
+    return base + extra + " Swipe to change scene.";
+  }
+
+  function setScene(name, quiet) {
+    S.anchor = name;
+    var isCanvas = CANVAS_SCENES.indexOf(name) >= 0;
+    document.documentElement.classList.toggle("dark-session", name !== "circle");
+    $("session").setAttribute("data-anchor", name);
+    els.phase.hidden = name !== "circle";
+    els.orbWrap.hidden = name !== "circle";
+    els.spacer.hidden = !isCanvas;
+    els.canvas.hidden = !isCanvas;
+    if (isCanvas) { V.last = 0; V.nextWind = 0; V.pulse = 0; sizeCanvas(); }
+    els.hint.textContent = hintText();
+    if (S.hintDone && els.panel.hidden && els.voicePanel.hidden) restHint();
+    Array.prototype.forEach.call(els.dots.children, function (b) {
+      var on = b.getAttribute("data-scene") === name;
+      b.classList.toggle("on", on);
+      if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    if (!quiet) {
+      els.sceneName.textContent = NAMES[name];
+      els.sceneName.classList.add("show");
+      clearTimeout(S.nameTimer);
+      S.nameTimer = setTimeout(function () { els.sceneName.classList.remove("show"); }, 1800);
+    }
+  }
+  function stepScene(d) {
+    if (!S.active || S.paused) return;
+    setScene(ORDER[(ORDER.indexOf(S.anchor) + d + ORDER.length) % ORDER.length]);
+  }
+
   /* ---------- main loop ---------- */
   function loop(now) {
     if (!S.active) return;
     if (S.anchor === "circle") drawCircle();
-    else if (S.anchor === "flame") drawFlame(now);
+    else if (!els.canvas.hidden) drawScene(now);
     S.raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------- timer ---------- */
+  function fmtTime(ms, up) {
+    var s = Math.max(0, up ? Math.ceil(ms / 1000) : Math.floor(ms / 1000));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return h ? h + ":" + pad(m) + ":" + pad(r) : m + ":" + pad(r);
+  }
+  function updateClock() {
+    var el = (S.paused ? S.pausedAt : Date.now()) - S.startWall;
+    els.clock.textContent = S.limit ? fmtTime(S.limit - el, true) : fmtTime(el, false);
   }
 
   /* ---------- session control ---------- */
@@ -597,14 +953,23 @@
   function begin() {
     var lines = els.reminders.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
     if (!lines.length) { lines = DEFAULTS.slice(); els.reminders.value = lines.join("\n"); }
+
+    var lenVal = document.querySelector('input[name="len"]:checked').value;
+    if (lenVal === "custom") {
+      var mins = parseFloat($("customMin").value);
+      if (!(mins > 0)) { show("home"); $("customErr").hidden = false; $("customMin").focus(); return; }
+      S.limit = Math.round(Math.min(mins, 1440) * 60000);
+    } else {
+      S.limit = parseInt(lenVal, 10) || 0;
+    }
+    $("customErr").hidden = true;
+
     lsSet(KEY_REM, els.reminders.value);
     S.list = lines;
     S.order = shuffle(lines); S.oi = 0;
     S.mode = document.querySelector('input[name="mode"]:checked').value;
     S.anchor = document.querySelector('input[name="anchor"]:checked').value;
-    S.limit = parseInt(document.querySelector('input[name="len"]:checked').value, 10) || 0;
     S.sound = $("sounds").checked;
-    S.speak = S.sound && S.anchor === "dark" && ("speechSynthesis" in window);
     initAudio(); // must run inside the click gesture
 
     if (S.mode === "voice") {
@@ -622,44 +987,33 @@
   }
 
   function startSession() {
-    S.entries = []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
-    S.listening = false; S.heardText = "";
-    document.documentElement.classList.toggle("dark-session", S.anchor !== "circle");
-    $("session").setAttribute("data-anchor", S.anchor);
+    S.entries = []; S.notes = []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
+    S.listening = false; S.heardText = ""; S.paused = false; S.swipedAt = 0; S.hintDone = false;
     els.countNum.textContent = "0"; els.countWord.textContent = "returns";
     els.count.classList.toggle("off", !$("showCount").checked);
+    els.clock.classList.toggle("off", !$("showClock").checked);
     els.slot.classList.remove("has-reminder");
     els.reminder.textContent = "";
-    els.phase.hidden = S.anchor !== "circle";
-    els.orbWrap.hidden = S.anchor !== "circle";
-    els.flameWrap.hidden = S.anchor !== "flame";
-    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false;
+    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true;
     els.hint.classList.remove("dim", "gone");
 
-    var base = {
-      circle: "Tap anywhere, or press space, when you notice your mind has wandered.",
-      flame: "Rest your eyes on the flame and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.",
-      dark: "Close your eyes and breathe at your own pace. Tap anywhere, or press space, when you notice your mind has wandered."
-    }[S.anchor];
-    var extra = "";
-    if (S.mode === "label") extra = " Then type where it went.";
-    if (S.mode === "voice") extra = S.voiceOK ? " Then say a word or two about where it went." : " Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so you'll type where it went.";
-    els.hint.textContent = base + extra;
-
     show("session");
-    if (S.anchor === "flame") { F.flare = 0; F.last = 0; F.nextWind = 0; sizeFlame(); }
-    S.startWall = Date.now(); S.startPerf = performance.now(); S.active = true;
+    S.startWall = Date.now(); S.startPerf = performance.now(); S.startedAt = S.startWall; S.active = true;
+    setScene(S.anchor, true);
+    updateClock();
     lockScreen();
     if (S.sound) bell(396, 0.12);
     clearTimeout(S.hintTimer);
     S.hintTimer = setTimeout(function () {
       if (!S.active) return;
+      S.hintDone = true;
       els.hint.classList.add(S.anchor === "dark" ? "gone" : "dim");
     }, 9000);
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
-      if (S.limit && Date.now() - S.startWall >= S.limit) finish();
-    }, 500);
+      if (S.paused) return;
+      if (S.limit && Date.now() - S.startWall >= S.limit) finish(); else updateClock();
+    }, 250);
   }
 
   function restHint() {
@@ -671,7 +1025,7 @@
 
   /* ---------- catching ---------- */
   function catchIt() {
-    if (!S.active) return;
+    if (!S.active || S.paused) return;
     var now = Date.now();
     if (now - S.lastCatch < 250) return;
     S.lastCatch = now;
@@ -682,7 +1036,7 @@
     els.countWord.textContent = n === 1 ? "return" : "returns";
     els.count.classList.remove("bump"); void els.count.offsetWidth; els.count.classList.add("bump");
     if (S.anchor === "circle") ripple();
-    if (S.anchor === "flame") F.flare = Math.min(1, F.flare + 0.9);
+    else { V.pulse = Math.min(1, V.pulse + 0.9); if (S.anchor === "stars") V.shoot = true; }
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
     commitLabel();
 
@@ -781,6 +1135,28 @@
     else restHint();
   }
 
+  /* ---------- notes (pause) ---------- */
+  function openNote() {
+    if (!S.active || S.paused) return;
+    if (S.listening) endListening(true);
+    commitLabel();
+    S.paused = true; S.pausedAt = Date.now();
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    els.noteText.value = "";
+    els.sheet.hidden = false;
+    els.noteText.focus();
+  }
+  function closeNote(save) {
+    if (!S.paused) return;
+    var txt = els.noteText.value.trim();
+    if (save && txt) S.notes.push({ at: S.pausedAt - S.startWall, text: txt });
+    var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
+    S.startWall += gap; S.startPerf += gap;
+    S.paused = false;
+    els.sheet.hidden = true; blurActive();
+    updateClock();
+  }
+
   /* ---------- finishing ---------- */
   function fmtClock(ms) {
     var s = Math.round(ms / 1000), m = Math.floor(s / 60);
@@ -789,10 +1165,11 @@
 
   function finish() {
     if (!S.active) return;
+    if (S.paused) closeNote(true);
     if (S.listening) endListening(true);
     commitLabel();
     S.active = false;
-    cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer);
+    cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer); clearTimeout(S.nameTimer);
     try { window.speechSynthesis.cancel(); } catch (e) {}
     unlockScreen();
     if (S.sound) bell(396, 0.12);
@@ -801,6 +1178,9 @@
     var dur = Date.now() - S.startWall, n = S.entries.length;
     var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
     lsSet(KEY_TOTAL, String(total));
+    if (dur >= MIN_RECORD_MS) {
+      saveSession({ start: S.startedAt, dur: dur, returns: n, entries: S.entries, notes: S.notes, scene: S.anchor });
+    }
 
     var mins = Math.round(dur / 60000);
     var span = dur < 60000 ? "under a minute" : (mins + (mins === 1 ? " minute" : " minutes"));
@@ -835,8 +1215,113 @@
     } else {
       block.hidden = true;
     }
+
+    var nb = $("noteBlock");
+    if (S.notes.length) {
+      var nl = $("noteLog"); nl.innerHTML = "";
+      S.notes.forEach(function (nt) {
+        var li = document.createElement("li");
+        var t = document.createElement("time"); t.textContent = fmtClock(nt.at);
+        var d = document.createElement("span"); d.textContent = nt.text;
+        li.appendChild(t); li.appendChild(d); nl.appendChild(li);
+      });
+      nb.hidden = false;
+    } else {
+      nb.hidden = true;
+    }
+
+    var same = document.querySelector('input[name="anchor"][value="' + S.anchor + '"]');
+    if (same) same.checked = true;   // "Sit again" starts on the scene you ended on
     loadTotal();
+    renderCalendar();
     show("end");
+  }
+
+  /* ---------- calendar ---------- */
+  var calSel = "";
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function dayKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function dayMap() {
+    var m = {};
+    loadHist().forEach(function (r) {
+      if (!r || typeof r.start !== "number") return;
+      var k = dayKey(new Date(r.start));
+      var d = m[k] || (m[k] = { ms: 0, returns: 0, sits: 0, notes: [] });
+      d.ms += r.dur || 0; d.returns += r.returns || 0; d.sits++;
+      (r.notes || []).forEach(function (nt) { if (nt && nt.text) d.notes.push(String(nt.text)); });
+    });
+    return m;
+  }
+  function shade(mins) {
+    if (mins <= 0) return "";
+    return "rgba(217,119,6," + (0.2 + 0.8 * Math.min(1, mins / CAL_FULL_MIN)).toFixed(2) + ")";
+  }
+  function fmtMins(ms) {
+    if (ms < 60000) return "under a minute";
+    var m = Math.round(ms / 60000), h = Math.floor(m / 60);
+    return h ? h + " h" + (m % 60 ? " " + (m % 60) + " min" : "") : m + " min";
+  }
+  function showDay(key, date, info) {
+    calSel = key;
+    Array.prototype.forEach.call($("calGrid").children, function (c) { c.classList.toggle("sel", c.getAttribute("data-key") === key); });
+    var box = $("calDetail"); box.innerHTML = "";
+    var label = date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    var b = document.createElement("b"); b.textContent = label;
+    box.appendChild(b);
+    if (!info) { box.appendChild(document.createTextNode(" · no sit recorded")); return; }
+    box.appendChild(document.createTextNode(" · " + fmtMins(info.ms) + " · " + info.returns + (info.returns === 1 ? " return" : " returns")));
+    if (info.notes.length) {
+      var ul = document.createElement("ul");
+      info.notes.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+      box.appendChild(ul);
+    }
+  }
+  function renderCalendar() {
+    var grid = $("calGrid"), months = $("calMonths"), map = dayMap();
+    grid.innerHTML = ""; months.innerHTML = "";
+    var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() - (CAL_WEEKS - 1) * 7);
+    var prevMonth = -1, w, d;
+    for (w = 0; w < CAL_WEEKS; w++) {
+      var first = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7);
+      var mo = first.getMonth();
+      if (mo !== prevMonth && (w > 0 || new Date(start.getFullYear(), start.getMonth(), start.getDate() + 14).getMonth() === mo)) {
+        var sp = document.createElement("span");
+        sp.textContent = first.toLocaleDateString(undefined, { month: "short" });
+        sp.style.gridColumn = String(w + 1);
+        months.appendChild(sp);
+      }
+      prevMonth = mo;
+      for (d = 0; d < 7; d++) {
+        (function (date) {
+          var key = dayKey(date), info = map[key];
+          var c = document.createElement("button");
+          c.type = "button"; c.className = "cell"; c.setAttribute("data-key", key);
+          var future = date > today;
+          if (future) { c.className += " future"; c.tabIndex = -1; }
+          if (+date === +today) c.className += " today";
+          if (key === calSel) c.className += " sel";
+          var label = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+          c.setAttribute("aria-label", label + (info ? ": " + fmtMins(info.ms) : ": no sit"));
+          c.title = label + (info ? " · " + fmtMins(info.ms) : "");
+          if (info) c.style.background = shade(info.ms / 60000);
+          c.addEventListener("click", function () { showDay(key, date, info); });
+          grid.appendChild(c);
+        })(new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d));
+      }
+    }
+    var lg = $("calLegend"); lg.innerHTML = "";
+    var less = document.createElement("span"); less.textContent = "Less"; lg.appendChild(less);
+    [0, 15, 30, 45, 60].forEach(function (m) {
+      var i = document.createElement("i"); if (m) i.style.background = shade(m); lg.appendChild(i);
+    });
+    var more = document.createElement("span"); more.textContent = "More (1 hr a day or more is darkest)"; lg.appendChild(more);
+    var todayKey = dayKey(today);
+    if (!calSel) calSel = todayKey;
+    var sel = new Date(today);
+    var parts = calSel.split("-");
+    sel = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    showDay(calSel, sel, map[calSel]);
   }
 
   /* ---------- events ---------- */
@@ -844,11 +1329,35 @@
   $("again").addEventListener("click", begin);
   $("home2").addEventListener("click", function () { show("home"); });
   $("finish").addEventListener("click", function (e) { e.stopPropagation(); finish(); });
+  $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); openNote(); });
+  $("noteSave").addEventListener("click", function () { closeNote(true); });
+  $("noteSkip").addEventListener("click", function () { closeNote(false); });
+  els.noteText.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { e.preventDefault(); closeNote(false); }
+    else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); closeNote(true); }
+  });
   $("doneListen").addEventListener("click", function () { stopListening(); });
   $("resetRem").addEventListener("click", function () { els.reminders.value = DEFAULTS.join("\n"); });
 
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="len"]'), function (r) {
+    r.addEventListener("change", function () {
+      var custom = document.querySelector('input[name="len"]:checked').value === "custom";
+      $("customRow").hidden = !custom;
+      if (custom) $("customMin").focus();
+    });
+  });
+  $("customMin").addEventListener("input", function () { $("customErr").hidden = true; });
+
+  ORDER.forEach(function (name) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "dot"; b.setAttribute("data-scene", name); b.setAttribute("aria-label", NAMES[name]);
+    b.addEventListener("click", function (e) { e.stopPropagation(); if (S.active && !S.paused) setScene(name); });
+    els.dots.appendChild(b);
+  });
+
   screens.session.addEventListener("click", function (e) {
-    if (!S.active) return;
+    if (!S.active || S.paused) return;
+    if (Date.now() - S.swipedAt < 400) return;
     if (e.target.closest("input")) return;
     if (S.listening) { stopListening(); return; }
     if (e.target.closest("button, .panel")) return;
@@ -856,10 +1365,26 @@
     catchIt();
   });
 
+  var touch = null;
+  screens.session.addEventListener("touchstart", function (e) {
+    if (!S.active || S.paused || S.listening || e.touches.length !== 1 || e.target.closest("input")) { touch = null; return; }
+    touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  screens.session.addEventListener("touchend", function (e) {
+    if (!touch || !S.active) { touch = null; return; }
+    var t = e.changedTouches[0], dx = t.clientX - touch.x, dy = t.clientY - touch.y;
+    touch = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) { S.swipedAt = Date.now(); stepScene(dx < 0 ? 1 : -1); }
+  }, { passive: true });
+
   document.addEventListener("keydown", function (e) {
-    if (!S.active) return;
+    if (!S.active || S.paused) return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault(); stepScene(e.key === "ArrowRight" ? 1 : -1); return;
+    }
     if (e.code === "Space" || e.key === " ") {
-      var tag = document.activeElement && document.activeElement.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (tag === "BUTTON" && !S.listening) return;
       e.preventDefault();
@@ -883,6 +1408,7 @@
   if (!SR) { $("voiceNote").textContent = " Not supported in this browser, so you'd type instead."; }
   loadReminders();
   loadTotal();
+  renderCalendar();
 })();
 </script>
 </body>
