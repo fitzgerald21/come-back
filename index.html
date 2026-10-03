@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Come back</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<meta name="theme-color" content="#E8EFEB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1A1F" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Come back">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -142,7 +151,7 @@
   }
   [hidden] { display: none !important; }
 
-  .screen { height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding: 1.25rem; }
+  .screen { height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding: 1.25rem; padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px)); }
   button { font: inherit; color: inherit; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
@@ -346,7 +355,43 @@
   ol.log .none { color: var(--muted); font-style: italic; }
   .end-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
+  /* ---------- Dim screen: black, with one big quiet number ---------- */
+  .dim { position: absolute; inset: 0; z-index: 8; background: #000; color: #4A565A; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  .dim-num { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(7rem, 42vmin, 18rem); line-height: 1; font-variant-numeric: tabular-nums; }
+  .dim-num.bump { animation: dimbump 0.7s ease-out; }
+  @keyframes dimbump { 0% { color: #B8C4C6; transform: scale(1.06); } 100% { color: #4A565A; transform: scale(1); } }
+  .dim-word { font-size: 1rem; letter-spacing: 0.04em; margin-top: 0.25rem; }
+  .dim-wake { position: absolute; bottom: max(1.5rem, env(safe-area-inset-bottom, 0px)); background: none; border: 1px solid #2A3336; border-radius: 999px; color: #5C696D; padding: 0.45rem 1.1rem; font-size: 0.9rem; cursor: pointer; }
+  .dim.off .dim-num, .dim.off .dim-word { visibility: hidden; }
+
+  /* ---------- Trends ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0 0 1.5rem; }
+  .tile { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.65rem 0.9rem; }
+  .tile b { display: block; font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--muted); font-size: 0.85rem; }
+  .tabs { display: flex; gap: 0.4rem; margin: 0 0 1.25rem; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tsec { margin: 0 0 1.75rem; }
+  .tsec .list-head { margin-bottom: 0.1rem; }
+  .tsec .often { margin-bottom: 0.6rem; }
+  .tchart { display: flex; align-items: flex-end; gap: 4px; height: 7rem; border-bottom: 1px solid var(--line); }
+  .tcol { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; background: none; border: 0; padding: 0; cursor: pointer; }
+  .tbar { width: 100%; max-width: 1.2rem; background: var(--accent); border-radius: 4px 4px 0 0; }
+  .tbar.zero { height: 2px !important; background: var(--line); border-radius: 0; }
+  .tcol.sel .tbar { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .txl { display: flex; gap: 4px; font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem; font-variant-numeric: tabular-nums; }
+  .txl span { flex: 1; min-width: 0; text-align: center; white-space: nowrap; }
+  .tdetail { font-size: 0.92rem; color: var(--muted); min-height: 2.6rem; margin-top: 0.5rem; }
+  .tdetail b { color: var(--ink); font-weight: 600; }
+  .irow { display: grid; grid-template-columns: 8rem 1fr 6.4rem; gap: 0.6rem; align-items: center; padding: 0.4rem 0; font-size: 0.92rem; }
+  .irow .v { color: var(--muted); font-size: 0.85rem; text-align: right; font-variant-numeric: tabular-nums; }
+  .ibar { height: 0.6rem; border-radius: 3px; background: rgba(127, 127, 127, 0.16); overflow: hidden; }
+  .ibar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .tsec .tags { margin-top: 0.5rem; }
+  .tnote { color: var(--muted); font-size: 0.88rem; margin: 0.3rem 0 0; }
+
   @media (prefers-reduced-motion: reduce) {
+    .dim-num.bump { animation: none; }
     .ripple { display: none; }
     .count.bump b { animation: none; }
     .pulse { animation: none; }
@@ -463,6 +508,12 @@
         </span>
       </label>
       <label class="check">
+        <input type="checkbox" id="dimStart">
+        <span>Start with a dim screen
+          <small>A black screen with one big number. Good with a handheld button. Only for "Just tap". You can turn it on or off during a sit from the Sound menu.</small>
+        </span>
+      </label>
+      <label class="check">
         <input type="checkbox" id="showCount" checked>
         <span>Show the count while I sit
           <small>Turn this off if the number starts to feel like a score. You'll still see it at the end.</small>
@@ -488,6 +539,7 @@
 
     <div class="home-links">
       <button class="btn ghost" id="openHist" type="button">Past sessions</button>
+      <button class="btn ghost" id="openTrends" type="button">Trends</button>
       <button class="btn ghost" id="openDist" type="button">Distractions</button>
     </div>
 
@@ -550,6 +602,36 @@
       <button class="btn ghost" id="doneListen" type="button">Done</button>
       <small>Or tap anywhere, or press space, to finish.</small>
     </div>
+  </div>
+  <div class="dim" id="dim" hidden>
+    <div class="dim-num" id="dimNum" aria-live="polite">0</div>
+    <div class="dim-word" id="dimWord">returns</div>
+    <button class="dim-wake" id="dimWake" type="button">Show screen</button>
+  </div>
+</section>
+
+<!-- TRENDS -->
+<section id="trends" class="screen" hidden>
+  <div class="sub-wrap">
+    <h2>Trends</h2>
+    <p class="sub" id="trSub"></p>
+    <div id="trBody">
+      <div class="tiles" id="trTiles"></div>
+      <div class="tabs" id="trTabs" role="group" aria-label="Range">
+        <button class="chip" type="button" data-range="day" aria-pressed="true">Daily</button>
+        <button class="chip" type="button" data-range="week" aria-pressed="false">Weekly</button>
+        <button class="chip" type="button" data-range="month" aria-pressed="false">Monthly</button>
+      </div>
+      <div class="tsec"><p class="list-head">Time sat</p><div id="chMin"></div></div>
+      <div class="tsec">
+        <p class="list-head">Returns a minute</p>
+        <p class="often">More returns in a minute means you're noticing more often. That's the practice, not a score.</p>
+        <div id="chRate"></div>
+      </div>
+      <div class="tsec"><p class="list-head">Which days you sit</p><div id="chDow"></div></div>
+      <div id="trInsights"></div>
+    </div>
+    <button class="btn ghost" id="trBack" type="button">Back to start</button>
   </div>
 </section>
 
@@ -660,7 +742,7 @@
   var CANVAS_SCENES = ["flame", "daytree", "tree", "rain", "ocean", "stars"];
 
   var $ = function (id) { return document.getElementById(id); };
-  var screens = { home: $("home"), session: $("session"), end: $("end"), hist: $("hist"), dist: $("dist") };
+  var screens = { home: $("home"), session: $("session"), end: $("end"), hist: $("hist"), dist: $("dist"), trends: $("trends") };
   var els = {
     reminders: $("reminders"), total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
     clock: $("clock"), orb: $("orb"), orbWrap: $("orbWrap"), spacer: $("spacer"), canvas: $("scene"),
@@ -675,7 +757,7 @@
     entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
     listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
-    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0
+    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null, dim: false
   };
 
   /* ---------- storage (guarded) ---------- */
@@ -726,7 +808,7 @@
   function remotePress() {
     if (!S.active || S.paused) return;
     if (S.listening) stopListening();
-    else if (els.panel.hidden && els.menu.hidden) catchIt();
+    else if (els.panel.hidden && els.menu.hidden) catchIt(true);
     // the phone has just paused or skipped our silent element, so start it again to keep receiving presses
     if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
     try { navigator.mediaSession.playbackState = "playing"; } catch (e) {}
@@ -750,7 +832,7 @@
     } catch (e) { AC = null; MASTER = null; }
   }
   function setMaster() { if (MASTER) MASTER.gain.setTargetAtTime(P.vol * P.vol * 1.3, AC.currentTime, 0.05); }
-  function ping(freq, vol, dur, delay) {
+  function ping(freq, vol, dur, delay, dest) {
     if (!AC || !S.sound) return;
     try {
       var t0 = AC.currentTime + (delay || 0);
@@ -759,12 +841,31 @@
       g.gain.setValueAtTime(0.0001, t0);
       g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(g); g.connect(AC.destination);
+      o.connect(g); g.connect(dest || AC.destination);
       o.start(t0); o.stop(t0 + dur + 0.05);
     } catch (e) {}
   }
-  function bell(freq, vol) { ping(freq, vol, 3.4); ping(freq * 2.76, vol * 0.35, 2.4); ping(freq * 5.4, vol * 0.12, 1.4); }
+  function bell(freq, vol, delay, dest) {
+    ping(freq, vol, 3.4, delay, dest); ping(freq * 2.76, vol * 0.35, 2.4, delay, dest); ping(freq * 5.4, vol * 0.12, 1.4, delay, dest);
+  }
   function tCatch() { ping(587, 0.07, 0.9); }
+  // A handheld button gets its own two-note cue, so you can tell by ear that it registered with the screen off.
+  function tRemote() { ping(440, 0.08, 0.7); ping(659, 0.07, 1.1, 0.11); }
+
+  // The closing bell is scheduled on the audio clock, which keeps running when a locked phone throttles
+  // the page's timers, so it still rings at the right moment.
+  function cancelEndBell() { if (S.endBell) { try { S.endBell.gain.disconnect(); } catch (e) {} S.endBell = null; } }
+  function scheduleEndBell() {
+    cancelEndBell();
+    if (!S.active || !S.limit || !S.sound || !AC) return;
+    var left = S.limit - (Date.now() - S.startWall);
+    if (left <= 0) return;
+    try {
+      var g = AC.createGain(); g.connect(AC.destination);
+      bell(396, 0.12, left / 1000, g);
+      S.endBell = { gain: g, at: Date.now() + left };
+    } catch (e) { S.endBell = null; }
+  }
   function tListenStart() { ping(523, 0.08, 0.5); ping(784, 0.08, 0.7, 0.12); }
   function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
@@ -1780,8 +1881,10 @@
   /* ---------- main loop ---------- */
   function loop(now) {
     if (!S.active) return;
-    if (S.anchor === "circle") drawCircle();
-    else if (!els.canvas.hidden) drawScene(now);
+    if (!S.dim) {   // nothing is visible while the screen is dim, so skip the drawing
+      if (S.anchor === "circle") drawCircle();
+      else if (!els.canvas.hidden) drawScene(now);
+    }
     S.raf = requestAnimationFrame(loop);
   }
 
@@ -1888,6 +1991,9 @@
     updateClock();
     lockScreen();
     if (S.sound) bell(396, 0.12);
+    scheduleEndBell();
+    $("dimNum").textContent = "0"; $("dimWord").textContent = "returns";
+    setDim($("dimStart").checked && S.mode === "tap");
     clearTimeout(S.hintTimer);
     S.hintTimer = setTimeout(function () {
       if (!S.active) return;
@@ -1909,7 +2015,7 @@
   }
 
   /* ---------- catching ---------- */
-  function catchIt() {
+  function catchIt(remote) {
     if (!S.active || S.paused) return;
     var now = Date.now();
     if (now - S.lastCatch < 250) return;
@@ -1920,6 +2026,9 @@
     els.countNum.textContent = n;
     els.countWord.textContent = n === 1 ? "return" : "returns";
     els.count.classList.remove("bump"); void els.count.offsetWidth; els.count.classList.add("bump");
+    $("dimNum").textContent = n; $("dimWord").textContent = els.countWord.textContent;
+    $("dimNum").classList.remove("bump"); void $("dimNum").offsetWidth; $("dimNum").classList.add("bump");
+    if (S.mode !== "tap") setDim(false);   // typing or speaking needs the screen
     if (S.anchor === "circle") ripple();
     else { V.pulse = Math.min(1, V.pulse + 0.9); if (S.anchor === "stars") V.shoot = true; }
     ambReact();
@@ -1929,7 +2038,7 @@
     if (S.mode === "voice" && S.voiceOK) {
       startListening(entry); // the reminder arrives once you've spoken
     } else {
-      tCatch();
+      if (remote) tRemote(); else tCatch();
       showReminder();
       if (S.mode === "label" || S.mode === "voice") openType(entry, S.mode === "voice");
       else restHint();
@@ -2028,6 +2137,8 @@
     if (S.listening) endListening(true);
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
+    cancelEndBell();
+    setDim(false);
     try { window.speechSynthesis.cancel(); } catch (e) {}
     els.noteText.value = "";
     els.sheet.hidden = false;
@@ -2042,6 +2153,7 @@
     S.paused = false;
     els.sheet.hidden = true; blurActive();
     updateClock();
+    scheduleEndBell();
   }
 
   /* ---------- finishing ---------- */
@@ -2062,7 +2174,11 @@
     unlockScreen();
     closeMenu();
     applyAudio();
-    if (S.sound) bell(396, 0.12);
+    // if the scheduled closing bell has already rung (or is ringing now), don't ring it twice
+    var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
+    if (S.sound && !rung) bell(396, 0.12);
+    if (rung) S.endBell = null; else cancelEndBell();
+    setDim(false);
     document.documentElement.classList.remove("dark-session");
 
     var dur = Date.now() - S.startWall, n = S.entries.length;
@@ -2356,6 +2472,209 @@
     showDay(calSel, sel, map[calSel]);
   }
 
+  /* ---------- trends ---------- */
+  var trRange = "day";
+  var WEEKDAYS = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+  var WD_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
+  var DAY_PARTS = [["Morning", 5, 12], ["Afternoon", 12, 17], ["Evening", 17, 22], ["Night", 22, 29]];   // night wraps past midnight
+
+  function sessions() {
+    return loadHist().filter(function (r) { return r && typeof r.start === "number" && r.dur > 0; });
+  }
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : many || one + "s"); }
+  function fmtRate(r) { return r.toFixed(r >= 10 ? 0 : 1); }
+
+  function makeBuckets(kind) {
+    var now = new Date(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), out = [], i, s, e;
+    var opt = { month: "short", day: "numeric" };
+    if (kind === "day") {
+      for (i = 13; i >= 0; i--) {
+        s = new Date(y, m, d - i); e = new Date(y, m, d - i + 1);
+        out.push({ s: +s, e: +e, label: String(s.getDate()), show: i % 2 === 0, long: s.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) });
+      }
+    } else if (kind === "week") {
+      var sun = d - now.getDay();
+      for (i = 11; i >= 0; i--) {
+        s = new Date(y, m, sun - 7 * i); e = new Date(y, m, sun - 7 * i + 7);
+        out.push({ s: +s, e: +e, label: s.toLocaleDateString(undefined, opt), show: i % 3 === 1, long: "Week of " + s.toLocaleDateString(undefined, opt) });
+      }
+    } else {
+      for (i = 11; i >= 0; i--) {
+        s = new Date(y, m - i, 1); e = new Date(y, m - i + 1, 1);
+        out.push({ s: +s, e: +e, label: s.toLocaleDateString(undefined, { month: "short" }), show: true, long: s.toLocaleDateString(undefined, { month: "long", year: "numeric" }) });
+      }
+    }
+    out.forEach(function (b) { b.ms = 0; b.returns = 0; b.sits = 0; });
+    sessions().forEach(function (r) {
+      for (var j = 0; j < out.length; j++) {
+        if (r.start >= out[j].s && r.start < out[j].e) { out[j].ms += r.dur; out[j].returns += r.returns || 0; out[j].sits++; break; }
+      }
+    });
+    return out;
+  }
+
+  // items: [{ label, show, value (number or null), text }]. Tap a bar to read its numbers underneath.
+  function drawChart(wrap, items, summary) {
+    wrap.innerHTML = "";
+    var max = 0;
+    items.forEach(function (it) { if (it.value > max) max = it.value; });
+    var chart = el("div", "tchart"), xl = el("div", "txl"), detail = el("div", "tdetail");
+    function setDetail(text, strong) {
+      detail.innerHTML = "";
+      if (strong) detail.appendChild(el("b", "", strong));
+      detail.appendChild(document.createTextNode(text));
+    }
+    items.forEach(function (it) {
+      var col = el("button", "tcol"); col.type = "button";
+      col.setAttribute("aria-label", it.name + ": " + it.text);
+      var bar = el("div", "tbar" + (it.value ? "" : " zero"));
+      if (it.value) bar.style.height = Math.max(3, Math.round(it.value / max * 100)) + "%";
+      col.appendChild(bar);
+      col.addEventListener("click", function () {
+        Array.prototype.forEach.call(chart.children, function (c) { c.classList.toggle("sel", c === col); });
+        setDetail(" · " + it.text, it.name);
+      });
+      chart.appendChild(col);
+      xl.appendChild(el("span", "", it.show ? it.label : ""));
+    });
+    setDetail(summary);
+    wrap.appendChild(chart); wrap.appendChild(xl); wrap.appendChild(detail);
+  }
+
+  function irow(label, frac, value) {
+    var r = el("div", "irow");
+    r.appendChild(el("span", "", label));
+    var bar = el("div", "ibar"), fill = el("i"); fill.style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + "%";
+    bar.appendChild(fill); r.appendChild(bar);
+    r.appendChild(el("span", "v", value));
+    return r;
+  }
+  function insightBlock(title, note) {
+    var b = el("div", "tsec"); b.appendChild(el("p", "list-head", title));
+    if (note) b.appendChild(el("p", "often", note));
+    return b;
+  }
+
+  function streaks(map) {
+    var keys = Object.keys(map).sort(), best = 0, run = 0, prev = null;
+    function ord(k) { var p = k.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000; }
+    keys.forEach(function (k) {
+      var o = ord(k);
+      run = (prev !== null && o - prev === 1) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = o;
+    });
+    var now = new Date(), t = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000, cur = 0;
+    var o = map[dayKey(now)] ? t : t - 1;   // a streak is still alive until the end of the day after your last sit
+    while (keys.length && map[(function (n) { var dt = new Date(n * 86400000); return dt.getUTCFullYear() + "-" + pad2(dt.getUTCMonth() + 1) + "-" + pad2(dt.getUTCDate()); })(o)]) { cur++; o--; }
+    return { cur: cur, best: best };
+  }
+
+  function renderTrends() {
+    var all = sessions(), body = $("trBody");
+    $("trSub").textContent = all.length ? "Built from your " + plural(all.length, "saved sit") + "." : "Nothing to chart yet. Once you've saved a few sits, patterns show up here.";
+    body.hidden = !all.length;
+    if (!all.length) return;
+
+    // headline numbers
+    var ms = 0, ret = 0;
+    all.forEach(function (r) { ms += r.dur; ret += r.returns || 0; });
+    var st = streaks(dayMap());
+    var tiles = $("trTiles"); tiles.innerHTML = "";
+    [[fmtMins(ms), "time sat"], [String(all.length), "sits"], [String(ret), "returns"], [fmtRate(ret / (ms / 60000)), "returns a minute"],
+     [plural(st.cur, "day"), "current streak"], [plural(st.best, "day"), "best streak"]].forEach(function (t) {
+      var d = el("div", "tile"); d.appendChild(el("b", "", t[0])); d.appendChild(el("span", "", t[1])); tiles.appendChild(d);
+    });
+    Array.prototype.forEach.call($("trTabs").children, function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-range") === trRange)); });
+
+    // time sat, and returns a minute, over the chosen range
+    var bk = makeBuckets(trRange), unit = { day: "days", week: "weeks", month: "months" }[trRange];
+    var tms = 0, tret = 0, tsits = 0;
+    bk.forEach(function (b) { tms += b.ms; tret += b.returns; tsits += b.sits; });
+    drawChart($("chMin"), bk.map(function (b) {
+      return { name: b.long, label: b.label, show: b.show, value: b.ms ? b.ms / 60000 : null,
+        text: b.sits ? fmtMins(b.ms) + " in " + plural(b.sits, "sit") : "no sit" };
+    }), tms ? fmtMins(tms) + " over " + plural(bk.length, unit.slice(0, -1)) + ", in " + plural(tsits, "sit") + ". Tap a bar for one " + unit.slice(0, -1) + "." : "No sits in this range.");
+    drawChart($("chRate"), bk.map(function (b) {
+      var rate = b.ms ? b.returns / (b.ms / 60000) : null;
+      return { name: b.long, label: b.label, show: b.show, value: rate || null,
+        text: b.sits ? fmtRate(rate) + " a minute (" + plural(b.returns, "return") + " in " + fmtMins(b.ms) + ")" : "no sit" };
+    }), tms ? "Average " + fmtRate(tret / (tms / 60000)) + " a minute over this range." : "No sits in this range.");
+
+    // which days of the week
+    var dow = [0, 0, 0, 0, 0, 0, 0], dowSits = [0, 0, 0, 0, 0, 0, 0];
+    all.forEach(function (r) { var g = new Date(r.start).getDay(); dow[g] += r.dur; dowSits[g]++; });
+    var wd = [1, 2, 3, 4, 5, 6, 0];   // week starts on Monday here
+    drawChart($("chDow"), wd.map(function (g) {
+      return { name: WEEKDAYS[g], label: WD_SHORT[g], show: true, value: dow[g] ? dow[g] / 60000 : null,
+        text: dowSits[g] ? fmtMins(dow[g]) + " in all, " + plural(dowSits[g], "sit") : "no sits yet" };
+    }), "All your sits, by the day they happened. Tap a bar for one day.");
+
+    // patterns inside a sit
+    var box = $("trInsights"); box.innerHTML = "";
+    var thirds = [0, 0, 0], n3 = 0;
+    all.forEach(function (r) {
+      (r.entries || []).forEach(function (e) {
+        if (!e || typeof e.at !== "number") return;
+        thirds[Math.max(0, Math.min(2, Math.floor(e.at / r.dur * 3)))]++; n3++;
+      });
+    });
+    var b1 = insightBlock("Where in a sit you come back", n3 >= 6 ? "Share of all your returns, by how far into the sit they came." : "");
+    if (n3 >= 6) {
+      ["Early", "Middle", "Late"].forEach(function (nm, i) { b1.appendChild(irow(nm, thirds[i] / n3, Math.round(thirds[i] / n3 * 100) + "%")); });
+    } else b1.appendChild(el("p", "tnote", "Needs a few more returns before a pattern means anything."));
+    box.appendChild(b1);
+
+    var parts = DAY_PARTS.map(function (p) { return { name: p[0], sits: 0, ms: 0, ret: 0 }; });
+    all.forEach(function (r) {
+      var h = new Date(r.start).getHours(); if (h < 5) h += 24;
+      for (var i = 0; i < DAY_PARTS.length; i++) if (h >= DAY_PARTS[i][1] && h < DAY_PARTS[i][2]) { parts[i].sits++; parts[i].ms += r.dur; parts[i].ret += r.returns || 0; break; }
+    });
+    var maxSits = Math.max.apply(null, parts.map(function (p) { return p.sits; }));
+    var b2 = insightBlock("Time of day", "How many sits, and how often you came back a minute.");
+    parts.forEach(function (p) { b2.appendChild(irow(p.name, p.sits / maxSits, p.sits ? p.sits + " · " + fmtRate(p.ret / (p.ms / 60000)) + "/min" : "none")); });
+    box.appendChild(b2);
+
+    var sc = {};
+    all.forEach(function (r) { var k = NAMES[r.scene] ? r.scene : "?"; var x = sc[k] || (sc[k] = { sits: 0, ms: 0, ret: 0 }); x.sits++; x.ms += r.dur; x.ret += r.returns || 0; });
+    var sk = Object.keys(sc).filter(function (k) { return k !== "?"; }).sort(function (a, b) { return sc[b].sits - sc[a].sits; });
+    if (sk.length) {
+      var b3 = insightBlock("Scenes", "How many sits, and how often you came back a minute.");
+      sk.forEach(function (k) { b3.appendChild(irow(NAMES[k], sc[k].sits / sc[sk[0]].sits, sc[k].sits + " · " + fmtRate(sc[k].ret / (sc[k].ms / 60000)) + "/min")); });
+      box.appendChild(b3);
+    }
+
+    var cutoff = Date.now() - 30 * 86400000, recent = [];
+    all.forEach(function (r) { if (r.start >= cutoff) recent = recent.concat(r.entries || []); });
+    var tl = tally(recent).slice(0, 6);
+    if (tl.length) {
+      var b4 = insightBlock("Where your mind went, last 30 days");
+      var tags = el("div", "tags");
+      tl.forEach(function (x) { var t = el("span", "tag", x.name); if (x.n > 1) t.appendChild(el("i", "", "×" + x.n)); tags.appendChild(t); });
+      b4.appendChild(tags); box.appendChild(b4);
+    }
+  }
+  $("openTrends").addEventListener("click", function () { renderTrends(); show("trends"); });
+  $("trBack").addEventListener("click", function () { show("home"); });
+  $("trTabs").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-range]"); if (!b) return;
+    trRange = b.getAttribute("data-range"); renderTrends();
+  });
+
+  /* ---------- dim screen ---------- */
+  var KEY_DIM = "come-back:dimstart";
+  function setDim(on) {
+    on = !!on && S.active;
+    S.dim = on;
+    $("dim").hidden = !on;
+    var b = $("dimBtn"); if (b) b.textContent = on ? "Show the screen" : "Dim screen, big count";
+    if (on) { closeMenu(); blurActive(); }
+  }
+  $("dimStart").checked = lsGet(KEY_DIM) === "1";
+  $("dimStart").addEventListener("change", function () { lsSet(KEY_DIM, this.checked ? "1" : "0"); });
+  $("dimWake").addEventListener("click", function (e) { e.stopPropagation(); setDim(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dim) { e.preventDefault(); setDim(false); } });
+
   /* ---------- sound menu ---------- */
   function closeMenu() { els.menu.hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); }
   function toggleMenu() {
@@ -2383,6 +2702,15 @@
   $("previewBtn").addEventListener("click", togglePreview);
   buildControls($("homeSound"));
   buildControls(els.menu);
+  (function () {
+    var b = el("button", "btn ghost", "Dim screen, big count"); b.type = "button"; b.id = "dimBtn"; b.style.marginTop = "1rem";
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (S.mode !== "tap") { b.textContent = "Dim needs “Just tap” mode"; return; }
+      setDim(!S.dim);
+    });
+    els.menu.appendChild(b);
+  })();
   $("noteSave").addEventListener("click", function () { closeNote(true); });
   $("noteSkip").addEventListener("click", function () { closeNote(false); });
   els.noteText.addEventListener("keydown", function (e) {
@@ -2473,6 +2801,10 @@
   loadTotal();
   renderCalendar();
   try { ORDER.forEach(function (n) { tryFile(n, ["mp3", "ogg"]); }); } catch (e) {}
+  // offline support and "add to home screen"
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
 })();
 </script>
 </body>
