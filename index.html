@@ -211,6 +211,12 @@
   .snd-row input[type="range"] { width: 55%; accent-color: var(--ink); }
   .snd-two { transition: opacity 0.2s; }
   .snd-two.off { opacity: 0.45; }
+  .snd-row.stack { flex-wrap: wrap; gap: 0.2rem; }
+  .snd-row.stack > span { flex: 1 1 100%; }
+  .snd-row.stack input[type="range"] { width: 100%; }
+  .snd-adv { margin: 0.7rem 0 0; padding-top: 0.6rem; }
+  .snd-adv summary { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+  .snd-row b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin-left: 0.3rem; }
   .snd-note { color: var(--muted); font-size: 0.84rem; margin: 0.5rem 0 0; min-height: 2.4em; }
   .soundmenu { position: absolute; top: 3.7rem; right: 1.25rem; z-index: 5; width: min(21rem, calc(100% - 2.5rem)); max-height: calc(100% - 5rem); overflow-y: auto; cursor: default;
     background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 0.4rem 1rem 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
@@ -548,6 +554,7 @@
       if (!MASTER) { MASTER = AC.createGain(); MASTER.connect(AC.destination); }
       if (AC.state === "suspended") AC.resume();
       setMaster();
+      Object.keys(FILES).forEach(decodeFile);
     } catch (e) { AC = null; MASTER = null; }
   }
   function setMaster() { if (MASTER) MASTER.gain.setTargetAtTime(P.vol * P.vol * 1.3, AC.currentTime, 0.05); }
@@ -672,17 +679,26 @@
       crackle();
       L.react = function () { for (var i = 0; i < 4; i++) L.later(function () { pop(L, rand(1500, 5000), 1.4, rand(0.2, 0.5), rand(0.015, 0.05), rand(-0.5, 0.5)); }, i * 70); };
     },
-    // Wind through leaves: a band of noise that gusts, with a thin hiss on top. A tap sends a gust.
+    // Wind in leaves: mostly a bright rustle, chopped by fast random flutter so it reads as many leaves
+    // rather than a pipe, with a low whoosh underneath that swells on gusts. A tap sends a gust.
     tree: function (L) {
-      var bp = filt("bandpass", 450, 0.7), g = gainNode(0.4), hp = filt("highpass", 3500), g2 = gainNode(0.02);
-      chain(L.noise("pink"), bp, g, L.out); chain(L.noise("white"), hp, g2, L.out);
+      var bp = filt("bandpass", 2800, 0.7), rustle = gainNode(0.2);
+      chain(L.noise("white"), bp, rustle, L.out);
+      var flutter = gainNode(70);   // low-passed noise is tiny, so it needs a big gain to move the rustle
+      chain(L.noise("white"), filt("lowpass", 16), flutter); flutter.connect(rustle.gain);
+      var air = filt("bandpass", 1200, 0.5), air2 = gainNode(0.05);
+      chain(L.noise("pink"), air, air2, L.out);
+      var wh = filt("bandpass", 320, 0.6), wg = gainNode(0.1);
+      chain(L.noise("pink"), wh, wg, L.out);
       function gustTo(s, secs) {
         var t = AC.currentTime;
-        g.gain.setTargetAtTime(0.2 + 1.6 * s, t, secs); bp.frequency.setTargetAtTime(280 + 800 * s, t, secs); g2.gain.setTargetAtTime(0.015 + 0.2 * s * s, t, secs);
+        rustle.gain.setTargetAtTime(0.12 + 0.6 * s, t, secs); bp.frequency.setTargetAtTime(2200 + 2200 * s, t, secs);
+        air2.gain.setTargetAtTime(0.04 + 0.35 * s, t, secs); air.frequency.setTargetAtTime(900 + 900 * s, t, secs);
+        wg.gain.setTargetAtTime(0.1 + 0.8 * s * s, t, secs); wh.frequency.setTargetAtTime(220 + 300 * s, t, secs);
       }
-      function drift() { gustTo(Math.random() * 0.55, 1.3); L.later(drift, rand(2500, 6000)); }
+      function drift() { gustTo(Math.random() * 0.6, 1.6); L.later(drift, rand(2500, 6500)); }
       drift();
-      L.react = function () { gustTo(1, 0.3); L.later(function () { gustTo(0.35, 1.4); }, 1600); };
+      L.react = function () { gustTo(1, 0.3); L.later(function () { gustTo(0.3, 1.6); }, 1700); };
     },
     // Rain on water: hiss, a far-off roar, and individual drops. A tap makes it fall harder for a moment.
     rain: function (L) {
@@ -729,36 +745,89 @@
   };
 
   /* Two-tone listening: two steady voices, like an appliance humming in two registers.
-     Style is the sound's character, pitch its register, difficulty how easily the two separate:
-     far apart in pitch and in opposite ears (easy), through to nearly the same pitch, centred, and each
-     slowly fading in and out so you keep losing one (hard). */
-  var STYLES = { pure: "Pure tones", whir: "Hum and whir", drone: "Warm drone" };
-  var PITCHES = { low: 110, mid: 180, high: 300 };
-  var PITCH_NAMES = { low: "Low", mid: "Middle", high: "High" };
-  var DIFFS = {
-    easy:   { ratio: 3,     lvB: 1,    pan: 0.7, drift: 0,    name: "Easy",   note: "Far apart in pitch, one in each ear. Headphones help." },
-    medium: { ratio: 1.5,   lvB: 0.8,  pan: 0.3, drift: 0.18, name: "Medium", note: "Closer in pitch and more blended. Each one swells and fades a little." },
-    hard:   { ratio: 1.125, lvB: 0.65, pan: 0,    drift: 0.4,  name: "Hard",   note: "Almost the same pitch, in the middle, and they drift in and out. You'll lose one. That's the practice." }
+     Everything is adjustable: each tone's sound and pitch, how loud the second is, how far apart they sit
+     in the ears, and how much each slowly fades in and out. The presets just fill those in.
+     Hard avoids tones a few Hz apart, which beat against each other into one harsh buzz. Being separate
+     voices is what makes this exercise work, so hard is about being quiet, centred and drifting instead. */
+  var SOUNDS = {
+    pure: "Pure tone", soft: "Soft (triangle)", hollow: "Hollow (square)", buzz: "Buzzy hum", organ: "Organ",
+    drone: "Warm drone", chime: "Chime", breath: "Breathy", whir: "Whir (narrow noise)"
   };
-  function tone(L, style, role, f, lvl, pan, drift, rate) {
-    var out = gainNode(lvl), o, o2, lp;
-    if (style === "whir" && role === "b") {
-      chain(L.noise("pink"), filt("bandpass", f, 14), gainNode(22), out);
-    } else if (style === "whir") {
-      chain(L.osc("sawtooth", f), filt("lowpass", f * 3, 0.7), gainNode(1.3), out);
-    } else if (style === "drone") {
+  var PRESETS = {
+    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    note: "Far apart in pitch, one in each ear. Headphones help." },
+    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, note: "A fifth apart and more blended. Each swells and fades a little." },
+    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
+    fridge: { name: "Fridge", f1: 100, f2: 1100, s1: "buzz", s2: "whir", bal: 0.8, spread: 0.3, fade: 0.25, note: "A low hum with a thin whine on top, like an appliance." }
+  };
+  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade"];
+  // Each sound is built into `out`, trimmed so they all sit at about the same loudness.
+  function voice(L, sound, f, out) {
+    var lp, g;
+    if (sound === "soft") { chain(L.osc("triangle", f), gainNode(1.1), out); }
+    else if (sound === "hollow") { chain(L.osc("square", f), filt("lowpass", f * 3.5, 0.5), gainNode(0.76), out); }
+    else if (sound === "buzz") { chain(L.osc("sawtooth", f), filt("lowpass", Math.min(f * 5, 5000), 0.7), gainNode(1.3), out); }
+    else if (sound === "organ") {
+      g = gainNode(0.78); [[1, 1], [2, 0.5], [3, 0.3], [4, 0.15]].forEach(function (h) { chain(L.osc("sine", f * h[0]), gainNode(h[1]), g); });
+      g.connect(out);
+    }
+    else if (sound === "drone") {
       lp = filt("lowpass", f * 5, 0.5); L.osc("triangle", f).connect(lp); L.osc("triangle", f * 1.004).connect(lp);
       chain(lp, gainNode(0.7), out);
-    } else {
-      L.osc("sine", f).connect(out); chain(L.osc("sine", f * 2), gainNode(0.14), out);
     }
+    else if (sound === "chime") {
+      g = gainNode(0.87); [[1, 1], [2.76, 0.35], [5.4, 0.12]].forEach(function (h) { chain(L.osc("sine", f * h[0]), gainNode(h[1]), g); });
+      g.connect(out);
+    }
+    else if (sound === "breath") { chain(L.noise("pink"), filt("bandpass", f, 4), gainNode(12.5), out); }
+    else if (sound === "whir") { chain(L.noise("pink"), filt("bandpass", f, 14), gainNode(22), out); }
+    else { L.osc("sine", f).connect(out); chain(L.osc("sine", f * 2), gainNode(0.14), out); }
+  }
+  function tone(L, sound, f, lvl, pan, drift, rate) {
+    var out = gainNode(lvl);
+    voice(L, sound, f, out);
     if (drift > 0) { var d = gainNode(lvl * drift * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
     chain(out, panner(pan), L.out);
   }
   function buildDual(L, c) {
-    var d = DIFFS[c.diff], fA = PITCHES[c.pitch], lv = 0.12;
-    tone(L, c.style, "a", fA, lv, -d.pan, d.drift, 0.07);
-    tone(L, c.style, "b", fA * d.ratio, lv * d.lvB, d.pan, d.drift, 0.113);
+    var lv = 0.12;
+    tone(L, c.s1, c.f1, lv, -c.spread, c.fade, 0.07);
+    tone(L, c.s2, c.f2, lv * c.bal, c.spread, c.fade, 0.113);
+  }
+  function dualKeyOf() { return FIELDS.map(function (k) { return P[k]; }).join("|"); }
+
+  /* Real recordings: if a file such as sounds/tree.mp3 exists it replaces the synthesized sound for that scene. */
+  var FILES = {};
+  function tryFile(n, exts) {
+    if (!exts.length) return;
+    fetch("sounds/" + n + "." + exts[0]).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(function (ab) { FILES[n] = { raw: ab, buf: null }; decodeFile(n); updateRealUI(); })
+      .catch(function () { tryFile(n, exts.slice(1)); });
+  }
+  function decodeFile(n) {
+    var f = FILES[n];
+    if (!f || !f.raw || !AC) return;
+    var ab = f.raw; f.raw = null;
+    AC.decodeAudioData(ab, function (buf) { f.buf = buf; f.k = fileGain(buf); if (ambName === n) { ambName = ""; applyAudio(); } }, function () {});
+  }
+  // Recordings come at wildly different levels, so scale each to about the loudness of the built-in sounds.
+  function fileGain(buf) {
+    var d = buf.getChannelData(0), sum = 0, n = 0;
+    for (var i = 0; i < d.length; i += 7) { sum += d[i] * d[i]; n++; }
+    var rms = Math.sqrt(sum / Math.max(1, n)) || 0.1;
+    return Math.max(0.1, Math.min(10, 0.08 / rms));
+  }
+  function fileAmbient(L, buf, k) {
+    var XF = Math.min(2.5, buf.duration / 3);
+    function play(first) {
+      if (!L.alive) return;
+      var t = AC.currentTime, s = AC.createBufferSource(), g = gainNode(0.0001), end = t + buf.duration;
+      s.buffer = buf;
+      if (first) g.gain.setValueAtTime(1, t); else { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(1, t + XF); }
+      g.gain.setValueAtTime(1, end - XF); g.gain.linearRampToValueAtTime(0.0001, end);
+      chain(s, g, gainNode(k || 0.7), L.out); s.start(t); s.stop(end + 0.05);
+      L.later(function () { play(false); }, (buf.duration - XF) * 1000);
+    }
+    play(true);
   }
 
   var curAmb = null, ambName = "", curDual = null, dualKey = "";
@@ -770,9 +839,13 @@
     if (name !== ambName) {
       if (curAmb) retire(curAmb, 1.5);
       curAmb = null; ambName = name;
-      if (name) { curAmb = mkLayer(); AMBIENT[name](curAmb); fadeIn(curAmb, 1.5); }
+      if (name) {
+        curAmb = mkLayer();
+        if (P.real && FILES[name] && FILES[name].buf) fileAmbient(curAmb, FILES[name].buf, FILES[name].k); else AMBIENT[name](curAmb);
+        fadeIn(curAmb, 1.5);
+      }
     }
-    var key = (S.preview || (S.active && P.dual)) ? [P.style, P.pitch, P.diff].join("|") : "";
+    var key = (S.preview || (S.active && P.dual)) ? dualKeyOf() : "";
     if (key !== dualKey) {
       if (curDual) retire(curDual, 0.8);
       curDual = null; dualKey = key;
@@ -782,31 +855,48 @@
   function ambReact() { if (curAmb && curAmb.react) curAmb.react(); }
 
   /* ---------- sound settings (shared by the home screen and the in-session menu) ---------- */
-  var P = { amb: true, dual: false, style: "pure", pitch: "mid", diff: "easy", vol: 0.7 };
+  var P = { amb: true, real: true, dual: false, preset: "easy", vol: 0.7 };
+  FIELDS.forEach(function (k) { P[k] = PRESETS.easy[k]; });
   (function () {
     try {
       var o = JSON.parse(lsGet(KEY_SND) || "{}") || {};
       if (typeof o.amb === "boolean") P.amb = o.amb;
+      if (typeof o.real === "boolean") P.real = o.real;
       if (typeof o.dual === "boolean") P.dual = o.dual;
-      if (STYLES[o.style]) P.style = o.style;
-      if (PITCHES[o.pitch]) P.pitch = o.pitch;
-      if (DIFFS[o.diff]) P.diff = o.diff;
       if (typeof o.vol === "number" && o.vol >= 0 && o.vol <= 1) P.vol = o.vol;
+      if (o.preset === "custom" || PRESETS[o.preset]) P.preset = o.preset;
+      ["f1", "f2"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 40 && o[k] <= 4000) P[k] = o[k]; });
+      ["bal"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1.5) P[k] = o[k]; });
+      ["spread", "fade"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1) P[k] = o[k]; });
+      ["s1", "s2"].forEach(function (k) { if (SOUNDS[o[k]]) P[k] = o[k]; });
+      if (PRESETS[P.preset]) FIELDS.forEach(function (k) { P[k] = PRESETS[P.preset][k]; });
     } catch (e) {}
   })();
-  var controls = [];
+  var controls = [], applyTimer = 0;
   function opts(map, label) {
     return Object.keys(map).map(function (k) { return '<option value="' + k + '">' + (label ? label(k) : map[k]) + "</option>"; }).join("");
+  }
+  function slider(k, label, extra) {
+    return '<label class="snd-row stack"><span>' + label + ' <b data-out="' + k + '"></b></span><input type="range" data-k="' + k + '" ' + extra + "></label>";
   }
   function buildControls(root) {
     root.innerHTML =
       '<label class="check"><input type="checkbox" data-k="amb"><span>Scene sounds<small>Wind, rain, waves and so on, matched to the scene.</small></span></label>' +
+      '<label class="check snd-real" hidden><input type="checkbox" data-k="real"><span>Use my recordings<small>Plays the files in the sounds folder instead of the built-in sound.</small></span></label>' +
       '<label class="check"><input type="checkbox" data-k="dual"><span>Two-tone listening<small>Two steady tones at once. Try to hear both.</small></span></label>' +
       '<div class="snd-two">' +
-        '<label class="snd-row"><span>Style</span><select data-k="style">' + opts(STYLES) + "</select></label>" +
-        '<label class="snd-row"><span>Pitch</span><select data-k="pitch">' + opts(PITCHES, function (k) { return PITCH_NAMES[k]; }) + "</select></label>" +
-        '<label class="snd-row"><span>Difficulty</span><select data-k="diff">' + opts(DIFFS, function (k) { return DIFFS[k].name; }) + "</select></label>" +
+        '<label class="snd-row"><span>Preset</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
         '<p class="snd-note" data-role="note"></p>' +
+        '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
+          '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
+          slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+          '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
+          slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+          slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
+          slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
+          slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
+          '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart, or far enough that they read as two.</p>' +
+        "</details>" +
       "</div>" +
       '<label class="snd-row"><span>Volume</span><input type="range" data-k="vol" min="0.05" max="1" step="0.01"></label>';
     root.addEventListener("input", onSoundChange);
@@ -814,28 +904,44 @@
     controls.push(root);
     syncControls();
   }
+  function fHz(v) { return Math.round(40 * Math.pow(100, v)); }
   function onSoundChange(e) {
     var k = e.target.getAttribute && e.target.getAttribute("data-k");
     if (!k) return;
-    if (e.target.type === "checkbox") P[k] = e.target.checked;
-    else if (k === "vol") P.vol = parseFloat(e.target.value) || 0;
-    else P[k] = e.target.value;
+    var el = e.target;
+    if (el.type === "checkbox") P[k] = el.checked;
+    else if (el.getAttribute("data-log")) { P[k] = fHz(parseFloat(el.value)); P.preset = "custom"; }
+    else if (el.type === "range") { P[k] = parseFloat(el.value) || 0; if (k !== "vol") P.preset = "custom"; }
+    else if (k === "preset") { P.preset = el.value; if (PRESETS[el.value]) FIELDS.forEach(function (f) { P[f] = PRESETS[el.value][f]; }); }
+    else { P[k] = el.value; P.preset = "custom"; }
     lsSet(KEY_SND, JSON.stringify(P));
+    if (k === "real") ambName = "";   // rebuild the running scene sound with or without the recording
     syncControls();
     initAudio();
-    applyAudio();
+    clearTimeout(applyTimer);
+    applyTimer = setTimeout(applyAudio, el.type === "range" ? 250 : 0);   // let a slider settle before rebuilding the tones
     if (S.active) els.hint.textContent = hintText();
   }
   function syncControls() {
+    var anyFile = Object.keys(FILES).length > 0;
     controls.forEach(function (root) {
       Array.prototype.forEach.call(root.querySelectorAll("[data-k]"), function (el) {
         var k = el.getAttribute("data-k");
-        if (el.type === "checkbox") el.checked = !!P[k]; else el.value = String(P[k]);
+        if (el === document.activeElement && el.type === "range") return;
+        if (el.type === "checkbox") el.checked = !!P[k];
+        else if (el.getAttribute("data-log")) el.value = String(Math.log(P[k] / 40) / Math.log(100));
+        else el.value = String(P[k]);
+      });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-out]"), function (b) {
+        var k = b.getAttribute("data-out");
+        b.textContent = (k === "f1" || k === "f2") ? P[k] + " Hz" : Math.round(P[k] * 100) + "%";
       });
       root.querySelector(".snd-two").classList.toggle("off", !P.dual && !S.preview);
-      root.querySelector('[data-role="note"]').textContent = DIFFS[P.diff].note;
+      root.querySelector(".snd-real").hidden = !anyFile;
+      root.querySelector('[data-role="note"]').textContent = PRESETS[P.preset] ? PRESETS[P.preset].note : "Your own mix.";
     });
   }
+  function updateRealUI() { syncControls(); }
   function updatePreviewBtn() { $("previewBtn").textContent = S.preview ? "Stop" : "Hear the two tones"; syncControls(); }
   function togglePreview() {
     initAudio(); if (!AC) return;
@@ -1875,6 +1981,7 @@
   loadReminders();
   loadTotal();
   renderCalendar();
+  try { ORDER.forEach(function (n) { tryFile(n, ["mp3", "ogg"]); }); } catch (e) {}
 })();
 </script>
 </body>
