@@ -397,6 +397,22 @@
   .ibar { height: 0.6rem; border-radius: 3px; background: rgba(127, 127, 127, 0.16); overflow: hidden; }
   .ibar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
   .tsec .tags { margin-top: 0.5rem; }
+  .scene-pick { margin: 0 0 0.25rem; }
+  .scene-btn { display: flex; align-items: center; gap: 0.8rem; width: 100%; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.5rem 0.9rem 0.5rem 0.5rem; }
+  .scene-btn[aria-expanded="true"] { border-color: var(--ink); }
+  .scene-btn img { width: 3rem; height: 3.75rem; object-fit: cover; border-radius: 8px; flex: none; background: rgba(127, 127, 127, 0.2); }
+  .scene-btn .st { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .scene-btn .st strong { font-weight: 600; }
+  .scene-btn .st span { color: var(--muted); font-size: 0.88rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .caret { width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 0.3rem 0.25rem 0; flex: none; transition: transform 0.2s; }
+  .scene-btn[aria-expanded="true"] .caret { transform: rotate(225deg); margin-bottom: 0; }
+  .scene-menu { display: flex; gap: 0.7rem; overflow-x: auto; scroll-snap-type: x proximity; padding: 0.8rem 0.25rem 0.6rem; margin: 0 -0.25rem; -webkit-overflow-scrolling: touch; }
+  .scene-card { flex: 0 0 9.5rem; scroll-snap-align: start; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0; overflow: hidden; }
+  .scene-card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; background: rgba(127, 127, 127, 0.2); }
+  .scene-card .t { display: block; padding: 0.5rem 0.65rem 0.65rem; }
+  .scene-card strong { display: block; font-size: 0.95rem; font-weight: 600; }
+  .scene-card .d { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); font-size: 0.8rem; line-height: 1.35; margin-top: 0.15rem; }
+  .scene-card[aria-selected="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
   .tnote { color: var(--muted); font-size: 0.88rem; margin: 0.3rem 0 0; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -440,9 +456,17 @@
 
     <fieldset>
       <legend>What do you rest on?</legend>
-      <div class="choices two">
+      <div class="scene-pick">
+        <button class="scene-btn" id="sceneBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sceneMenu">
+          <img id="sceneThumb" alt="" width="48" height="60">
+          <span class="st"><strong id="sceneBtnName"></strong><span id="sceneBtnDesc"></span></span>
+          <i class="caret" aria-hidden="true"></i>
+        </button>
+        <div class="scene-menu" id="sceneMenu" role="listbox" aria-label="Scenes" hidden></div>
+      </div>
+      <div class="choices two" hidden>
         <label class="choice">
-          <input type="radio" name="anchor" value="circle" checked>
+          <input type="radio" name="anchor" value="circle">
           <strong>Breathing circle</strong>
           <span>4 seconds in, 6 out. A slow circle sets the pace.</span>
         </label>
@@ -477,7 +501,7 @@
           <span>Twinkling stars. A tap sends a shooting star.</span>
         </label>
         <label class="choice">
-          <input type="radio" name="anchor" value="dark">
+          <input type="radio" name="anchor" value="dark" checked>
           <strong>Eyes closed</strong>
           <span>The screen goes black, with just one big number counting your returns. Best with sound on or a handheld button.</span>
         </label>
@@ -741,7 +765,7 @@
   var CAL_FULL_MIN = 60;      // a day at this many minutes gets the deepest orange
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  var ORDER = ["circle", "flame", "daytree", "tree", "rain", "ocean", "stars", "dark"];
+  var ORDER = ["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars"];
   var NAMES = {
     circle: "Breathing circle", flame: "Candle flame", daytree: "Tree by day", tree: "Tree at night", rain: "Rain",
     ocean: "Night ocean", stars: "Starry sky", dark: "Eyes closed"
@@ -2250,6 +2274,7 @@
 
     var same = document.querySelector('input[name="anchor"][value="' + S.anchor + '"]');
     if (same) same.checked = true;   // "Sit again" starts on the scene you ended on
+    refreshScene();
     loadTotal();
     renderCalendar();
     show("end");
@@ -2663,6 +2688,37 @@
       b4.appendChild(tags); box.appendChild(b4);
     }
   }
+  /* ---------- scene dropdown (previews are screenshots in previews/) ---------- */
+  function sceneDesc(name) {
+    var r = document.querySelector('input[name="anchor"][value="' + name + '"]'), d = r && r.parentNode.querySelector("span");
+    return d ? d.textContent : "";
+  }
+  function refreshScene() {
+    var r = document.querySelector('input[name="anchor"]:checked'), name = r ? r.value : ORDER[0];
+    $("sceneThumb").src = "previews/" + name + ".jpg";
+    $("sceneBtnName").textContent = NAMES[name]; $("sceneBtnDesc").textContent = sceneDesc(name);
+    Array.prototype.forEach.call($("sceneMenu").children, function (c) { c.setAttribute("aria-selected", String(c.getAttribute("data-scene") === name)); });
+  }
+  function closeSceneMenu() { $("sceneMenu").hidden = true; $("sceneBtn").setAttribute("aria-expanded", "false"); }
+  ORDER.forEach(function (name) {
+    var c = el("button", "scene-card"); c.type = "button"; c.setAttribute("role", "option"); c.setAttribute("data-scene", name);
+    var im = el("img"); im.alt = ""; im.loading = "lazy"; im.src = "previews/" + name + ".jpg"; im.width = 390; im.height = 488;
+    var t = el("span", "t"); t.appendChild(el("strong", "", NAMES[name])); t.appendChild(el("span", "d", sceneDesc(name)));
+    c.appendChild(im); c.appendChild(t);
+    c.addEventListener("click", function () {
+      var r = document.querySelector('input[name="anchor"][value="' + name + '"]'); if (r) r.checked = true;
+      refreshScene(); closeSceneMenu();
+    });
+    $("sceneMenu").appendChild(c);
+  });
+  $("sceneBtn").addEventListener("click", function () {
+    var open = $("sceneMenu").hidden;
+    $("sceneMenu").hidden = !open;
+    this.setAttribute("aria-expanded", String(open));
+    if (open) { var sel = $("sceneMenu").querySelector('[aria-selected="true"]'); if (sel) { try { sel.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} } }
+  });
+  document.addEventListener("click", function (e) { if (!e.target.closest(".scene-pick")) closeSceneMenu(); });
+  refreshScene();
   $("themeBtn").addEventListener("click", function () {
     var open = $("themes").hidden;
     $("themes").hidden = !open;
