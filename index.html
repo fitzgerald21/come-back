@@ -705,7 +705,22 @@
 
   /* ---------- sound ---------- */
   var AC = null, MASTER = null;
+  // iOS treats Web Audio as "ambient", so the silent switch mutes it. Ask for a playback session, and
+  // for older iOS fall back to looping a silent <audio> element, which moves the page to the media channel.
+  var KEEP = null;
+  function mediaChannel() {
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+    try {
+      if (!KEEP) {
+        KEEP = document.createElement("audio");
+        KEEP.setAttribute("playsinline", ""); KEEP.loop = true; KEEP.preload = "auto";
+        KEEP.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+      }
+      var p = KEEP.play(); if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
   function initAudio() {
+    mediaChannel();
     try {
       AC = AC || new (window.AudioContext || window.webkitAudioContext)();
       if (!MASTER) { MASTER = AC.createGain(); MASTER.connect(AC.destination); }
@@ -1140,7 +1155,14 @@
     try { if (navigator.wakeLock && navigator.wakeLock.request) { navigator.wakeLock.request("screen").then(function (l) { S.wake = l; }, function () {}); } } catch (e) {}
   }
   function unlockScreen() { try { if (S.wake) { S.wake.release(); S.wake = null; } } catch (e) {} }
-  document.addEventListener("visibilitychange", function () { if (S.active && document.visibilityState === "visible") lockScreen(); });
+  document.addEventListener("visibilitychange", function () {
+    if (S.active && document.visibilityState === "visible") {
+      lockScreen();
+      // phones suspend audio when the page is backgrounded or the screen locks
+      if (AC && AC.state !== "running") { try { AC.resume(); } catch (e) {} }
+      if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
+    }
+  });
 
   /* ---------- reminders cycle ---------- */
   function shuffle(a) {
