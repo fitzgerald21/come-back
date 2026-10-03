@@ -967,7 +967,7 @@
       var s = AC.createBufferSource(); s.buffer = noiseBuf(kind); s.loop = true;
       s.start(0, Math.random() * s.buffer.duration * 0.9); L.srcs.push(s); return s;
     };
-    L.osc = function (type, f) { var o = AC.createOscillator(); o.type = type; o.frequency.value = f; o.start(); L.srcs.push(o); return o; };
+    L.osc = function (type, f) { var o = AC.createOscillator(); o.type = type; o.frequency.value = f; if (L.pitchBus) L.pitchBus.connect(o.detune); o.start(); L.srcs.push(o); return o; };
     L.stop = function () {
       L.alive = false;
       Object.keys(L.hs).forEach(function (k) { clearTimeout(+k); clearInterval(+k); });
@@ -1120,14 +1120,15 @@
     drone: "Warm drone", chime: "Chime", breath: "Breathy", whir: "Whir (narrow noise)"
   };
   var PRESETS = {
-    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    move: "drift", rate: 0.1, note: "Far apart in pitch, one in each ear. Headphones help." },
-    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, move: "drift", rate: 0.1, note: "A fifth apart and more blended. Each swells and fades a little." },
-    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  move: "drift", rate: 0.1, note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
-    sync:   { name: "Swell together", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.7, move: "sync", rate: 0.1, note: "Both tones rise and fall together, like one slow breath." },
-    opposite: { name: "Swell apart", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.7, move: "opposite", rate: 0.1, note: "One tone rises as the other falls. Follow whichever is fading." }
+    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    move: "drift", rate: 0.1, what: "volume", note: "Far apart in pitch, one in each ear. Headphones help." },
+    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, move: "drift", rate: 0.1, what: "volume", note: "A fifth apart and more blended. Each swells and fades a little." },
+    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  move: "drift", rate: 0.1, what: "volume", note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
+    sync:   { name: "Glide together", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.6, move: "sync", rate: 0.08, what: "pitch", note: "Both tones slide higher and lower together, keeping their distance." },
+    opposite: { name: "Glide apart", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.6, move: "opposite", rate: 0.08, what: "pitch", note: "One tone slides up while the other slides down, then back. Keep hearing both." }
   };
   var MOVES = { drift: "Each on its own", sync: "Together (in sync)", opposite: "Opposite (out of sync)" };
-  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade", "move", "rate"];
+  var WHATS = { volume: "Volume", pitch: "Pitch" };
+  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade", "move", "rate", "what"];
   // Each sound is built into `out`, trimmed so they all sit at about the same loudness.
   function voice(L, sound, f, out) {
     var lp, g;
@@ -1151,9 +1152,13 @@
     else { L.osc("sine", f).connect(out); chain(L.osc("sine", f * 2), gainNode(0.14), out); }
   }
   function tone(L, sound, f, lvl, pan, depth, rate, sign) {
-    var out = gainNode(lvl);
+    var out = gainNode(lvl), pitch = P.what === "pitch" && depth > 0, lfo;
+    if (pitch) {   // glide: every oscillator in this voice follows one slow sine, in cents (up to about a third of an octave each way)
+      lfo = L.osc("sine", rate); L.pitchBus = gainNode(sign * depth * 400); lfo.connect(L.pitchBus);
+    }
     voice(L, sound, f, out);
-    if (depth > 0) { var d = gainNode(sign * lvl * depth * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
+    L.pitchBus = null;
+    if (depth > 0 && !pitch) { var d = gainNode(sign * lvl * depth * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
     chain(out, panner(pan), L.out);
   }
   function buildDual(L, c) {
@@ -1240,6 +1245,7 @@
       ["bal"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1.5) P[k] = o[k]; });
       ["spread", "fade"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1) P[k] = o[k]; });
       if (MOVES[o.move]) P.move = o.move;
+      if (WHATS[o.what]) P.what = o.what;
       if (typeof o.rate === "number" && o.rate >= 0.03 && o.rate <= 0.5) P.rate = o.rate;
       ["s1", "s2"].forEach(function (k) { if (SOUNDS[o[k]]) P[k] = o[k]; });
       if (PRESETS[P.preset]) FIELDS.forEach(function (k) { P[k] = PRESETS[P.preset][k]; });
@@ -1280,7 +1286,8 @@
           slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
           slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
           slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
-          '<label class="snd-row"><span>Rising and falling</span><select data-k="move">' + opts(MOVES) + "</select></label>" +
+          '<label class="snd-row"><span>What rises and falls</span><select data-k="what">' + opts(WHATS) + "</select></label>" +
+          '<label class="snd-row"><span>Moving</span><select data-k="move">' + opts(MOVES) + "</select></label>" +
           slider("fade", "Rise and fall amount", 'min="0" max="1" step="0.01"') +
           slider("rate", "Rise and fall speed", 'min="0.03" max="0.5" step="0.01"') +
           '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
