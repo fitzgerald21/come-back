@@ -52,6 +52,71 @@
     --btn-bg: #DCEAE5;
     --btn-ink: #0D1A1F;
   }
+  :root[data-theme="sand"] {
+    --bg: #F3EBDD;
+    --ink: #2E2418;
+    --muted: #7A6A55;
+    --line: rgba(46,36,24,0.16);
+    --card: rgba(255,255,255,0.5);
+    --orb-hi: #EBCB9A;
+    --orb-lo: #B5732F;
+    --glow: rgba(181,115,47,0.32);
+    --accent: #9A5B12;
+    --btn-bg: #2E2418;
+    --btn-ink: #F3EBDD;
+  }
+  :root[data-theme="rose"] {
+    --bg: #F6E9EA;
+    --ink: #31202A;
+    --muted: #7E6470;
+    --line: rgba(49,32,42,0.16);
+    --card: rgba(255,255,255,0.5);
+    --orb-hi: #F0C2CB;
+    --orb-lo: #B5566F;
+    --glow: rgba(181,86,111,0.32);
+    --accent: #A24560;
+    --btn-bg: #31202A;
+    --btn-ink: #F6E9EA;
+  }
+  :root[data-theme="dusk"] {
+    --bg: #1B1830;
+    --ink: #E6E1F5;
+    --muted: #A09BC0;
+    --line: rgba(230,225,245,0.16);
+    --card: rgba(230,225,245,0.06);
+    --orb-hi: #B7A6F0;
+    --orb-lo: #5B4BA8;
+    --glow: rgba(150,130,240,0.3);
+    --accent: #F0C98A;
+    --btn-bg: #E6E1F5;
+    --btn-ink: #1B1830;
+  }
+  :root[data-theme="forest"] {
+    --bg: #0F1D15;
+    --ink: #DDEBD8;
+    --muted: #8FA88F;
+    --line: rgba(221,235,216,0.16);
+    --card: rgba(221,235,216,0.05);
+    --orb-hi: #A6D79A;
+    --orb-lo: #3C7A45;
+    --glow: rgba(120,200,120,0.28);
+    --accent: #E8C27A;
+    --btn-bg: #DDEBD8;
+    --btn-ink: #0F1D15;
+  }
+  :root[data-theme="ember"] {
+    --bg: #1E1412;
+    --ink: #F2E2D8;
+    --muted: #B0968A;
+    --line: rgba(242,226,216,0.16);
+    --card: rgba(242,226,216,0.05);
+    --orb-hi: #F2B27A;
+    --orb-lo: #B0502A;
+    --glow: rgba(240,150,90,0.3);
+    --accent: #F0BF72;
+    --btn-bg: #F2E2D8;
+    --btn-ink: #1E1412;
+  }
   /* Every scene except the breathing circle is always dark, whatever the device theme. */
   :root.dark-session {
     --bg: #0A0F12;
@@ -181,7 +246,7 @@
   #session[data-anchor="circle"] .reminder { text-shadow: none; }
   .slot.has-reminder .reminder { opacity: 1; }
   .slot.has-reminder .phase { opacity: 0; }
-  .dots { display: flex; justify-content: center; gap: 0.1rem; min-height: 1.6rem; flex: none; }
+  .dots { display: none; }
   .dot { width: 1.5rem; height: 1.5rem; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
   .dot::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--muted); opacity: 0.45; transition: opacity 0.3s, transform 0.3s; }
   .dot.on::before { opacity: 1; background: var(--ink); transform: scale(1.25); }
@@ -223,6 +288,42 @@
   .soundmenu .check { margin-top: 0.8rem; }
   #previewBtn { margin-top: 1rem; padding: 0.55rem 1.3rem; font-size: 0.95rem; }
 
+  /* ---------- Theme picker ---------- */
+  .themes { display: flex; gap: 0.55rem; flex-wrap: wrap; margin: 0 0 1.75rem; }
+  .theme-btn { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 1px solid var(--line); padding: 0; cursor: pointer; }
+  .theme-btn[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ---------- Past sessions / distractions ---------- */
+  .home-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
+  .home-links .btn { padding: 0.55rem 1.1rem; font-size: 0.95rem; }
+  .sub-wrap { width: 100%; max-width: 34rem; margin: 0 auto; padding: 2rem 0 2rem; }
+  .sub-wrap h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(2.4rem, 9vw, 3.4rem); line-height: 1; margin: 0 0 0.6rem; }
+  .sub-wrap .sub { color: var(--muted); margin: 0 0 1.25rem; font-size: 0.97rem; }
+  .sess { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.9rem 1rem; margin: 0 0 0.75rem; }
+  .sess h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+  .sess .meta { color: var(--muted); font-size: 0.88rem; margin: 0.15rem 0 0; }
+  .sess .stats { display: flex; gap: 1.25rem; margin: 0.6rem 0 0; font-size: 0.92rem; color: var(--muted); }
+  .sess .stats b { color: var(--ink); font-size: 1.15rem; font-weight: 600; margin-right: 0.25rem; }
+  .sess h4 { margin: 0.8rem 0 0.25rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .sess .link-btn { margin-top: 0.7rem; display: block; }
+  .sess ul { margin: 0; padding-left: 1.1rem; }
+  .sess li { overflow-wrap: anywhere; white-space: pre-wrap; }
+  .sess li small { color: var(--muted); }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tag { border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.65rem; font-size: 0.88rem; }
+  .tag i { font-style: normal; color: var(--muted); margin-left: 0.3rem; }
+  .empty { color: var(--muted); font-style: italic; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.9rem; cursor: pointer; }
+  .chip:active { transform: translateY(1px); }
+  .drow { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+  .drow .name { flex: 1; overflow-wrap: anywhere; }
+  .drow .n { color: var(--muted); font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+  .drow .link-btn { font-size: 0.85rem; }
+  .dlist { border-top: 1px solid var(--line); margin: 0 0 1.75rem; }
+  .addrow { display: flex; gap: 0.5rem; margin: 0.6rem 0 1.75rem; }
+  .addrow .btn { padding: 0.6rem 1.2rem; }
+
   /* ---------- Note sheet ---------- */
   .sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; background: rgba(0, 0, 0, 0.5); padding: 1rem; padding-top: 10vh; cursor: default; }
   .sheet-card { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 1.25rem; width: min(100%, 32rem); }
@@ -261,6 +362,8 @@
     <h1>Come back</h1>
     <p class="lede">Settle in and breathe. Each time you notice your mind has wandered, tap. That noticing is the whole practice, and every tap counts as a point. You can't lose.</p>
 
+    <div class="themes" id="themes" role="group" aria-label="Theme"><button type="button" class="theme-btn" data-theme-set="auto" style="background:linear-gradient(135deg,#E8EFEB 50%,#0D1A1F 50%)" aria-label="Auto" title="Auto"></button><button type="button" class="theme-btn" data-theme-set="light" style="background:#E8EFEB" aria-label="Mist" title="Mist"></button><button type="button" class="theme-btn" data-theme-set="sand" style="background:#F3EBDD" aria-label="Sand" title="Sand"></button><button type="button" class="theme-btn" data-theme-set="rose" style="background:#F6E9EA" aria-label="Rose" title="Rose"></button><button type="button" class="theme-btn" data-theme-set="dusk" style="background:#1B1830" aria-label="Dusk" title="Dusk"></button><button type="button" class="theme-btn" data-theme-set="forest" style="background:#0F1D15" aria-label="Forest" title="Forest"></button><button type="button" class="theme-btn" data-theme-set="ember" style="background:#1E1412" aria-label="Ember" title="Ember"></button><button type="button" class="theme-btn" data-theme-set="dark" style="background:#0D1A1F" aria-label="Night" title="Night"></button></div>
+
     <fieldset>
       <legend>When you notice, you…</legend>
       <div class="choices">
@@ -296,9 +399,14 @@
           <span>A steady flame to rest your eyes on.</span>
         </label>
         <label class="choice">
+          <input type="radio" name="anchor" value="daytree">
+          <strong>Tree by day</strong>
+          <span>Sunlit leaves swaying in the breeze, birds in the distance. A tap stirs a gust.</span>
+        </label>
+        <label class="choice">
           <input type="radio" name="anchor" value="tree">
-          <strong>Tree in the wind</strong>
-          <span>Branches swaying in the breeze. A tap stirs a gust.</span>
+          <strong>Tree at night</strong>
+          <span>Branches swaying under the moon. A tap stirs a gust.</span>
         </label>
         <label class="choice">
           <input type="radio" name="anchor" value="rain">
@@ -378,6 +486,11 @@
 
     <button class="btn" id="begin" type="button">Begin</button>
 
+    <div class="home-links">
+      <button class="btn ghost" id="openHist" type="button">Past sessions</button>
+      <button class="btn ghost" id="openDist" type="button">Distractions</button>
+    </div>
+
     <div class="cal">
       <h2>Your practice</h2>
       <div class="cal-months" id="calMonths" aria-hidden="true"></div>
@@ -402,6 +515,7 @@
     <div class="bar-actions">
       <button class="finish" id="soundBtn" type="button" aria-expanded="false" aria-controls="soundMenu">Sound</button>
       <button class="finish" id="noteBtn" type="button">Note</button>
+      <button class="finish" id="cancel" type="button">Cancel</button>
       <button class="finish" id="finish" type="button">Finish</button>
     </div>
   </div>
@@ -427,6 +541,7 @@
         <input type="text" id="labelInput" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. email, dinner">
         <button class="btn" id="saveLabel" type="button">Save</button>
       </div>
+      <div class="chips" id="chips"></div>
       <small>Enter saves. Blank is fine.</small>
     </div>
     <div class="panel" id="voicePanel" hidden>
@@ -435,6 +550,33 @@
       <button class="btn ghost" id="doneListen" type="button">Done</button>
       <small>Or tap anywhere, or press space, to finish.</small>
     </div>
+  </div>
+</section>
+
+<!-- PAST SESSIONS -->
+<section id="hist" class="screen" hidden>
+  <div class="sub-wrap">
+    <h2>Past sessions</h2>
+    <p class="sub" id="histSub"></p>
+    <div id="histList"></div>
+    <button class="btn ghost" id="histBack" type="button">Back to start</button>
+  </div>
+</section>
+
+<!-- DISTRACTIONS -->
+<section id="dist" class="screen" hidden>
+  <div class="sub-wrap">
+    <h2>Distractions</h2>
+    <p class="sub">Presets show up as one-tap buttons when you catch yourself, so you don't have to type.</p>
+    <p class="list-head">Presets</p>
+    <div class="dlist" id="presetList"></div>
+    <div class="addrow">
+      <input type="text" id="presetInput" maxlength="32" autocomplete="off" placeholder="Add a preset" aria-label="New preset distraction">
+      <button class="btn" id="presetAdd" type="button">Add</button>
+    </div>
+    <p class="list-head">Everything you've logged</p>
+    <div class="dlist" id="allList"></div>
+    <button class="btn ghost" id="distBack" type="button">Back to start</button>
   </div>
 </section>
 
@@ -458,6 +600,18 @@
     </div>
   </div>
 </section>
+
+<!-- CANCEL CONFIRM -->
+<div id="cancelSheet" class="sheet" hidden role="alertdialog" aria-modal="true" aria-labelledby="cancelTitle">
+  <div class="sheet-card">
+    <h3 id="cancelTitle">Cancel this sit?</h3>
+    <p>It won't be saved or counted.</p>
+    <div class="sheet-actions">
+      <button class="btn" id="cancelKeep" type="button">Keep sitting</button>
+      <button class="btn ghost" id="cancelYes" type="button">Yes, cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- NOTE SHEET (pauses the sit) -->
 <div id="noteSheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="noteTitle">
@@ -487,23 +641,26 @@
   var KEY_TOTAL = "come-back:total";
   var KEY_HIST = "come-back:sessions";
   var KEY_SND = "come-back:sound";
+  var KEY_PRE = "come-back:presets";
+  var KEY_THEME = "come-back:theme";
+  var PRESET_DEFAULTS = ["Physical discomfort", "Planning", "Worry", "Sounds", "Memory", "Sleepy"];
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
   var LISTEN_MS = 7000;
-  var MIN_RECORD_MS = 5000;   // shorter sits aren't added to the calendar
+  var MIN_RECORD_MS = 20000;  // shorter sits aren't saved or counted
   var CAL_WEEKS = 17;
   var CAL_FULL_MIN = 60;      // a day at this many minutes gets the deepest orange
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  var ORDER = ["circle", "flame", "tree", "rain", "ocean", "stars", "dark"];
+  var ORDER = ["circle", "flame", "daytree", "tree", "rain", "ocean", "stars", "dark"];
   var NAMES = {
-    circle: "Breathing circle", flame: "Candle flame", tree: "Tree in the wind", rain: "Rain",
+    circle: "Breathing circle", flame: "Candle flame", daytree: "Tree by day", tree: "Tree at night", rain: "Rain",
     ocean: "Night ocean", stars: "Starry sky", dark: "Eyes closed"
   };
-  var CANVAS_SCENES = ["flame", "tree", "rain", "ocean", "stars"];
+  var CANVAS_SCENES = ["flame", "daytree", "tree", "rain", "ocean", "stars"];
 
   var $ = function (id) { return document.getElementById(id); };
-  var screens = { home: $("home"), session: $("session"), end: $("end") };
+  var screens = { home: $("home"), session: $("session"), end: $("end"), hist: $("hist"), dist: $("dist") };
   var els = {
     reminders: $("reminders"), total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
     clock: $("clock"), orb: $("orb"), orbWrap: $("orbWrap"), spacer: $("spacer"), canvas: $("scene"),
@@ -679,27 +836,53 @@
       crackle();
       L.react = function () { for (var i = 0; i < 4; i++) L.later(function () { pop(L, rand(1500, 5000), 1.4, rand(0.2, 0.5), rand(0.015, 0.05), rand(-0.5, 0.5)); }, i * 70); };
     },
-    // Wind in leaves: mostly a bright rustle, chopped by fast random flutter so it reads as many leaves
-    // rather than a pipe, with a low whoosh underneath that swells on gusts. A tap sends a gust.
-    tree: function (L) {
-      var bp = filt("bandpass", 2800, 0.7), rustle = gainNode(0.2);
-      chain(L.noise("white"), bp, rustle, L.out);
-      var flutter = gainNode(70);   // low-passed noise is tiny, so it needs a big gain to move the rustle
-      chain(L.noise("white"), filt("lowpass", 16), flutter); flutter.connect(rustle.gain);
-      var air = filt("bandpass", 1200, 0.5), air2 = gainNode(0.05);
-      chain(L.noise("pink"), air, air2, L.out);
-      var wh = filt("bandpass", 320, 0.6), wg = gainNode(0.1);
-      chain(L.noise("pink"), wh, wg, L.out);
+    // Wind through a tree: a soft, dark body of air (two independent channels, hard left and right, for width),
+    // a gentle mid "through the branches" breath, and individual leaf rustles that thicken as a gust builds.
+    // Nothing bright or steady, so it never reads as static. A tap sends a gust.
+    tree: function (L) { treeWind(L, false); },
+    daytree: function (L) { treeWind(L, true); }
+  };
+  function treeWind(L, day) {
+      var lvl = 0.2;   // current gust strength, 0..1, read by the leaf scheduler
+      var bodyG = [], bodyF = [], airG = [], airF = [];
+      [-0.7, 0.7].forEach(function (pan, i) {
+        var f1 = filt("bandpass", 380, 0.5), f2 = filt("lowpass", 1400, 0.4), g = gainNode(0.25);
+        chain(L.noise("pink"), f1, f2, g, panner(pan), L.out); bodyG.push(g); bodyF.push(f1);
+        var a1 = filt("bandpass", 1000, 0.9), a2 = filt("lowpass", 3200, 0.5), ag = gainNode(0.03);
+        chain(L.noise("pink"), a1, a2, ag, panner(-pan * 0.6), L.out); airG.push(ag); airF.push(a1);
+      });
+      chain(L.noise("brown"), filt("lowpass", 160), gainNode(0.12), L.out);   // distant low sway
       function gustTo(s, secs) {
-        var t = AC.currentTime;
-        rustle.gain.setTargetAtTime(0.12 + 0.6 * s, t, secs); bp.frequency.setTargetAtTime(2200 + 2200 * s, t, secs);
-        air2.gain.setTargetAtTime(0.04 + 0.35 * s, t, secs); air.frequency.setTargetAtTime(900 + 900 * s, t, secs);
-        wg.gain.setTargetAtTime(0.1 + 0.8 * s * s, t, secs); wh.frequency.setTargetAtTime(220 + 300 * s, t, secs);
+        var t = AC.currentTime; lvl = s;
+        bodyG.forEach(function (g, i) { g.gain.setTargetAtTime(0.18 + 0.55 * s * (i ? 1 : 0.85), t, secs); });
+        bodyF.forEach(function (f) { f.frequency.setTargetAtTime(300 + 380 * s, t, secs); });
+        airG.forEach(function (g) { g.gain.setTargetAtTime(0.02 + 0.2 * s * s, t, secs); });
+        airF.forEach(function (f) { f.frequency.setTargetAtTime(800 + 900 * s, t, secs); });
       }
-      function drift() { gustTo(Math.random() * 0.6, 1.6); L.later(drift, rand(2500, 6500)); }
-      drift();
-      L.react = function () { gustTo(1, 0.3); L.later(function () { gustTo(0.3, 1.6); }, 1700); };
-    },
+      function leaf() {
+        var t = AC.currentTime, src = AC.createBufferSource(), g = gainNode(0.0001), dur = rand(0.08, 0.28), v = rand(0.05, 0.14) * (0.25 + lvl);
+        src.buffer = noiseBuf("pink");
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        chain(src, filt("bandpass", rand(1800, 4200), 0.8), filt("lowpass", 5200), g, panner(rand(-0.9, 0.9)), L.out);
+        src.start(t, Math.random() * 3); src.stop(t + dur + 0.03);
+        L.later(leaf, rand(40, 260) / (0.35 + lvl * 1.6));
+      }
+      function drift() { gustTo(rand(0.05, 0.55), rand(1.8, 3)); L.later(drift, rand(3500, 8000)); }
+      drift(); leaf();
+      L.react = function () { gustTo(1, 0.5); L.later(function () { gustTo(0.25, 2.5); }, 2200); };
+      // by day: soft, sparse birdsong from a distance. by night: an owl, very occasionally.
+      function chirp() {
+        var f = rand(2300, 4200), pan = rand(-0.8, 0.8), n = 1 + Math.floor(Math.random() * 4), i;
+        for (i = 0; i < n; i++) (function (d) { L.later(function () { blip(L, f * rand(0.95, 1.15), f * rand(1.15, 1.5), rand(0.012, 0.03), rand(0.07, 0.14), pan); }, d); })(i * rand(110, 190));
+        L.later(chirp, Math.random() < 0.3 ? rand(1500, 4000) : rand(5000, 14000));
+      }
+      function owl() {
+        blip(L, 400, 360, 0.035, 0.45, -0.5); L.later(function () { blip(L, 340, 300, 0.03, 0.7, -0.5); }, 650);
+        L.later(owl, rand(18000, 40000));
+      }
+      if (day) L.later(chirp, rand(1500, 4000)); else L.later(owl, rand(8000, 16000));
+  }
+  var AMBIENT2 = {
     // Rain on water: hiss, a far-off roar, and individual drops. A tap makes it fall harder for a moment.
     rain: function (L) {
       var g = gainNode(0.12), roar = gainNode(0.3);
@@ -743,6 +926,7 @@
       chain(L.noise("pink"), filt("lowpass", 500), gainNode(0.015), L.out);
     }
   };
+  Object.keys(AMBIENT2).forEach(function (k) { AMBIENT[k] = AMBIENT2[k]; });
 
   /* Two-tone listening: two steady voices, like an appliance humming in two registers.
      Everything is adjustable: each tone's sound and pitch, how loud the second is, how far apart they sit
@@ -1077,21 +1261,52 @@
     ctx.beginPath(); ctx.ellipse(cx, baseY - h * 0.03, w * 0.55, h * 0.07, 0, 0, Math.PI * 2); ctx.fill();
   }
 
-  /* tree in the wind */
-  var TREE = null, treeTips = [], fallen = [];
-  // A clump of leaves: a soft body with lots of small leaf dots inside it.
+  /* tree in the wind: one renderer, two themes (night by moonlight, day by sun). Light comes from the upper right. */
+  var TREES = {}, treeTips = [], fallen = [];
+  function rgbOf(s) { return s.split(",").map(Number); }
+  function mixRGB(a, b, k) { return [Math.round(a[0] + (b[0] - a[0]) * k), Math.round(a[1] + (b[1] - a[1]) * k), Math.round(a[2] + (b[2] - a[2]) * k)].join(","); }
+
+  var TREE_THEMES = {
+    tree: {
+      day: false,
+      sky: [[0, "rgba(34,60,96,0.10)"], [0.65, "rgba(60,110,120,0.16)"], [1, "rgba(120,170,150,0.22)"]],
+      hills: ["rgba(46,78,84,0.55)", "rgba(28,52,58,0.85)"], farTree: "rgba(20,40,46,0.9)", ground: "#0b1618",
+      fog: "130,180,165", sun: [232, 241, 230], sunGlow: "205,230,225", sunGlowA: 0.22,
+      bark: "#171f1f", barkLit: "150,185,180", barkLitA: 0.42, barkRim: "rgba(190,220,215,0.35)",
+      leaves: [["24,62,64", "50,106,98"], ["38,92,86", "76,136,112"], ["72,136,112", "132,188,152"], ["130,190,150", "208,242,204"]],
+      shadow: "rgba(2,8,10,0.45)", grass: "rgba(52,92,84,0.85)", glint: "rgba(200,235,205,0.55)", fall: "rgba(150,210,165,0.8)",
+      motes: "210,240,150", moteA: 0.5
+    },
+    daytree: {
+      day: true,
+      sky: [[0, "rgb(74,118,158)"], [0.55, "rgb(128,168,190)"], [1, "rgb(206,204,170)"]],
+      hills: ["rgba(104,138,128,0.7)", "rgba(66,104,86,0.9)"], farTree: "rgba(48,84,66,0.95)", ground: "#34502e",
+      fog: "235,230,190", sun: [255, 246, 214], sunGlow: "255,240,190", sunGlowA: 0.32,
+      bark: "#3a2c22", barkLit: "214,176,128", barkLitA: 0.55, barkRim: "rgba(255,226,170,0.45)",
+      leaves: [["28,70,40", "70,122,60"], ["44,98,48", "100,152,66"], ["78,134,56", "150,190,82"], ["126,170,70", "214,226,120"]],
+      shadow: "rgba(14,30,14,0.4)", grass: "rgba(86,130,60,0.9)", glint: "rgba(255,244,190,0.6)", fall: "rgba(176,196,84,0.85)",
+      motes: "255,244,200", moteA: 0.4
+    }
+  };
+
+  // A clump of leaves: a soft body of many small leaves, shaded as one ball lit from the upper right.
   function leafSprite(rgb, light, size) {
     var c = document.createElement("canvas"); c.width = c.height = size;
-    var g = c.getContext("2d"), r = size / 2, i;
+    var g = c.getContext("2d"), r = size / 2, i, dark = rgbOf(rgb).map(function (v) { return Math.round(v * 0.62); }), mid = rgbOf(rgb), lit = rgbOf(light);
     var gr = g.createRadialGradient(r, r, 0, r, r, r);
-    gr.addColorStop(0, "rgba(" + rgb + ",0.92)");
-    gr.addColorStop(0.62, "rgba(" + rgb + ",0.78)");
-    gr.addColorStop(1, "rgba(" + rgb + ",0)");
+    gr.addColorStop(0, "rgba(" + dark.join(",") + ",0.95)");
+    gr.addColorStop(0.62, "rgba(" + dark.join(",") + ",0.8)");
+    gr.addColorStop(1, "rgba(" + dark.join(",") + ",0)");
     g.fillStyle = gr; g.fillRect(0, 0, size, size);
-    for (i = 0; i < 26; i++) {
-      var a = hash(i + 1) * 6.283, d = Math.sqrt(hash(i + 50)) * r * 0.78;
-      g.fillStyle = "rgba(" + (hash(i + 90) > 0.5 ? light : rgb) + "," + (0.35 + 0.4 * hash(i + 120)).toFixed(2) + ")";
-      g.beginPath(); g.ellipse(r + Math.cos(a) * d, r + Math.sin(a) * d, size * (0.045 + 0.04 * hash(i + 150)), size * 0.035, hash(i + 180) * 3, 0, 6.3); g.fill();
+    for (i = 0; i < 70; i++) {
+      var a = hash(i + 1) * 6.283, d = Math.sqrt(hash(i + 50)) * r * 0.8, px = Math.cos(a) * d, py = Math.sin(a) * d;
+      var f = Math.max(0, Math.min(1, 0.5 + (px * 0.55 - py * 0.75) / (r * 0.8) * 0.6 + (hash(i + 90) - 0.5) * 0.5));   // facing the light
+      var col = f < 0.5 ? mixRGB(dark, mid, f * 2) : mixRGB(mid, lit, (f - 0.5) * 2);
+      var lw = size * (0.05 + 0.04 * hash(i + 150)), lh = lw * 0.55, rot = hash(i + 180) * 3.14;
+      g.fillStyle = "rgba(" + mixRGB(dark, mid, 0.2) + ",0.55)";   // tiny shadow under each leaf gives depth
+      g.beginPath(); g.ellipse(r + px - lw * 0.12, r + py + lh * 0.45, lw, lh, rot, 0, 6.3); g.fill();
+      g.fillStyle = "rgba(" + col + "," + (0.55 + 0.4 * f).toFixed(2) + ")";
+      g.beginPath(); g.ellipse(r + px, r + py, lw, lh, rot, 0, 6.3); g.fill();
     }
     return c;
   }
@@ -1102,38 +1317,50 @@
     g.fillStyle = gr; g.fillRect(0, 0, size, size);
     return c;
   }
+  function cloudSprite(w) {
+    var c = document.createElement("canvas"); c.width = Math.round(w); c.height = Math.round(w * 0.4);
+    var g = c.getContext("2d"), i;
+    for (i = 0; i < 9; i++) {
+      var x = w * (0.2 + 0.6 * hash(i + 3)), y = w * (0.2 - 0.06 * Math.sin(i * 1.9) * hash(i + 8)), r = w * (0.09 + 0.09 * hash(i + 13));
+      var gr = g.createRadialGradient(x, y - r * 0.2, 0, x, y, r);
+      gr.addColorStop(0, "rgba(255,255,250,0.34)"); gr.addColorStop(0.6, "rgba(246,246,240,0.16)"); gr.addColorStop(1, "rgba(240,240,235,0)");
+      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    return c;
+  }
   function groundY(T, x) {
     return T.gy - T.u * 0.04 * Math.exp(-Math.pow((x - T.w / 2) / (T.w * 0.32), 2)) + T.u * 0.012 * Math.sin(x / T.w * 5.1 + 0.6);
   }
-  // Everything that never moves (sky, moon, hills, far trees) is painted once into T.bg.
-  function treeBuild(W, H) {
+  // Everything that never moves (sky, sun or moon, hills, far trees, ground) is painted once into T.bg.
+  function treeBuild(W, H, th) {
     var dpr = V.dpr || 1, u = Math.min(W * 0.7, H * 0.64), i, x;
-    var T = { w: W, h: H, u: u, gy: H * 0.8, bg: document.createElement("canvas"), spr: [], grass: [], flies: [] };
+    var T = { w: W, h: H, u: u, th: th, gy: H * 0.8, bg: document.createElement("canvas"), spr: [], grass: [], flies: [], clouds: [], birds: [] };
     T.bg.width = Math.round(W * dpr); T.bg.height = Math.round(H * dpr);
     var g = T.bg.getContext("2d"); g.scale(dpr, dpr);
 
     var sk = g.createLinearGradient(0, 0, 0, T.gy);
-    sk.addColorStop(0, "rgba(34,60,96,0.10)");
-    sk.addColorStop(0.65, "rgba(60,110,120,0.16)");
-    sk.addColorStop(1, "rgba(120,170,150,0.22)");
+    th.sky.forEach(function (s) { sk.addColorStop(s[0], s[1]); });
     g.fillStyle = sk; g.fillRect(0, 0, W, H);
 
-    for (i = 0; i < 70; i++) {
+    if (!th.day) for (i = 0; i < 70; i++) {
       g.fillStyle = "rgba(225,236,250," + (0.12 + 0.4 * hash(i + 40)).toFixed(2) + ")";
       g.beginPath(); g.arc(hash(i) * W, hash(i + 90) * T.gy * 0.62, 0.5 + hash(i + 7) * 1.0, 0, 6.3); g.fill();
     }
 
-    var mx = W * 0.8, my = H * 0.15, mr = u * 0.042;
-    var mg = g.createRadialGradient(mx, my, mr * 0.8, mx, my, u * 0.6);
-    mg.addColorStop(0, "rgba(205,230,225,0.22)");
-    mg.addColorStop(1, "rgba(205,230,225,0)");
+    var mx = W * 0.8, my = H * 0.15, mr = u * (th.day ? 0.05 : 0.042), sc = th.sun.join(",");
+    T.sx = mx; T.sy = my;
+    var mg = g.createRadialGradient(mx, my, mr * 0.8, mx, my, u * (th.day ? 0.9 : 0.6));
+    mg.addColorStop(0, "rgba(" + th.sunGlow + "," + th.sunGlowA + ")");
+    mg.addColorStop(1, "rgba(" + th.sunGlow + ",0)");
     g.fillStyle = mg; g.fillRect(0, 0, W, H);
-    g.fillStyle = "rgba(232,241,230,0.93)";
+    g.fillStyle = "rgba(" + sc + ",0.95)";
     g.beginPath(); g.arc(mx, my, mr, 0, 6.3); g.fill();
-    g.fillStyle = "rgba(170,195,190,0.28)";
-    [[-0.3, -0.2, 0.28], [0.25, 0.1, 0.2], [-0.1, 0.35, 0.15]].forEach(function (m) {
-      g.beginPath(); g.arc(mx + m[0] * mr, my + m[1] * mr, m[2] * mr, 0, 6.3); g.fill();
-    });
+    if (!th.day) {
+      g.fillStyle = "rgba(170,195,190,0.28)";
+      [[-0.3, -0.2, 0.28], [0.25, 0.1, 0.2], [-0.1, 0.35, 0.15]].forEach(function (m) {
+        g.beginPath(); g.arc(mx + m[0] * mr, my + m[1] * mr, m[2] * mr, 0, 6.3); g.fill();
+      });
+    }
 
     // two ranges of hills, then a few far trees standing on the nearer one
     function hill(base, amp, ph, fill) {
@@ -1144,9 +1371,9 @@
       }
       g.lineTo(W, H); g.closePath(); g.fill();
     }
-    hill(T.gy - u * 0.2, u * 0.05, 0.4, "rgba(46,78,84,0.55)");
-    hill(T.gy - u * 0.1, u * 0.045, 2.1, "rgba(28,52,58,0.85)");
-    g.fillStyle = "rgba(20,40,46,0.9)";
+    hill(T.gy - u * 0.2, u * 0.05, 0.4, th.hills[0]);
+    hill(T.gy - u * 0.1, u * 0.045, 2.1, th.hills[1]);
+    g.fillStyle = th.farTree;
     for (i = 0; i < 9; i++) {
       var tx = hash(i + 200) * W, tk = tx / W;
       if (Math.abs(tx - W / 2) < u * 0.28) continue;
@@ -1156,43 +1383,86 @@
       g.fillRect(tx - 1.2, ty - tr * 0.4, 2.4, tr * 0.5);
     }
 
-    g.fillStyle = "#0b1618";
+    g.fillStyle = th.ground;
     g.beginPath(); g.moveTo(0, H);
     for (x = 0; x <= W + 6; x += 6) g.lineTo(x, groundY(T, x));
     g.lineTo(W, H); g.closePath(); g.fill();
     var fog = g.createLinearGradient(0, T.gy - u * 0.15, 0, T.gy + u * 0.1);
-    fog.addColorStop(0, "rgba(130,180,165,0)");
-    fog.addColorStop(0.6, "rgba(130,180,165,0.07)");
-    fog.addColorStop(1, "rgba(130,180,165,0)");
+    fog.addColorStop(0, "rgba(" + th.fog + ",0)");
+    fog.addColorStop(0.6, "rgba(" + th.fog + "," + (th.day ? 0.16 : 0.07) + ")");
+    fog.addColorStop(1, "rgba(" + th.fog + ",0)");
     g.fillStyle = fog; g.fillRect(0, T.gy - u * 0.15, W, u * 0.25);
+    if (th.day) {   // keep the clock above and the hint below readable on a bright sky
+      var top = g.createLinearGradient(0, 0, 0, H * 0.2), bot = g.createLinearGradient(0, H * 0.78, 0, H);
+      top.addColorStop(0, "rgba(10,20,30,0.38)"); top.addColorStop(1, "rgba(10,20,30,0)");
+      bot.addColorStop(0, "rgba(10,20,14,0)"); bot.addColorStop(1, "rgba(10,20,14,0.5)");
+      g.fillStyle = top; g.fillRect(0, 0, W, H * 0.2); g.fillStyle = bot; g.fillRect(0, H * 0.78, W, H * 0.22);
+    }
 
-    // soft leaf sprites, dark to moonlit
-    [["30,78,74", "56,120,104"], ["46,110,98", "84,148,122"], ["84,152,124", "140,196,160"], ["142,200,160", "206,240,200"]]
-      .forEach(function (c) { T.spr.push(leafSprite(c[0], c[1], 96)); });
-    T.fly = glowDot("210,240,150", 32);
+    th.leaves.forEach(function (c) { T.spr.push(leafSprite(c[0], c[1], 128)); });
+    T.fly = glowDot(th.motes, 32);
 
     for (i = 0; i < Math.round(W / 6); i++) T.grass.push({ x: (i + hash(i + 11)) * 6, h: u * (0.02 + 0.035 * hash(i + 5)), ph: hash(i + 77) * 6.3 });
-    for (i = 0; i < 16; i++) T.flies.push({ x: hash(i + 500) * W, y: T.gy - u * (0.02 + 0.34 * hash(i + 600)), ph: hash(i + 700) * 6.3, sp: 0.15 + 0.25 * hash(i + 800) });
+    for (i = 0; i < (th.day ? 22 : 16); i++) T.flies.push({ x: hash(i + 500) * W, y: T.gy - u * (0.02 + 0.5 * hash(i + 600)), ph: hash(i + 700) * 6.3, sp: 0.15 + 0.25 * hash(i + 800) });
+    if (th.day) {
+      for (i = 0; i < 4; i++) T.clouds.push({ img: cloudSprite(u * (0.7 + 0.6 * hash(i + 900))), x: hash(i + 910) * (W + u), y: H * (0.06 + 0.2 * hash(i + 920)), v: 2 + 3 * hash(i + 930) });
+      T.cloudW = u * 1.3;
+    }
     return T;
   }
 
-  function sceneTree(ctx, W, H, t, dt) {
-    if (!TREE || TREE.w !== W || TREE.h !== H) TREE = treeBuild(W, H);
-    var T = TREE, u = T.u, cx = W / 2, i, k, x, y, D = 8;
+  function sceneTree(ctx, W, H, t, dt) { drawTree(ctx, W, H, t, dt, TREE_THEMES.tree); }
+  function sceneDayTree(ctx, W, H, t, dt) { drawTree(ctx, W, H, t, dt, TREE_THEMES.daytree); }
+
+  function drawTree(ctx, W, H, t, dt, th) {
+    var key = th.day ? "daytree" : "tree", T = TREES[key];
+    if (!T || T.w !== W || T.h !== H) T = TREES[key] = treeBuild(W, H, th);
+    var u = T.u, cx = W / 2, i, k, x, y, D = 8;
     var wd = V.wind * 0.5 + V.pulse * 1.0 + 0.1 * Math.sin(t * 0.7);
     ctx.drawImage(T.bg, 0, 0, W, H);
+
+    if (th.day) {
+      // clouds drifting slowly across
+      for (i = 0; i < T.clouds.length; i++) {
+        var cl = T.clouds[i]; cl.x += cl.v * dt; if (cl.x > W + 10) cl.x = -cl.img.width - 10;
+        ctx.drawImage(cl.img, cl.x, cl.y);
+      }
+      // a few slow shafts of sunlight that breathe
+      var prevO = ctx.globalCompositeOperation; ctx.globalCompositeOperation = "lighter";
+      for (i = 0; i < 4; i++) {
+        var ra = 0.5 + 0.28 * i + 0.03 * Math.sin(t * 0.3 + i), rl = H * 1.1;
+        var rg = ctx.createLinearGradient(T.sx, T.sy, T.sx - Math.sin(ra) * rl, T.sy + Math.cos(ra) * rl);
+        rg.addColorStop(0, "rgba(255,240,190," + (0.03 + 0.012 * Math.sin(t * 0.4 + i * 2)).toFixed(3) + ")"); rg.addColorStop(1, "rgba(255,240,190,0)");
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.moveTo(T.sx, T.sy);
+        ctx.lineTo(T.sx - Math.sin(ra - 0.05) * rl, T.sy + Math.cos(ra - 0.05) * rl); ctx.lineTo(T.sx - Math.sin(ra + 0.05) * rl, T.sy + Math.cos(ra + 0.05) * rl);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.globalCompositeOperation = prevO;
+    }
 
     var by = groundY(T, cx) + 2, tw = u * 0.06;
     function bw(d) { return Math.max(1, tw * Math.pow(0.72, d)); }
 
-    // trunk flare
-    ctx.fillStyle = "#1c2424";
+    // the canopy's shadow on the ground, thrown away from the light (to the left)
+    var sg = ctx.createRadialGradient(cx - u * 0.18, by + u * 0.02, 0, cx - u * 0.18, by + u * 0.02, u * 0.55);
+    sg.addColorStop(0, th.shadow); sg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save(); ctx.translate(0, by + u * 0.02); ctx.scale(1, 0.12); ctx.translate(0, -(by + u * 0.02));
+    ctx.fillStyle = sg; ctx.fillRect(cx - u * 0.8, by - u * 0.6, u * 1.2, u * 1.6); ctx.restore();
+
+    // trunk flare, shaded across its width: shadowed on the left, catching light on the right
+    var tg = ctx.createLinearGradient(cx - tw * 1.5, 0, cx + tw * 1.5, 0);
+    tg.addColorStop(0, th.bark); tg.addColorStop(0.55, th.bark); tg.addColorStop(0.85, "rgba(" + th.barkLit + "," + th.barkLitA + ")"); tg.addColorStop(1, th.bark);
+    ctx.fillStyle = th.bark;
     ctx.beginPath();
     ctx.moveTo(cx - tw * 1.5, by + 3);
     ctx.quadraticCurveTo(cx - tw * 0.65, by, cx - tw * 0.5, by - tw * 1.8);
     ctx.lineTo(cx + tw * 0.5, by - tw * 1.8);
     ctx.quadraticCurveTo(cx + tw * 0.65, by, cx + tw * 1.5, by + 3);
     ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.clip(); ctx.fillStyle = tg; ctx.fillRect(cx - tw * 1.6, by - tw * 2, tw * 3.2, tw * 2.2);
+    ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = 1; ctx.beginPath();   // bark furrows
+    for (i = -3; i <= 3; i++) { ctx.moveTo(cx + i * tw * 0.22, by + 2); ctx.quadraticCurveTo(cx + i * tw * 0.2 + tw * 0.05, by - tw * 0.8, cx + i * tw * 0.17, by - tw * 1.8); }
+    ctx.stroke(); ctx.restore();
 
     // branches: tapered, each child inheriting the sway of its parent
     treeTips.length = 0;
@@ -1201,13 +1471,13 @@
       var a = ang + (wd * 0.03 + 0.010 * Math.sin(t * 1.3 + id * 0.9)) * (1 + d * 0.22);
       var x2 = x0 + Math.sin(a) * len, y2 = y0 - Math.cos(a) * len;
       var w0 = bw(d), w1 = bw(d + 1), nx = Math.cos(a), ny = Math.sin(a);
-      ctx.fillStyle = "#1c2424";
+      ctx.fillStyle = th.bark;
       ctx.beginPath();
       ctx.moveTo(x0 - nx * w0 / 2, y0 - ny * w0 / 2); ctx.lineTo(x2 - nx * w1 / 2, y2 - ny * w1 / 2);
       ctx.lineTo(x2 + nx * w1 / 2, y2 + ny * w1 / 2); ctx.lineTo(x0 + nx * w0 / 2, y0 + ny * w0 / 2);
       ctx.closePath(); ctx.fill();
       ctx.beginPath(); ctx.arc(x2, y2, w1 / 2, 0, 6.3); ctx.fill();
-      if (d > 0 && d < 4) lit.push(x0 + nx * w0 * 0.22, y0 + ny * w0 * 0.22, x2 + nx * w1 * 0.22, y2 + ny * w1 * 0.22, Math.max(1, w1 * 0.35));
+      if (d < 5) lit.push(x0 + nx * w0 * 0.24, y0 + ny * w0 * 0.24, x2 + nx * w1 * 0.24, y2 + ny * w1 * 0.24, Math.max(1, w1 * 0.4));
       if (d >= 3) treeTips.push(x2, y2, id, d);
       if (d >= D - 1) return;
       var spread = 0.3 + 0.26 * hash(id), l2 = len * (0.77 + 0.09 * hash(id + 0.5));
@@ -1216,9 +1486,11 @@
     }
     branch(cx, by - tw * 1.6, u * 0.2, 0.03, 0, 1);
 
-    // moonlight along the right edge of the bigger limbs
-    ctx.strokeStyle = "rgba(160,190,180,0.32)"; ctx.lineCap = "round";
+    // light along the sun-facing edge of the limbs (strongest on the right, since the left is in shadow)
+    ctx.lineCap = "round";
     for (i = 0; i < lit.length; i += 5) {
+      var side = Math.max(0.25, Math.min(1, 0.55 + (lit[i] - cx) / (u * 0.6)));
+      ctx.strokeStyle = "rgba(" + th.barkLit + "," + (th.barkLitA * side).toFixed(2) + ")";
       ctx.lineWidth = lit[i + 4];
       ctx.beginPath(); ctx.moveTo(lit[i], lit[i + 1]); ctx.lineTo(lit[i + 2], lit[i + 3]); ctx.stroke();
     }
@@ -1243,18 +1515,20 @@
       }
     }
     ctx.globalAlpha = 1;
-    // glints of leaf catching the moon
-    ctx.fillStyle = "rgba(200,235,205,0.55)";
+    // glints of leaf catching the light, more of them on the lit side
+    ctx.fillStyle = th.glint;
     for (i = 0; i < treeTips.length; i += 4) {
-      if (treeTips[i + 3] !== 7) continue;
+      if (treeTips[i + 3] < 6) continue;
       id2 = treeTips[i + 2];
-      if (hash(id2 + 33) < 0.6 || treeTips[i] < cx) continue;
+      if (hash(id2 + 33) < (th.day ? 0.5 : 0.62) || treeTips[i] < cx - u * 0.05) continue;
+      ctx.globalAlpha = 0.5 + 0.5 * Math.max(0, Math.sin(t * 1.3 + id2));   // shimmer as the leaves turn
       ctx.beginPath();
       ctx.ellipse(treeTips[i] + u * 0.01, treeTips[i + 1] - u * 0.012, u * 0.007, u * 0.0035, Math.sin(t * 2.5 + id2), 0, 6.3); ctx.fill();
     }
+    ctx.globalAlpha = 1;
 
     // grass tufts bending with the wind
-    ctx.strokeStyle = "rgba(52,92,84,0.85)"; ctx.lineWidth = 1.3; ctx.lineCap = "round";
+    ctx.strokeStyle = th.grass; ctx.lineWidth = 1.3; ctx.lineCap = "round";
     ctx.beginPath();
     for (i = 0; i < T.grass.length; i++) {
       var b = T.grass[i], gy0 = groundY(T, b.x) + 3;
@@ -1263,24 +1537,37 @@
     }
     ctx.stroke();
 
-    // fireflies; a tap brightens them
+    // fireflies at night, drifting pollen by day; a tap brightens them
     var prevOp = ctx.globalCompositeOperation; ctx.globalCompositeOperation = "lighter";
     for (i = 0; i < T.flies.length; i++) {
       var f = T.flies[i];
-      x = f.x + Math.sin(t * f.sp + f.ph) * u * 0.08; y = f.y + Math.cos(t * f.sp * 1.3 + f.ph) * u * 0.04;
-      var a = Math.max(0, Math.sin(t * 0.9 + f.ph * 3)) * (0.5 + V.pulse * 0.5);
+      x = f.x + Math.sin(t * f.sp + f.ph) * u * 0.08 + (th.day ? wd * u * 0.05 : 0); y = f.y + Math.cos(t * f.sp * 1.3 + f.ph) * u * 0.04;
+      var a = (th.day ? 0.35 + 0.35 * Math.sin(t * 0.6 + f.ph) : Math.max(0, Math.sin(t * 0.9 + f.ph * 3))) * (0.5 + V.pulse * 0.5) * (th.day ? 1 : 1);
       if (a < 0.03) continue;
-      ctx.globalAlpha = a; var fr = u * (0.012 + 0.01 * V.pulse);
+      ctx.globalAlpha = a * (th.day ? 0.6 : 1); var fr = u * (th.day ? 0.006 : 0.012) * (1 + V.pulse * 0.8);
       ctx.drawImage(T.fly, x - fr, y - fr, fr * 2, fr * 2);
     }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = prevOp;
+
+    // a distant bird now and then, by day
+    if (th.day) {
+      if (!T.bird && Math.random() < dt * 0.06) T.bird = { x: -20, y: H * (0.18 + 0.2 * Math.random()), v: 40 + 30 * Math.random(), ph: 0 };
+      if (T.bird) {
+        var bd = T.bird; bd.x += bd.v * dt; bd.y -= 4 * dt; bd.ph += dt * 7;
+        var fl = Math.sin(bd.ph) * u * 0.008;
+        ctx.strokeStyle = "rgba(40,50,50,0.7)"; ctx.lineWidth = 1.2; ctx.beginPath();
+        ctx.moveTo(bd.x - u * 0.014, bd.y - fl); ctx.quadraticCurveTo(bd.x - u * 0.005, bd.y - fl * 0.2 - 2, bd.x, bd.y);
+        ctx.quadraticCurveTo(bd.x + u * 0.005, bd.y - fl * 0.2 - 2, bd.x + u * 0.014, bd.y - fl); ctx.stroke();
+        if (bd.x > W + 20) T.bird = null;
+      }
+    }
 
     // a gust shakes a few leaves loose
     if (V.pulse > 0.25 && treeTips.length && Math.random() < V.pulse * 0.2 && fallen.length < 40) {
       n = Math.floor(Math.random() * (treeTips.length / 4)) * 4;
       fallen.push({ x: treeTips[n], y: treeTips[n + 1], vx: 20 + Math.random() * 30, vy: 12 + Math.random() * 20, ph: Math.random() * 6, r: u * 0.008 + Math.random() * 2.5 });
     }
-    ctx.fillStyle = "rgba(150,210,165,0.8)";
+    ctx.fillStyle = th.fall;
     for (i = fallen.length - 1; i >= 0; i--) {
       var lf = fallen[i];
       lf.x += (lf.vx + wd * 60) * dt; lf.y += lf.vy * dt + Math.sin(lf.ph) * 6 * dt; lf.ph += dt * 3;
@@ -1390,7 +1677,7 @@
     }
   }
 
-  var SCENES = { flame: sceneFlame, tree: sceneTree, rain: sceneRain, ocean: sceneOcean, stars: sceneStars };
+  var SCENES = { flame: sceneFlame, daytree: sceneDayTree, tree: sceneTree, rain: sceneRain, ocean: sceneOcean, stars: sceneStars };
 
   function drawScene(now) {
     var fn = SCENES[S.anchor];
@@ -1615,6 +1902,7 @@
       : "What pulled you away? One or two words.";
     els.hint.hidden = true; els.voicePanel.hidden = true; els.panel.hidden = false;
     els.input.value = "";
+    renderChips();
     els.input.focus({ preventScroll: true });
   }
   function commitLabel() {
@@ -1720,8 +2008,9 @@
     return m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
   }
 
-  function finish() {
+  function finish(discard) {
     if (!S.active) return;
+    $("cancelSheet").hidden = true;
     if (S.paused) closeNote(true);
     if (S.listening) endListening(true);
     commitLabel();
@@ -1735,11 +2024,13 @@
     document.documentElement.classList.remove("dark-session");
 
     var dur = Date.now() - S.startWall, n = S.entries.length;
-    var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
-    lsSet(KEY_TOTAL, String(total));
-    if (dur >= MIN_RECORD_MS) {
+    var counts_ = !discard && dur >= MIN_RECORD_MS;
+    if (counts_) {
+      var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
+      lsSet(KEY_TOTAL, String(total));
       saveSession({ start: S.startedAt, dur: dur, returns: n, entries: S.entries, notes: S.notes, scene: S.anchor });
     }
+    if (discard) { loadTotal(); renderCalendar(); show("home"); return; }
 
     var mins = Math.round(dur / 60000);
     var span = dur < 60000 ? "under a minute" : (mins + (mins === 1 ? " minute" : " minutes"));
@@ -1751,6 +2042,7 @@
       head.textContent = n === 1 ? "You came back once." : "You came back " + n + " times.";
       sub.textContent = "In " + span + " of sitting. Every one of those was the practice.";
     }
+    if (!counts_) sub.textContent += " That was under " + Math.round(MIN_RECORD_MS / 1000) + " seconds, so it wasn't saved or counted.";
 
     var block = $("logBlock");
     if (S.mode !== "tap" && n > 0) {
@@ -1795,6 +2087,145 @@
     renderCalendar();
     show("end");
   }
+
+  /* ---------- theme ---------- */
+  function applyTheme(t) {
+    var root = document.documentElement;
+    if (!t || t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    Array.prototype.forEach.call($("themes").children, function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-set") === (t || "auto")));
+    });
+  }
+  Array.prototype.forEach.call($("themes").children, function (b) {
+    b.addEventListener("click", function () { var t = b.getAttribute("data-theme-set"); lsSet(KEY_THEME, t); applyTheme(t); });
+  });
+  applyTheme(lsGet(KEY_THEME) || "auto");
+
+  /* ---------- presets, past sessions, distractions ---------- */
+  function loadPresets() {
+    var raw = lsGet(KEY_PRE);
+    if (raw === null) return PRESET_DEFAULTS.slice();
+    try { var a = JSON.parse(raw); return Array.isArray(a) ? a.filter(function (x) { return typeof x === "string" && x; }) : PRESET_DEFAULTS.slice(); }
+    catch (e) { return PRESET_DEFAULTS.slice(); }
+  }
+  function savePresets(a) { lsSet(KEY_PRE, JSON.stringify(a)); }
+  function hasPreset(a, t) { return a.some(function (x) { return x.toLowerCase() === t.toLowerCase(); }); }
+  function renderChips() {
+    var box = $("chips"); box.innerHTML = "";
+    loadPresets().forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = t;
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        els.input.value = t; commitLabel();
+      });
+      box.appendChild(b);
+    });
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function tally(entries) {
+    var c = {}, order = [];
+    (entries || []).forEach(function (e) {
+      var l = e && e.label ? String(e.label).trim() : "";
+      if (!l) return;
+      var k = l.toLowerCase();
+      if (!c[k]) { c[k] = { name: l, n: 0 }; order.push(k); }
+      c[k].n++;
+    });
+    return order.map(function (k) { return c[k]; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  function fmtDur(ms) {
+    var sec = Math.round(ms / 1000);
+    if (sec < 60) return sec + " sec";
+    var m = Math.floor(sec / 60), r = sec % 60;
+    return m + " min" + (r >= 10 && m < 10 ? " " + r + " sec" : "");
+  }
+  function renderHist() {
+    var h = loadHist().slice().sort(function (a, b) { return (b.start || 0) - (a.start || 0); });
+    var list = $("histList"); list.innerHTML = "";
+    $("histSub").textContent = h.length ? h.length + (h.length === 1 ? " session" : " sessions") + ", newest first." : "";
+    if (!h.length) { list.appendChild(el("p", "empty", "Nothing yet. Sits longer than a few seconds show up here.")); return; }
+    h.forEach(function (r) {
+      var d = new Date(r.start || 0);
+      var card = el("div", "sess");
+      card.appendChild(el("h3", "", d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+        + " · " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })));
+      if (r.scene && NAMES[r.scene]) card.appendChild(el("p", "meta", NAMES[r.scene]));
+      var st = el("div", "stats");
+      var a = el("span"); a.appendChild(el("b", "", String(r.returns || 0))); a.appendChild(document.createTextNode((r.returns === 1 ? "tap" : "taps")));
+      var b = el("span"); b.appendChild(el("b", "", fmtDur(r.dur || 0)));
+      st.appendChild(a); st.appendChild(b); card.appendChild(st);
+      var tl = tally(r.entries);
+      if (tl.length) {
+        card.appendChild(el("h4", "", "Distractions"));
+        var tags = el("div", "tags");
+        tl.forEach(function (x) { var t = el("span", "tag", x.name); if (x.n > 1) t.appendChild(el("i", "", "×" + x.n)); tags.appendChild(t); });
+        card.appendChild(tags);
+      }
+      var notes = (r.notes || []).filter(function (n) { return n && n.text; });
+      if (notes.length) {
+        card.appendChild(el("h4", "", "Notes"));
+        var ul = el("ul");
+        notes.forEach(function (n) { var li = el("li", "", String(n.text)); ul.appendChild(li); });
+        card.appendChild(ul);
+      }
+      var del = el("button", "link-btn", "Delete this session"); del.type = "button";
+      del.addEventListener("click", function () {
+        if (!window.confirm("Delete this session? This can't be undone.")) return;
+        var all = loadHist(), i = -1;
+        for (var j = 0; j < all.length; j++) { if (all[j].start === r.start && all[j].dur === r.dur) { i = j; break; } }
+        if (i < 0) return;
+        all.splice(i, 1); lsSet(KEY_HIST, JSON.stringify(all));
+        lsSet(KEY_TOTAL, String(Math.max(0, (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) - (r.returns || 0))));
+        loadTotal(); renderCalendar(); renderHist();
+      });
+      card.appendChild(del);
+      list.appendChild(card);
+    });
+  }
+  function renderDist() {
+    var pre = loadPresets();
+    var pl = $("presetList"); pl.innerHTML = "";
+    if (!pre.length) pl.appendChild(el("p", "empty", "No presets. Add one below."));
+    pre.forEach(function (t, i) {
+      var row = el("div", "drow"); row.appendChild(el("span", "name", t));
+      var rm = el("button", "link-btn", "Remove"); rm.type = "button";
+      rm.addEventListener("click", function () { var a = loadPresets(); a.splice(i, 1); savePresets(a); renderDist(); });
+      row.appendChild(rm); pl.appendChild(row);
+    });
+    var all = [];
+    loadHist().forEach(function (r) { all = all.concat(r.entries || []); });
+    var tl = tally(all);
+    var al = $("allList"); al.innerHTML = "";
+    if (!tl.length) al.appendChild(el("p", "empty", "Nothing yet. Distractions you type or say during a sit are collected here."));
+    tl.forEach(function (x) {
+      var row = el("div", "drow"); row.appendChild(el("span", "name", x.name)); row.appendChild(el("span", "n", "×" + x.n));
+      if (!hasPreset(pre, x.name)) {
+        var ad = el("button", "link-btn", "Make preset"); ad.type = "button";
+        ad.addEventListener("click", function () { var a = loadPresets(); a.push(x.name); savePresets(a); renderDist(); });
+        row.appendChild(ad);
+      }
+      al.appendChild(row);
+    });
+  }
+  function addPreset() {
+    var inp = $("presetInput"), t = inp.value.trim().replace(/\s+/g, " ");
+    if (!t) return;
+    var a = loadPresets();
+    if (!hasPreset(a, t)) { a.push(t); savePresets(a); }
+    inp.value = ""; renderDist();
+  }
+  $("openHist").addEventListener("click", function () { renderHist(); show("hist"); });
+  $("openDist").addEventListener("click", function () { renderDist(); show("dist"); });
+  $("histBack").addEventListener("click", function () { show("home"); });
+  $("distBack").addEventListener("click", function () { show("home"); });
+  $("presetAdd").addEventListener("click", addPreset);
+  $("presetInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addPreset(); } });
 
   /* ---------- calendar ---------- */
   var calSel = "";
@@ -1896,6 +2327,15 @@
   $("again").addEventListener("click", begin);
   $("home2").addEventListener("click", function () { show("home"); });
   $("finish").addEventListener("click", function (e) { e.stopPropagation(); finish(); });
+  $("cancel").addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (!S.active) return;
+    $("cancelSheet").hidden = false;
+    $("cancelKeep").focus();
+  });
+  $("cancelKeep").addEventListener("click", function () { $("cancelSheet").hidden = true; blurActive(); });
+  $("cancelYes").addEventListener("click", function () { $("cancelSheet").hidden = true; finish(true); });
+  $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") { $("cancelSheet").hidden = true; blurActive(); } });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
   $("previewBtn").addEventListener("click", togglePreview);
