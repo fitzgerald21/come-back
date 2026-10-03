@@ -593,6 +593,7 @@
     <div class="bar-actions">
       <button class="finish" id="soundBtn" type="button" aria-expanded="false" aria-controls="soundMenu">Sound</button>
       <button class="finish" id="noteBtn" type="button">Note</button>
+      <button class="finish" id="pauseBtn" type="button">Pause</button>
       <button class="finish" id="cancel" type="button">Cancel</button>
       <button class="finish" id="finish" type="button">Finish</button>
     </div>
@@ -717,6 +718,17 @@
     <div class="sheet-actions">
       <button class="btn" id="cancelKeep" type="button">Keep sitting</button>
       <button class="btn ghost" id="cancelYes" type="button">Yes, cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE SHEET -->
+<div id="pauseSheet" class="sheet" hidden role="alertdialog" aria-modal="true" aria-labelledby="pauseTitle">
+  <div class="sheet-card">
+    <h3 id="pauseTitle">Paused</h3>
+    <p>The timer is stopped. This time won't count.</p>
+    <div class="sheet-actions">
+      <button class="btn" id="pauseResume" type="button">Resume</button>
     </div>
   </div>
 </div>
@@ -2020,7 +2032,7 @@
     els.clock.classList.toggle("off", !$("showClock").checked);
     els.slot.classList.remove("has-reminder");
     els.reminder.textContent = "";
-    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true;
+    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true; $("pauseSheet").hidden = true;
     els.hint.classList.remove("dim", "gone");
     S.preview = false; clearTimeout(S.pvTimer); updatePreviewBtn();
     closeMenu();
@@ -2171,14 +2183,26 @@
   }
 
   /* ---------- notes (pause) ---------- */
-  function openNote() {
-    if (!S.active || S.paused) return;
+  function beginPause() {
     if (S.listening) endListening(true);
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
     cancelEndBell();
     setDim(false);
     try { window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  function endPause() {
+    var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
+    S.startWall += gap; S.startPerf += gap;
+    S.paused = false;
+    blurActive();
+    updateClock();
+    scheduleEndBell();
+    syncDim();
+  }
+  function openNote() {
+    if (!S.active || S.paused) return;
+    beginPause();
     els.noteText.value = "";
     els.sheet.hidden = false;
     els.noteText.focus();
@@ -2187,13 +2211,15 @@
     if (!S.paused) return;
     var txt = els.noteText.value.trim();
     if (save && txt) S.notes.push({ at: S.pausedAt - S.startWall, text: txt });
-    var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
-    S.startWall += gap; S.startPerf += gap;
-    S.paused = false;
-    els.sheet.hidden = true; blurActive();
-    updateClock();
-    scheduleEndBell();
-    syncDim();
+    els.sheet.hidden = true;
+    $("pauseSheet").hidden = true;
+    endPause();
+  }
+  function openPause() {
+    if (!S.active || S.paused) return;
+    beginPause();
+    $("pauseSheet").hidden = false;
+    $("pauseResume").focus();
   }
 
   /* ---------- finishing ---------- */
@@ -2781,6 +2807,9 @@
   $("cancelKeep").addEventListener("click", function () { $("cancelSheet").hidden = true; blurActive(); });
   $("cancelYes").addEventListener("click", function () { $("cancelSheet").hidden = true; finish(true); });
   $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") { $("cancelSheet").hidden = true; blurActive(); } });
+  $("pauseBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openPause(); });
+  $("pauseResume").addEventListener("click", function () { closeNote(false); });
+  $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") closeNote(false); });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
   buildControls($("homeSound"));
