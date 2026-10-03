@@ -292,7 +292,7 @@
   .snd-row select { font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.4rem 0.6rem; max-width: 60%; }
   .snd-row input[type="range"] { width: 55%; accent-color: var(--ink); }
   .snd-two { transition: opacity 0.2s; }
-  .snd-two.off { opacity: 0.45; }
+  .snd-two.off > :not(.snd-preview) { opacity: 0.45; }   /* the exercise is off, but you can still hear it */
   .snd-row.stack { flex-wrap: wrap; gap: 0.2rem; }
   .snd-row.stack > span { flex: 1 1 100%; }
   .snd-row.stack input[type="range"] { width: 100%; }
@@ -303,7 +303,10 @@
   .soundmenu { position: absolute; top: 3.7rem; right: 1.25rem; z-index: 5; width: min(21rem, calc(100% - 2.5rem)); max-height: calc(100% - 5rem); overflow-y: auto; cursor: default;
     background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 0.4rem 1rem 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
   .soundmenu .check { margin-top: 0.8rem; }
-  #previewBtn { margin-top: 1rem; padding: 0.55rem 1.3rem; font-size: 0.95rem; }
+  .snd-preview { margin-top: 0.6rem; padding: 0.5rem 1.2rem; font-size: 0.93rem; }
+  .snd-more { margin-top: 1rem; }
+  .snd-more > summary { font-weight: 600; }
+  .snd-two .snd-adv { margin-top: 0.9rem; }
 
   /* ---------- Theme picker ---------- */
   .themes { display: flex; gap: 0.55rem; flex-wrap: wrap; margin: 0 0 1.75rem; }
@@ -526,13 +529,12 @@
     </fieldset>
 
     <details>
-      <summary>Sound and display</summary>
-      <label class="check">
-        <input type="checkbox" id="sounds" checked>
-        <span>Soft sounds
-          <small>A bell to begin and end, and a quiet tone at each step. With Eyes closed, your reminders are also read aloud.</small>
-        </span>
-      </label>
+      <summary>Sound</summary>
+      <div id="homeSound"></div>
+    </details>
+
+    <details>
+      <summary>Display</summary>
       <label class="check">
         <input type="checkbox" id="showClock" checked>
         <span>Show the timer while I sit
@@ -545,13 +547,6 @@
           <small>Turn this off if the number starts to feel like a score. You'll still see it at the end.</small>
         </span>
       </label>
-    </details>
-
-    <details>
-      <summary>Scene sounds and two-tone listening</summary>
-      <p>Each scene can have its own sound: wind in the leaves, rain, waves. You can also add an exercise: two steady tones at once, like a fridge humming in two voices. Try to keep hearing both. When one slips away, or you lose both, tap, same as any other return. All of this can be changed during a sit, too.</p>
-      <div id="homeSound"></div>
-      <button class="btn ghost" id="previewBtn" type="button">Hear the two tones</button>
     </details>
 
     <details>
@@ -784,7 +779,7 @@
   };
 
   var S = {
-    mode: "tap", anchor: "circle", limit: 0, sound: true, voiceOK: false, voiceReason: "", micDenied: false,
+    mode: "tap", anchor: "circle", limit: 0, voiceOK: false, voiceReason: "", micDenied: false,
     entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
     listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
@@ -864,7 +859,7 @@
   }
   function setMaster() { if (MASTER) MASTER.gain.setTargetAtTime(P.vol * P.vol * 1.3, AC.currentTime, 0.05); }
   function ping(freq, vol, dur, delay, dest) {
-    if (!AC || !S.sound) return;
+    if (!AC || !P.bells) return;
     try {
       var t0 = AC.currentTime + (delay || 0);
       var o = AC.createOscillator(), g = AC.createGain();
@@ -888,7 +883,7 @@
   function cancelEndBell() { if (S.endBell) { try { S.endBell.gain.disconnect(); } catch (e) {} S.endBell = null; } }
   function scheduleEndBell() {
     cancelEndBell();
-    if (!S.active || !S.limit || !S.sound || !AC) return;
+    if (!S.active || !S.limit || !P.bells || !AC) return;
     var left = S.limit - (Date.now() - S.startWall);
     if (left <= 0) return;
     try {
@@ -901,7 +896,7 @@
   function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
   function speakText(text) {
-    if (!(S.sound && S.anchor === "dark" && "speechSynthesis" in window)) return;
+    if (!(P.speak && S.anchor === "dark" && "speechSynthesis" in window)) return;
     try {
       window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
@@ -1206,12 +1201,14 @@
   function ambReact() { if (curAmb && curAmb.react) curAmb.react(); }
 
   /* ---------- sound settings (shared by the home screen and the in-session menu) ---------- */
-  var P = { amb: true, real: true, dual: false, preset: "easy", vol: 0.7 };
+  var P = { amb: true, bells: true, speak: true, real: true, dual: false, preset: "easy", vol: 0.7 };
   FIELDS.forEach(function (k) { P[k] = PRESETS.easy[k]; });
   (function () {
     try {
       var o = JSON.parse(lsGet(KEY_SND) || "{}") || {};
       if (typeof o.amb === "boolean") P.amb = o.amb;
+      if (typeof o.bells === "boolean") P.bells = o.bells;
+      if (typeof o.speak === "boolean") P.speak = o.speak;
       if (typeof o.real === "boolean") P.real = o.real;
       if (typeof o.dual === "boolean") P.dual = o.dual;
       if (typeof o.vol === "number" && o.vol >= 0 && o.vol <= 1) P.vol = o.vol;
@@ -1232,24 +1229,30 @@
   }
   function buildControls(root) {
     root.innerHTML =
+      slider("vol", "Volume", 'min="0.05" max="1" step="0.01"') +
       '<label class="check"><input type="checkbox" data-k="amb"><span>Scene sounds<small>Wind, rain, waves and so on, matched to the scene.</small></span></label>' +
-      '<label class="check snd-real" hidden><input type="checkbox" data-k="real"><span>Use my recordings<small>Plays the files in the sounds folder instead of the built-in sound.</small></span></label>' +
-      '<label class="check"><input type="checkbox" data-k="dual"><span>Two-tone listening<small>Two steady tones at once. Try to hear both.</small></span></label>' +
-      '<div class="snd-two">' +
-        '<label class="snd-row"><span>Preset</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
-        '<p class="snd-note" data-role="note"></p>' +
-        '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
-          '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
-          slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-          '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
-          slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-          slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
-          slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
-          slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
-          '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart, or far enough that they read as two.</p>' +
-        "</details>" +
-      "</div>" +
-      '<label class="snd-row"><span>Volume</span><input type="range" data-k="vol" min="0.05" max="1" step="0.01"></label>';
+      '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>' +
+      '<label class="check"><input type="checkbox" data-k="speak"><span>Read reminders aloud<small>Speaks your reminder after each return. Only with Eyes closed.</small></span></label>' +
+      '<details class="snd-adv snd-more"><summary>More sound options</summary>' +
+        '<label class="check snd-real" hidden><input type="checkbox" data-k="real"><span>Natural recordings<small>Use the real recordings for scene sounds. Turn off for generated sound.</small></span></label>' +
+        '<label class="check"><input type="checkbox" data-k="dual"><span>Two-tone listening<small>An exercise: two steady tones at once. Try to keep hearing both, and tap when one slips away.</small></span></label>' +
+        '<div class="snd-two">' +
+          '<label class="snd-row"><span>Difficulty</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
+          '<p class="snd-note" data-role="note"></p>' +
+          '<button class="btn ghost snd-preview" type="button">Hear the two tones</button>' +
+          '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
+            '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
+            slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+            '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
+            slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+            slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
+            slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
+            slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
+            '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart, or far enough that they read as two.</p>' +
+          "</details>" +
+        "</div>" +
+      "</details>";
+    root.querySelector(".snd-preview").addEventListener("click", togglePreview);
     root.addEventListener("input", onSoundChange);
     root.addEventListener("change", onSoundChange);
     controls.push(root);
@@ -1266,6 +1269,8 @@
     else if (k === "preset") { P.preset = el.value; if (PRESETS[el.value]) FIELDS.forEach(function (f) { P[f] = PRESETS[el.value][f]; }); }
     else { P[k] = el.value; P.preset = "custom"; }
     lsSet(KEY_SND, JSON.stringify(P));
+    if (k === "bells" && S.active) { if (P.bells) scheduleEndBell(); else cancelEndBell(); }
+    if (k === "speak" && !P.speak) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     if (k === "real") ambName = "";   // rebuild the running scene sound with or without the recording
     syncControls();
     initAudio();
@@ -1293,7 +1298,10 @@
     });
   }
   function updateRealUI() { syncControls(); }
-  function updatePreviewBtn() { $("previewBtn").textContent = S.preview ? "Stop" : "Hear the two tones"; syncControls(); }
+  function updatePreviewBtn() {
+    Array.prototype.forEach.call(document.querySelectorAll(".snd-preview"), function (b) { b.textContent = S.preview ? "Stop" : "Hear the two tones"; });
+    syncControls();
+  }
   function togglePreview() {
     initAudio(); if (!AC) return;
     S.preview = !S.preview;
@@ -1988,7 +1996,6 @@
     S.order = shuffle(lines); S.oi = 0;
     S.mode = document.querySelector('input[name="mode"]:checked').value;
     S.anchor = document.querySelector('input[name="anchor"]:checked').value;
-    S.sound = $("sounds").checked;
     initAudio(); // must run inside the click gesture, even if the bells are off (scene sounds still need it)
 
     if (S.mode === "voice") {
@@ -2023,7 +2030,7 @@
     setScene(S.anchor, true);
     updateClock();
     lockScreen();
-    if (S.sound) bell(396, 0.12);
+    if (P.bells) bell(396, 0.12);
     scheduleEndBell();
     $("dimNum").textContent = "0"; $("dimWord").textContent = "returns";
     clearTimeout(S.hintTimer);
@@ -2209,7 +2216,7 @@
     applyAudio();
     // if the scheduled closing bell has already rung (or is ringing now), don't ring it twice
     var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
-    if (S.sound && !rung) bell(396, 0.12);
+    if (P.bells && !rung) bell(396, 0.12);
     if (rung) S.endBell = null; else cancelEndBell();
     S.peek = false; clearTimeout(peekTimer); setDim(false);
     document.documentElement.classList.remove("dark-session");
@@ -2776,7 +2783,6 @@
   $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") { $("cancelSheet").hidden = true; blurActive(); } });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
-  $("previewBtn").addEventListener("click", togglePreview);
   buildControls($("homeSound"));
   buildControls(els.menu);
   $("noteSave").addEventListener("click", function () { closeNote(true); });
