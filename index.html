@@ -202,6 +202,11 @@
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
   .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: 0.6; cursor: default; }
+  .begin-bar { position: sticky; bottom: 0; z-index: 3; margin: 1.5rem -1.25rem 0; padding: 1.4rem 1.25rem max(1rem, env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to bottom, transparent, var(--bg) 1.2rem); }
+  .btn.begin { display: flex; width: 100%; padding: 1.15rem 1.5rem; font-size: 1.45rem; font-family: "Instrument Serif", Georgia, serif; font-weight: 400; letter-spacing: 0.02em; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
+  .theme-wrap { margin-top: 2rem; }
+  .theme-wrap .themes { margin: 0.75rem 0 0; }
   .home-foot { margin-top: 2.25rem; color: var(--muted); font-size: 0.95rem; }
   .home-foot q { font-family: "Instrument Serif", Georgia, serif; font-size: 1.35rem; line-height: 1.25; color: var(--ink); display: block; margin-bottom: 0.5rem; quotes: none; }
 
@@ -299,6 +304,7 @@
 
   /* ---------- Theme picker ---------- */
   .themes { display: flex; gap: 0.55rem; flex-wrap: wrap; margin: 0 0 1.75rem; }
+  .themes[hidden] { display: none; }
   .theme-btn { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 1px solid var(--line); padding: 0; cursor: pointer; }
   .theme-btn[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
 
@@ -407,7 +413,6 @@
     <h1>Come back</h1>
     <p class="lede">Settle in and breathe. Each time you notice your mind has wandered, tap. That noticing is the whole practice, and every tap counts as a point. You can't lose.</p>
 
-    <div class="themes" id="themes" role="group" aria-label="Theme"><button type="button" class="theme-btn" data-theme-set="auto" style="background:linear-gradient(135deg,#E8EFEB 50%,#0D1A1F 50%)" aria-label="Auto" title="Auto"></button><button type="button" class="theme-btn" data-theme-set="light" style="background:#E8EFEB" aria-label="Mist" title="Mist"></button><button type="button" class="theme-btn" data-theme-set="sand" style="background:#F3EBDD" aria-label="Sand" title="Sand"></button><button type="button" class="theme-btn" data-theme-set="rose" style="background:#F6E9EA" aria-label="Rose" title="Rose"></button><button type="button" class="theme-btn" data-theme-set="dusk" style="background:#1B1830" aria-label="Dusk" title="Dusk"></button><button type="button" class="theme-btn" data-theme-set="forest" style="background:#0F1D15" aria-label="Forest" title="Forest"></button><button type="button" class="theme-btn" data-theme-set="ember" style="background:#1E1412" aria-label="Ember" title="Ember"></button><button type="button" class="theme-btn" data-theme-set="dark" style="background:#0D1A1F" aria-label="Night" title="Night"></button></div>
 
     <fieldset>
       <legend>When you notice, you…</legend>
@@ -471,7 +476,7 @@
         <label class="choice">
           <input type="radio" name="anchor" value="dark">
           <strong>Eyes closed</strong>
-          <span>The screen goes dark. Best with sound on.</span>
+          <span>The screen goes black, with just one big number counting your returns. Best with sound on or a handheld button.</span>
         </label>
       </div>
       <p class="subnote">During a sit, swipe left or right to change the scene.</p>
@@ -481,10 +486,10 @@
       <legend>How long?</legend>
       <div class="seg">
         <label class="choice"><input type="radio" name="len" value="300000"><span>5 min</span></label>
-        <label class="choice"><input type="radio" name="len" value="600000" checked><span>10 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="600000"><span>10 min</span></label>
         <label class="choice"><input type="radio" name="len" value="1200000"><span>20 min</span></label>
         <label class="choice"><input type="radio" name="len" value="custom"><span>Custom</span></label>
-        <label class="choice"><input type="radio" name="len" value="0"><span>No limit</span></label>
+        <label class="choice"><input type="radio" name="len" value="0" checked><span>No limit</span></label>
       </div>
       <div class="custom" id="customRow" hidden>
         <input type="number" id="customMin" inputmode="decimal" min="0.1" step="any" placeholder="25" aria-label="Custom length in minutes">
@@ -505,12 +510,6 @@
         <input type="checkbox" id="showClock" checked>
         <span>Show the timer while I sit
           <small>Counts down if you set a length, up if not.</small>
-        </span>
-      </label>
-      <label class="check">
-        <input type="checkbox" id="dimStart">
-        <span>Start with a dim screen
-          <small>A black screen with one big number. Good with a handheld button. Only for "Just tap". You can turn it on or off during a sit from the Sound menu.</small>
         </span>
       </label>
       <label class="check">
@@ -535,7 +534,7 @@
       <button class="link-btn" id="resetRem" type="button">Restore the starter set</button>
     </details>
 
-    <button class="btn" id="begin" type="button">Begin</button>
+    <div class="begin-bar"><button class="btn begin" id="begin" type="button">Begin</button></div>
 
     <div class="home-links">
       <button class="btn ghost" id="openHist" type="button">Past sessions</button>
@@ -549,6 +548,11 @@
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-legend" id="calLegend"></div>
       <div class="cal-detail" id="calDetail" aria-live="polite"></div>
+    </div>
+
+    <div class="theme-wrap">
+      <button class="link-btn" id="themeBtn" type="button" aria-expanded="false" aria-controls="themes">Theme</button>
+    <div class="themes" id="themes" hidden role="group" aria-label="Theme"><button type="button" class="theme-btn" data-theme-set="auto" style="background:linear-gradient(135deg,#E8EFEB 50%,#0D1A1F 50%)" aria-label="Auto" title="Auto"></button><button type="button" class="theme-btn" data-theme-set="light" style="background:#E8EFEB" aria-label="Mist" title="Mist"></button><button type="button" class="theme-btn" data-theme-set="sand" style="background:#F3EBDD" aria-label="Sand" title="Sand"></button><button type="button" class="theme-btn" data-theme-set="rose" style="background:#F6E9EA" aria-label="Rose" title="Rose"></button><button type="button" class="theme-btn" data-theme-set="dusk" style="background:#1B1830" aria-label="Dusk" title="Dusk"></button><button type="button" class="theme-btn" data-theme-set="forest" style="background:#0F1D15" aria-label="Forest" title="Forest"></button><button type="button" class="theme-btn" data-theme-set="ember" style="background:#1E1412" aria-label="Ember" title="Ember"></button><button type="button" class="theme-btn" data-theme-set="dark" style="background:#0D1A1F" aria-label="Night" title="Night"></button></div>
     </div>
 
     <div class="home-foot">
@@ -757,7 +761,7 @@
     entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
     listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
-    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null, dim: false
+    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null, dim: false, peek: false
   };
 
   /* ---------- storage (guarded) ---------- */
@@ -1850,6 +1854,7 @@
 
   function setScene(name, quiet) {
     S.anchor = name;
+    S.peek = false;
     var isCanvas = CANVAS_SCENES.indexOf(name) >= 0;
     document.documentElement.classList.toggle("dark-session", name !== "circle");
     $("session").setAttribute("data-anchor", name);
@@ -1866,6 +1871,7 @@
       if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
     });
     applyAudio();
+    syncDim();
     if (!quiet) {
       els.sceneName.textContent = NAMES[name];
       els.sceneName.classList.add("show");
@@ -1993,7 +1999,6 @@
     if (S.sound) bell(396, 0.12);
     scheduleEndBell();
     $("dimNum").textContent = "0"; $("dimWord").textContent = "returns";
-    setDim($("dimStart").checked && S.mode === "tap");
     clearTimeout(S.hintTimer);
     S.hintTimer = setTimeout(function () {
       if (!S.active) return;
@@ -2028,7 +2033,6 @@
     els.count.classList.remove("bump"); void els.count.offsetWidth; els.count.classList.add("bump");
     $("dimNum").textContent = n; $("dimWord").textContent = els.countWord.textContent;
     $("dimNum").classList.remove("bump"); void $("dimNum").offsetWidth; $("dimNum").classList.add("bump");
-    if (S.mode !== "tap") setDim(false);   // typing or speaking needs the screen
     if (S.anchor === "circle") ripple();
     else { V.pulse = Math.min(1, V.pulse + 0.9); if (S.anchor === "stars") V.shoot = true; }
     ambReact();
@@ -2052,13 +2056,14 @@
       ? "Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so type it. One or two words."
       : "What pulled you away? One or two words.";
     els.hint.hidden = true; els.voicePanel.hidden = true; els.panel.hidden = false;
+    syncDim();
     els.input.value = "";
     renderChips();
     els.input.focus({ preventScroll: true });
   }
   function commitLabel() {
     if (S.current && !S.listening) { S.current.label = els.input.value.trim(); S.current = null; }
-    if (!els.panel.hidden) { els.panel.hidden = true; blurActive(); restHint(); }
+    if (!els.panel.hidden) { els.panel.hidden = true; blurActive(); restHint(); syncDim(); }
   }
 
   /* ---------- listening ---------- */
@@ -2154,6 +2159,7 @@
     els.sheet.hidden = true; blurActive();
     updateClock();
     scheduleEndBell();
+    syncDim();
   }
 
   /* ---------- finishing ---------- */
@@ -2178,7 +2184,7 @@
     var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
     if (S.sound && !rung) bell(396, 0.12);
     if (rung) S.endBell = null; else cancelEndBell();
-    setDim(false);
+    S.peek = false; clearTimeout(peekTimer); setDim(false);
     document.documentElement.classList.remove("dark-session");
 
     var dur = Date.now() - S.startWall, n = S.entries.length;
@@ -2654,6 +2660,12 @@
       b4.appendChild(tags); box.appendChild(b4);
     }
   }
+  $("themeBtn").addEventListener("click", function () {
+    var open = $("themes").hidden;
+    $("themes").hidden = !open;
+    this.setAttribute("aria-expanded", String(open));
+    if (open) { try { $("themes").scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {} }
+  });
   $("openTrends").addEventListener("click", function () { renderTrends(); show("trends"); });
   $("trBack").addEventListener("click", function () { show("home"); });
   $("trTabs").addEventListener("click", function (e) {
@@ -2662,18 +2674,23 @@
   });
 
   /* ---------- dim screen ---------- */
-  var KEY_DIM = "come-back:dimstart";
+  // The Eyes closed scene is the black screen with one big number. Typing a label needs the screen,
+  // so the black comes back once it's saved. "Show screen" reveals the controls for a few seconds.
+  var peekTimer = 0;
+  function syncDim() { setDim(S.active && !S.paused && S.anchor === "dark" && els.panel.hidden && !S.peek); }
   function setDim(on) {
     on = !!on && S.active;
     S.dim = on;
     $("dim").hidden = !on;
-    var b = $("dimBtn"); if (b) b.textContent = on ? "Show the screen" : "Dim screen, big count";
     if (on) { closeMenu(); blurActive(); }
   }
-  $("dimStart").checked = lsGet(KEY_DIM) === "1";
-  $("dimStart").addEventListener("change", function () { lsSet(KEY_DIM, this.checked ? "1" : "0"); });
-  $("dimWake").addEventListener("click", function (e) { e.stopPropagation(); setDim(false); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dim) { e.preventDefault(); setDim(false); } });
+  function peek() {
+    S.peek = true; syncDim();
+    clearTimeout(peekTimer);
+    peekTimer = setTimeout(function () { S.peek = false; syncDim(); }, 10000);
+  }
+  $("dimWake").addEventListener("click", function (e) { e.stopPropagation(); peek(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dim) { e.preventDefault(); peek(); } });
 
   /* ---------- sound menu ---------- */
   function closeMenu() { els.menu.hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); }
@@ -2702,15 +2719,6 @@
   $("previewBtn").addEventListener("click", togglePreview);
   buildControls($("homeSound"));
   buildControls(els.menu);
-  (function () {
-    var b = el("button", "btn ghost", "Dim screen, big count"); b.type = "button"; b.id = "dimBtn"; b.style.marginTop = "1rem";
-    b.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (S.mode !== "tap") { b.textContent = "Dim needs “Just tap” mode"; return; }
-      setDim(!S.dim);
-    });
-    els.menu.appendChild(b);
-  })();
   $("noteSave").addEventListener("click", function () { closeNote(true); });
   $("noteSkip").addEventListener("click", function () { closeNote(false); });
   els.noteText.addEventListener("keydown", function (e) {
@@ -2769,8 +2777,10 @@
     // Bluetooth clickers act as keyboards: shutter remotes send Enter or the volume keys, media remotes send play/pause.
     if (e.key === "Enter" || e.key === "AudioVolumeUp" || e.key === "AudioVolumeDown" || e.key === "MediaPlayPause" ||
         e.key === "MediaTrackNext" || e.key === "MediaTrackPrevious") {
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (tag === "BUTTON" && e.key === "Enter") return;
+      // judge by where the key was pressed, not the focus now: saving a label with Enter blurs the box before this runs
+      var tt = e.target && e.target.tagName;
+      if (tt === "INPUT" || tt === "TEXTAREA" || tt === "SELECT" || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((tag === "BUTTON" || tt === "BUTTON") && e.key === "Enter") return;
       e.preventDefault();
       if (!e.repeat) remotePress();
       return;
