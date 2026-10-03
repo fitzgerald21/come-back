@@ -718,6 +718,26 @@
       }
       var p = KEEP.play(); if (p && p.catch) p.catch(function () {});
     } catch (e) {}
+    hookRemote();
+  }
+  // A handheld clicker, camera shutter or earbud button counts as a "come back". Phones send those as media
+  // buttons (play, pause, next, previous) to whichever page is playing audio, which the silent element above makes us.
+  var remoteHooked = false;
+  function remotePress() {
+    if (!S.active || S.paused) return;
+    if (S.listening) stopListening();
+    else if (els.panel.hidden && els.menu.hidden) catchIt();
+    // the phone has just paused or skipped our silent element, so start it again to keep receiving presses
+    if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
+    try { navigator.mediaSession.playbackState = "playing"; } catch (e) {}
+  }
+  function hookRemote() {
+    if (remoteHooked || !("mediaSession" in navigator)) return;
+    remoteHooked = true;
+    try { navigator.mediaSession.metadata = new MediaMetadata({ title: "Come back", artist: "Press to mark a return" }); } catch (e) {}
+    ["play", "pause", "stop", "nexttrack", "previoustrack", "seekforward", "seekbackward"].forEach(function (a) {
+      try { navigator.mediaSession.setActionHandler(a, remotePress); } catch (e) {}
+    });
   }
   function initAudio() {
     mediaChannel();
@@ -2417,6 +2437,15 @@
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       e.preventDefault(); stepScene(e.key === "ArrowRight" ? 1 : -1); return;
+    }
+    // Bluetooth clickers act as keyboards: shutter remotes send Enter or the volume keys, media remotes send play/pause.
+    if (e.key === "Enter" || e.key === "AudioVolumeUp" || e.key === "AudioVolumeDown" || e.key === "MediaPlayPause" ||
+        e.key === "MediaTrackNext" || e.key === "MediaTrackPrevious") {
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (tag === "BUTTON" && e.key === "Enter") return;
+      e.preventDefault();
+      if (!e.repeat) remotePress();
+      return;
     }
     if (e.code === "Space" || e.key === " ") {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
