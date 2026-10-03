@@ -137,7 +137,8 @@
     --btn-bg: #E6EDE9;
     --btn-ink: #0A0F12;
   }
-  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  :root.dimmed { --bg: #000; }   /* the whole page, including the strips by the notch and home bar, goes black with the dim screen */
+  html { background: var(--bg); scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   *, *::before, *::after { box-sizing: inherit; }
   body {
     height: 100%;
@@ -202,7 +203,9 @@
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
   .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: 0.6; cursor: default; }
-  .begin-bar { position: sticky; bottom: 0; z-index: 3; margin: 1.5rem -1.25rem 0; padding: 1.4rem 1.25rem max(1rem, env(safe-area-inset-bottom, 0px));
+  /* sticks flush to the true bottom edge: the screen's own bottom padding is offset so nothing scrolls by underneath */
+  .begin-bar { position: sticky; bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom, 0px))); z-index: 3; margin: 1.5rem -1.25rem 0;
+    padding: 1.4rem 1.25rem calc(max(1.25rem, env(safe-area-inset-bottom, 0px)) + 0.4rem);
     background: linear-gradient(to bottom, transparent, var(--bg) 1.2rem); }
   .btn.begin { display: flex; width: 100%; padding: 1.15rem 1.5rem; font-size: 1.45rem; font-family: "Instrument Serif", Georgia, serif; font-weight: 400; letter-spacing: 0.02em; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
   .theme-wrap { margin-top: 2rem; }
@@ -2682,6 +2685,7 @@
     on = !!on && S.active;
     S.dim = on;
     $("dim").hidden = !on;
+    document.documentElement.classList.toggle("dimmed", on);
     if (on) { closeMenu(); blurActive(); }
   }
   function peek() {
