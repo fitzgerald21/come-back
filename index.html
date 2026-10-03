@@ -236,13 +236,22 @@
   #session { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: pan-y; overflow: hidden; }
   #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0; }
   #session > .bar, #session > .stage, #session > .dots, #session > .bottom { position: relative; z-index: 1; }
-  .bar { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
   .count { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .count b { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.7rem; color: var(--ink); margin-right: 0.3rem; display: inline-block; }
   .count.bump b { animation: bump 0.6s ease-out; }
   .count.off, .clock.off { visibility: hidden; }
   .clock { flex: 1; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 1.05rem; letter-spacing: 0.03em; }
   .bar-actions { display: flex; gap: 0.4rem; }
+  @media (max-width: 520px) {
+    /* Five buttons don't fit beside the count and timer: Finish stays top right, the rest drop to their own row. */
+    .bar-actions { display: contents; }
+    .bar .count { order: 0; } .bar .clock { order: 1; }
+    #finish { order: 1; }
+    #soundBtn, #noteBtn, #pauseBtn, #cancel { order: 3; flex: 1 1 0; padding-left: 0.3rem; padding-right: 0.3rem; }
+    .bar::before { content: ""; order: 2; flex: 0 0 100%; height: 0; }
+    .soundmenu { top: 6.6rem; max-height: calc(100% - 7.5rem); }
+  }
   @keyframes bump { 0% { transform: scale(1); color: var(--ink); } 25% { transform: scale(1.35); color: var(--accent); } 100% { transform: scale(1); color: var(--ink); } }
   .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .orb-wrap { position: relative; width: min(66vmin, 26rem); aspect-ratio: 1; flex: none; }
@@ -284,7 +293,7 @@
   .heard { font-family: "Instrument Serif", Georgia, serif; font-size: 1.6rem; line-height: 1.15; min-height: 1.9rem; text-align: center; margin: 0.5rem 0 0.75rem; }
   #voicePanel { text-align: center; }
   #voicePanel .btn { padding: 0.5rem 1.4rem; }
-  .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.9rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+  .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.75rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 
   /* ---------- Sound controls (home + in-session menu) ---------- */
   .snd-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.65rem 0 0; font-size: 0.93rem; }
@@ -1111,12 +1120,14 @@
     drone: "Warm drone", chime: "Chime", breath: "Breathy", whir: "Whir (narrow noise)"
   };
   var PRESETS = {
-    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    note: "Far apart in pitch, one in each ear. Headphones help." },
-    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, note: "A fifth apart and more blended. Each swells and fades a little." },
-    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
-    fridge: { name: "Fridge", f1: 100, f2: 1100, s1: "buzz", s2: "whir", bal: 0.8, spread: 0.3, fade: 0.25, note: "A low hum with a thin whine on top, like an appliance." }
+    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    move: "drift", rate: 0.1, note: "Far apart in pitch, one in each ear. Headphones help." },
+    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, move: "drift", rate: 0.1, note: "A fifth apart and more blended. Each swells and fades a little." },
+    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  move: "drift", rate: 0.1, note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
+    sync:   { name: "Swell together", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.7, move: "sync", rate: 0.1, note: "Both tones rise and fall together, like one slow breath." },
+    opposite: { name: "Swell apart", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.7, move: "opposite", rate: 0.1, note: "One tone rises as the other falls. Follow whichever is fading." }
   };
-  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade"];
+  var MOVES = { drift: "Each on its own", sync: "Together (in sync)", opposite: "Opposite (out of sync)" };
+  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade", "move", "rate"];
   // Each sound is built into `out`, trimmed so they all sit at about the same loudness.
   function voice(L, sound, f, out) {
     var lp, g;
@@ -1139,16 +1150,17 @@
     else if (sound === "whir") { chain(L.noise("pink"), filt("bandpass", f, 14), gainNode(22), out); }
     else { L.osc("sine", f).connect(out); chain(L.osc("sine", f * 2), gainNode(0.14), out); }
   }
-  function tone(L, sound, f, lvl, pan, drift, rate) {
+  function tone(L, sound, f, lvl, pan, depth, rate, sign) {
     var out = gainNode(lvl);
     voice(L, sound, f, out);
-    if (drift > 0) { var d = gainNode(lvl * drift * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
+    if (depth > 0) { var d = gainNode(sign * lvl * depth * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
     chain(out, panner(pan), L.out);
   }
   function buildDual(L, c) {
-    var lv = 0.12;
-    tone(L, c.s1, c.f1, lv, -c.spread, c.fade, 0.07);
-    tone(L, c.s2, c.f2, lv * c.bal, c.spread, c.fade, 0.113);
+    var lv = 0.12, r1 = c.rate, r2 = c.rate;
+    if (c.move === "drift") r2 = c.rate * 1.6;   // different speeds wander in and out of step
+    tone(L, c.s1, c.f1, lv, -c.spread, c.fade, r1, 1);
+    tone(L, c.s2, c.f2, lv * c.bal, c.spread, c.fade, r2, c.move === "opposite" ? -1 : 1);
   }
   function dualKeyOf() { return FIELDS.map(function (k) { return P[k]; }).join("|"); }
 
@@ -1227,6 +1239,8 @@
       ["f1", "f2"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 40 && o[k] <= 4000) P[k] = o[k]; });
       ["bal"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1.5) P[k] = o[k]; });
       ["spread", "fade"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1) P[k] = o[k]; });
+      if (MOVES[o.move]) P.move = o.move;
+      if (typeof o.rate === "number" && o.rate >= 0.03 && o.rate <= 0.5) P.rate = o.rate;
       ["s1", "s2"].forEach(function (k) { if (SOUNDS[o[k]]) P[k] = o[k]; });
       if (PRESETS[P.preset]) FIELDS.forEach(function (k) { P[k] = PRESETS[P.preset][k]; });
     } catch (e) {}
@@ -1266,7 +1280,9 @@
           slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
           slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
           slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
-          slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
+          '<label class="snd-row"><span>Rising and falling</span><select data-k="move">' + opts(MOVES) + "</select></label>" +
+          slider("fade", "Rise and fall amount", 'min="0" max="1" step="0.01"') +
+          slider("rate", "Rise and fall speed", 'min="0.03" max="0.5" step="0.01"') +
           '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
         "</div>" +
       "</div>" +
@@ -1319,7 +1335,7 @@
       });
       Array.prototype.forEach.call(root.querySelectorAll("[data-out]"), function (b) {
         var k = b.getAttribute("data-out");
-        b.textContent = (k === "f1" || k === "f2") ? P[k] + " Hz" : Math.round(P[k] * 100) + "%";
+        b.textContent = (k === "f1" || k === "f2") ? P[k] + " Hz" : k === "rate" ? (Math.round(P[k] * 60 * 10) / 10) + " per min" : Math.round(P[k] * 100) + "%";
       });
       Array.prototype.forEach.call(root.querySelectorAll("[data-mode]"), function (b) { b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === P.mode)); });
       Array.prototype.forEach.call(root.querySelectorAll("[data-real]"), function (b) { b.setAttribute("aria-checked", String((b.getAttribute("data-real") === "1") === P.real)); });

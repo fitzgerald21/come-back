@@ -1,6 +1,6 @@
 /* Come back: offline support.
    Pages load network-first so a new version shows up on the next open; sounds and fonts are cached after first use. */
-var CACHE = "come-back-v5";
+var CACHE = "come-back-v6";
 var CORE = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"]
   .concat(["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "previews/" + n + ".jpg"; }));
 var SOUNDS = ["daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "sounds/" + n + ".mp3"; });
