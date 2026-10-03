@@ -299,6 +299,7 @@
   .snd-pane[hidden], .snd-real[hidden] { display: none; }
   .snd-pane > .snd-note:first-child { margin-top: 0.6rem; min-height: 0; }
   .snd-src { margin-top: 0.6rem; }
+  .snd-custom[hidden] { display: none; }
   details.panel { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.85rem 1rem; margin: 0 0 0.75rem; }
   details.panel > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 1.02rem; }
   details.panel > summary::-webkit-details-marker { display: none; }
@@ -1258,7 +1259,7 @@
         '<label class="snd-row"><span>Difficulty</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
         '<p class="snd-note" data-role="note"></p>' +
         '<button class="btn ghost snd-preview" type="button">Hear the two tones</button>' +
-        '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
+        '<div class="snd-custom" data-role="custom" hidden>' +
           '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
           slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
           '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
@@ -1267,7 +1268,7 @@
           slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
           slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
           '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
-        "</details>" +
+        "</div>" +
       "</div>" +
       '<div class="snd-h">Bells</div>' +
       '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>';
@@ -1324,6 +1325,7 @@
       Array.prototype.forEach.call(root.querySelectorAll("[data-real]"), function (b) { b.setAttribute("aria-checked", String((b.getAttribute("data-real") === "1") === P.real)); });
       Array.prototype.forEach.call(root.querySelectorAll("[data-pane]"), function (p) { p.hidden = p.getAttribute("data-pane") !== P.mode; });
       root.querySelector(".snd-real").hidden = !anyFile;
+      root.querySelector('[data-role="custom"]').hidden = P.preset !== "custom";
       root.querySelector('[data-role="note"]').textContent = PRESETS[P.preset] ? PRESETS[P.preset].note : "Your own mix.";
     });
   }
