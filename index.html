@@ -291,8 +291,19 @@
   .snd-row > span { color: var(--muted); }
   .snd-row select { font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.4rem 0.6rem; max-width: 60%; }
   .snd-row input[type="range"] { width: 55%; accent-color: var(--ink); }
-  .snd-two { transition: opacity 0.2s; }
-  .snd-two.off > :not(.snd-preview) { opacity: 0.45; }   /* the exercise is off, but you can still hear it */
+  .snd-h { margin: 1.1rem 0 0.45rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .seg { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+  .seg button { flex: 1; font: inherit; font-size: 0.92rem; color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 0.5rem 0.3rem; cursor: pointer; }
+  .seg button[aria-checked="true"] { background: var(--ink); color: var(--bg); font-weight: 600; }
+  .seg.small button { font-size: 0.85rem; padding: 0.38rem 0.3rem; }
+  .snd-pane[hidden], .snd-real[hidden] { display: none; }
+  .snd-pane > .snd-note:first-child { margin-top: 0.6rem; min-height: 0; }
+  .snd-src { margin-top: 0.6rem; }
+  details.panel { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.85rem 1rem; margin: 0 0 0.75rem; }
+  details.panel > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 1.02rem; }
+  details.panel > summary::-webkit-details-marker { display: none; }
+  details.panel > summary::after { content: ""; width: 0.55rem; height: 0.55rem; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.2s; margin-right: 0.2rem; }
+  details.panel[open] > summary::after { transform: rotate(225deg); }
   .snd-row.stack { flex-wrap: wrap; gap: 0.2rem; }
   .snd-row.stack > span { flex: 1 1 100%; }
   .snd-row.stack input[type="range"] { width: 100%; }
@@ -304,10 +315,7 @@
     background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 0.4rem 1rem 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
   .soundmenu .check { margin-top: 0.8rem; }
   .snd-preview { margin-top: 0.6rem; padding: 0.5rem 1.2rem; font-size: 0.93rem; }
-  .snd-more { margin-top: 1rem; }
-  .snd-more > summary { font-weight: 600; }
-  .snd-two .snd-adv { margin-top: 0.9rem; }
-
+  
   /* ---------- Theme picker ---------- */
   .themes { display: flex; gap: 0.55rem; flex-wrap: wrap; margin: 0 0 1.75rem; }
   .themes[hidden] { display: none; }
@@ -528,12 +536,12 @@
       </div>
     </fieldset>
 
-    <details>
+    <details class="panel">
       <summary>Sound</summary>
       <div id="homeSound"></div>
     </details>
 
-    <details>
+    <details class="panel">
       <summary>Display</summary>
       <label class="check">
         <input type="checkbox" id="showClock" checked>
@@ -549,7 +557,7 @@
       </label>
     </details>
 
-    <details>
+    <details class="panel">
       <summary>Your reminders</summary>
       <p>One per line. A different one appears each time you catch yourself.</p>
       <textarea id="reminders" aria-label="Your reminders, one per line"></textarea>
@@ -907,16 +915,6 @@
   function tListenStart() { ping(523, 0.08, 0.5); ping(784, 0.08, 0.7, 0.12); }
   function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
-  function speakText(text) {
-    if (!(P.speak && S.anchor === "dark" && "speechSynthesis" in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.82; u.pitch = 0.9; u.volume = 0.75;
-      window.speechSynthesis.speak(u);
-    } catch (e) {}
-  }
-
   /* ---------- scene sounds and two-tone listening ---------- */
   // Everything is synthesized, so there are no audio files. Looped noise is the raw material.
   var NB = {};
@@ -1213,16 +1211,16 @@
   function ambReact() { if (curAmb && curAmb.react) curAmb.react(); }
 
   /* ---------- sound settings (shared by the home screen and the in-session menu) ---------- */
-  var P = { amb: true, bells: true, speak: true, real: true, dual: false, preset: "easy", vol: 0.7 };
+  var P = { mode: "scene", amb: true, bells: true, real: true, dual: false, preset: "easy", vol: 0.7 };
+  function applyMode() { P.amb = P.mode === "scene"; P.dual = P.mode === "dual"; }
   FIELDS.forEach(function (k) { P[k] = PRESETS.easy[k]; });
   (function () {
     try {
       var o = JSON.parse(lsGet(KEY_SND) || "{}") || {};
-      if (typeof o.amb === "boolean") P.amb = o.amb;
+      P.mode = (o.mode === "scene" || o.mode === "dual" || o.mode === "off") ? o.mode : (o.dual ? "dual" : o.amb === false ? "off" : "scene");
+      applyMode();
       if (typeof o.bells === "boolean") P.bells = o.bells;
-      if (typeof o.speak === "boolean") P.speak = o.speak;
       if (typeof o.real === "boolean") P.real = o.real;
-      if (typeof o.dual === "boolean") P.dual = o.dual;
       if (typeof o.vol === "number" && o.vol >= 0 && o.vol <= 1) P.vol = o.vol;
       if (o.preset === "custom" || PRESETS[o.preset]) P.preset = o.preset;
       ["f1", "f2"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 40 && o[k] <= 4000) P[k] = o[k]; });
@@ -1242,31 +1240,51 @@
   function buildControls(root) {
     root.innerHTML =
       slider("vol", "Volume", 'min="0.05" max="1" step="0.01"') +
-      '<label class="check"><input type="checkbox" data-k="amb"><span>Scene sounds<small>Wind, rain, waves and so on, matched to the scene.</small></span></label>' +
-      '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>' +
-      '<label class="check"><input type="checkbox" data-k="speak"><span>Read reminders aloud<small>Speaks your reminder after each return. Only with Eyes closed.</small></span></label>' +
-      '<details class="snd-adv snd-more"><summary>More sound options</summary>' +
-        '<label class="check snd-real" hidden><input type="checkbox" data-k="real"><span>Natural recordings<small>Use the real recordings for scene sounds. Turn off for generated sound.</small></span></label>' +
-        '<label class="check"><input type="checkbox" data-k="dual"><span>Two-tone listening<small>An exercise: two steady tones at once. Try to keep hearing both, and tap when one slips away.</small></span></label>' +
-        '<div class="snd-two">' +
-          '<label class="snd-row"><span>Difficulty</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
-          '<p class="snd-note" data-role="note"></p>' +
-          '<button class="btn ghost snd-preview" type="button">Hear the two tones</button>' +
-          '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
-            '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
-            slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-            '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
-            slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-            slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
-            slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
-            slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
-            '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart, or far enough that they read as two.</p>' +
-          "</details>" +
-        "</div>" +
-      "</details>";
+      '<div class="snd-h">Background sound</div>' +
+      '<div class="seg" role="radiogroup" aria-label="Background sound">' +
+        '<button type="button" role="radio" data-mode="scene">Scene</button>' +
+        '<button type="button" role="radio" data-mode="dual">Two tones</button>' +
+        '<button type="button" role="radio" data-mode="off">Silent</button>' +
+      "</div>" +
+      '<div class="snd-pane" data-pane="scene">' +
+        '<p class="snd-note">Wind, rain, waves and so on, matched to the scene you pick.</p>' +
+        '<div class="snd-src snd-real" hidden><div class="seg small" role="radiogroup" aria-label="Scene sound source">' +
+          '<button type="button" role="radio" data-real="1">Real recordings</button>' +
+          '<button type="button" role="radio" data-real="0">Generated</button>' +
+        "</div></div>" +
+      "</div>" +
+      '<div class="snd-pane" data-pane="dual">' +
+        '<p class="snd-note">An exercise: two steady tones at once. Keep hearing both, and tap when one slips away.</p>' +
+        '<label class="snd-row"><span>Difficulty</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
+        '<p class="snd-note" data-role="note"></p>' +
+        '<button class="btn ghost snd-preview" type="button">Hear the two tones</button>' +
+        '<details class="snd-adv"><summary>Fine-tune the tones</summary>' +
+          '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
+          slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+          '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
+          slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
+          slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
+          slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
+          slider("fade", "Fading in and out", 'min="0" max="1" step="0.01"') +
+          '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
+        "</details>" +
+      "</div>" +
+      '<div class="snd-h">Bells</div>' +
+      '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>';
     root.querySelector(".snd-preview").addEventListener("click", togglePreview);
     root.addEventListener("input", onSoundChange);
     root.addEventListener("change", onSoundChange);
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest("[data-mode], [data-real]");
+      if (!b) return;
+      if (b.hasAttribute("data-mode")) {
+        P.mode = b.getAttribute("data-mode"); applyMode();
+        if (P.mode !== "dual" && S.preview) { S.preview = false; clearTimeout(S.pvTimer); updatePreviewBtn(); }
+      } else { P.real = b.getAttribute("data-real") === "1"; ambName = ""; }
+      lsSet(KEY_SND, JSON.stringify(P));
+      syncControls(); initAudio(); applyAudio();
+      if (S.active) els.hint.textContent = hintText();
+    });
     controls.push(root);
     syncControls();
   }
@@ -1282,8 +1300,6 @@
     else { P[k] = el.value; P.preset = "custom"; }
     lsSet(KEY_SND, JSON.stringify(P));
     if (k === "bells" && S.active) { if (P.bells) scheduleEndBell(); else cancelEndBell(); }
-    if (k === "speak" && !P.speak) { try { window.speechSynthesis.cancel(); } catch (e) {} }
-    if (k === "real") ambName = "";   // rebuild the running scene sound with or without the recording
     syncControls();
     initAudio();
     clearTimeout(applyTimer);
@@ -1304,7 +1320,9 @@
         var k = b.getAttribute("data-out");
         b.textContent = (k === "f1" || k === "f2") ? P[k] + " Hz" : Math.round(P[k] * 100) + "%";
       });
-      root.querySelector(".snd-two").classList.toggle("off", !P.dual && !S.preview);
+      Array.prototype.forEach.call(root.querySelectorAll("[data-mode]"), function (b) { b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === P.mode)); });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-real]"), function (b) { b.setAttribute("aria-checked", String((b.getAttribute("data-real") === "1") === P.real)); });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-pane]"), function (p) { p.hidden = p.getAttribute("data-pane") !== P.mode; });
       root.querySelector(".snd-real").hidden = !anyFile;
       root.querySelector('[data-role="note"]').textContent = PRESETS[P.preset] ? PRESETS[P.preset].note : "Your own mix.";
     });
@@ -1356,7 +1374,6 @@
     var text = nextReminder();
     els.reminder.textContent = text;
     els.slot.classList.add("has-reminder");
-    speakText(text);
     clearTimeout(S.remTimer);
     S.remTimer = setTimeout(function () { els.slot.classList.remove("has-reminder"); }, 4200);
   }
@@ -2189,7 +2206,6 @@
     S.paused = true; S.pausedAt = Date.now();
     cancelEndBell();
     setDim(false);
-    try { window.speechSynthesis.cancel(); } catch (e) {}
   }
   function endPause() {
     var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
@@ -2236,7 +2252,6 @@
     commitLabel();
     S.active = false;
     cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer); clearTimeout(S.nameTimer);
-    try { window.speechSynthesis.cancel(); } catch (e) {}
     unlockScreen();
     closeMenu();
     applyAudio();
