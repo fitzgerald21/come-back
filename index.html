@@ -305,7 +305,16 @@
   .seg button { flex: 1; font: inherit; font-size: 0.92rem; color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 0.5rem 0.3rem; cursor: pointer; }
   .seg button[aria-checked="true"] { background: var(--ink); color: var(--bg); font-weight: 600; }
   .seg.small button { font-size: 0.85rem; padding: 0.38rem 0.3rem; }
-  .snd-pane[hidden], .snd-real[hidden] { display: none; }
+  .snd-pane[hidden], .snd-real[hidden], .snd-row[hidden], .snd-save[hidden], .snd-links[hidden], .snd-game[hidden], .linkbtn[hidden], .snd-gamebtns .btn[hidden], .snd-preview[hidden] { display: none; }
+  .seg.two-rows { display: grid; grid-template-columns: 1fr 1fr; }
+  .snd-namerow { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+  .snd-namerow input { flex: 1; min-width: 0; font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.45rem 0.65rem; }
+  .snd-namerow .btn { padding: 0.45rem 1.1rem; font-size: 0.93rem; }
+  .snd-links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.35rem; }
+  .linkbtn { font: inherit; font-size: 0.86rem; color: var(--muted); background: none; border: 0; padding: 0.25rem 0; text-decoration: underline; cursor: pointer; }
+  .snd-game { margin-top: 0.8rem; }
+  .snd-gamebtns { display: flex; gap: 0.6rem; }
+  .snd-gamebtns .btn { flex: 1; padding: 0.85rem 0.5rem; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
   .snd-pane > .snd-note:first-child { margin-top: 0.6rem; min-height: 0; }
   .snd-src { margin-top: 0.6rem; }
   .snd-custom[hidden] { display: none; }
@@ -393,6 +402,7 @@
   .dim-word { font-size: 1rem; letter-spacing: 0.04em; margin-top: 0.25rem; }
   .dim-wake { position: absolute; bottom: max(1.5rem, env(safe-area-inset-bottom, 0px)); background: none; border: 1px solid #2A3336; border-radius: 999px; color: #5C696D; padding: 0.45rem 1.1rem; font-size: 0.9rem; cursor: pointer; }
   .dim.off .dim-num, .dim.off .dim-word { visibility: hidden; }
+  .dim.nocount .dim-num, .dim.nocount .dim-word { visibility: hidden; }
 
   /* ---------- Trends ---------- */
   .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0 0 1.5rem; }
@@ -764,6 +774,9 @@
   </div>
 </div>
 
+<script src="samples/manifest.js"></script>
+<script src="instruments.js"></script>
+<script src="tones.js"></script>
 <script>
 (function () {
   "use strict";
@@ -882,6 +895,7 @@
     try {
       AC = AC || new (window.AudioContext || window.webkitAudioContext)();
       if (!MASTER) { MASTER = AC.createGain(); MASTER.connect(AC.destination); }
+      if (!Lab.ac()) Lab.useContext(AC, { dest: MASTER, fixedGain: true });   // the instruments play through the same master volume
       if (AC.state === "suspended") AC.resume();
       setMaster();
       Object.keys(FILES).forEach(decodeFile);
@@ -925,7 +939,7 @@
   function tListenStart() { ping(523, 0.08, 0.5); ping(784, 0.08, 0.7, 0.12); }
   function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
-  /* ---------- scene sounds and two-tone listening ---------- */
+  /* ---------- scene sounds ---------- */
   // Everything is synthesized, so there are no audio files. Looped noise is the raw material.
   var NB = {};
   function noiseBuf(kind) {
@@ -1110,64 +1124,84 @@
   };
   Object.keys(AMBIENT2).forEach(function (k) { AMBIENT[k] = AMBIENT2[k]; });
 
-  /* Two-tone listening: two steady voices, like an appliance humming in two registers.
-     Everything is adjustable: each tone's sound and pitch, how loud the second is, how far apart they sit
-     in the ears, and how much each slowly fades in and out. The presets just fill those in.
-     Hard avoids tones a few Hz apart, which beat against each other into one harsh buzz. Being separate
-     voices is what makes this exercise work, so hard is about being quiet, centred and drifting instead. */
-  var SOUNDS = {
-    pure: "Pure tone", soft: "Soft (triangle)", hollow: "Hollow (square)", buzz: "Buzzy hum", organ: "Organ",
-    drone: "Warm drone", chime: "Chime", breath: "Breathy", whir: "Whir (narrow noise)"
-  };
-  var PRESETS = {
-    easy:   { name: "Easy",   f1: 180, f2: 540,  s1: "pure", s2: "pure", bal: 1,   spread: 0.7, fade: 0,    move: "drift", rate: 0.1, what: "volume", note: "Far apart in pitch, one in each ear. Headphones help." },
-    medium: { name: "Medium", f1: 180, f2: 270,  s1: "pure", s2: "pure", bal: 0.8, spread: 0.3, fade: 0.18, move: "drift", rate: 0.1, what: "volume", note: "A fifth apart and more blended. Each swells and fades a little." },
-    hard:   { name: "Hard",   f1: 220, f2: 293,  s1: "pure", s2: "pure", bal: 0.5, spread: 0,   fade: 0.5,  move: "drift", rate: 0.1, what: "volume", note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice." },
-    sync:   { name: "Glide together", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.6, move: "sync", rate: 0.08, what: "pitch", note: "Both tones slide higher and lower together, keeping their distance." },
-    opposite: { name: "Glide apart", f1: 180, f2: 270, s1: "pure", s2: "pure", bal: 0.9, spread: 0.4, fade: 0.6, move: "opposite", rate: 0.08, what: "pitch", note: "One tone slides up while the other slides down, then back. Keep hearing both." }
-  };
+  /* The two listening exercises (instruments.js and tones.js).
+     Two voices: two held sounds at once, to keep hearing both.
+     Hidden overtone: one held note with a much quieter tone inside it, as a warm-up or for the whole sit.
+     Each has ready-made setups, plus any you save yourself, which stay on this device. */
+  var T = Lab.Tones;
+  var DUAL_F = ["iA", "nA", "iB", "nB", "bal", "spread", "what", "move", "depth", "rate"];
+  var HID_F = ["hInst", "hNote", "hRatio", "hDiff", "hShow", "hSide", "hUse", "hWarm", "hAfter"];
+  var HID_HEARD = ["hInst", "hNote", "hRatio", "hDiff", "hShow", "hSide"];   // the settings that change what you hear; the rest only change how the sit runs
   var MOVES = { drift: "Each on its own", sync: "Together (in sync)", opposite: "Opposite (out of sync)" };
-  var WHATS = { volume: "Volume", pitch: "Pitch" };
-  var FIELDS = ["f1", "f2", "s1", "s2", "bal", "spread", "fade", "move", "rate", "what"];
-  // Each sound is built into `out`, trimmed so they all sit at about the same loudness.
-  function voice(L, sound, f, out) {
-    var lp, g;
-    if (sound === "soft") { chain(L.osc("triangle", f), gainNode(1.1), out); }
-    else if (sound === "hollow") { chain(L.osc("square", f), filt("lowpass", f * 3.5, 0.5), gainNode(0.76), out); }
-    else if (sound === "buzz") { chain(L.osc("sawtooth", f), filt("lowpass", Math.min(f * 5, 5000), 0.7), gainNode(1.3), out); }
-    else if (sound === "organ") {
-      g = gainNode(0.78); [[1, 1], [2, 0.5], [3, 0.3], [4, 0.15]].forEach(function (h) { chain(L.osc("sine", f * h[0]), gainNode(h[1]), g); });
-      g.connect(out);
-    }
-    else if (sound === "drone") {
-      lp = filt("lowpass", f * 5, 0.5); L.osc("triangle", f).connect(lp); L.osc("triangle", f * 1.004).connect(lp);
-      chain(lp, gainNode(0.7), out);
-    }
-    else if (sound === "chime") {
-      g = gainNode(0.87); [[1, 1], [2.76, 0.35], [5.4, 0.12]].forEach(function (h) { chain(L.osc("sine", f * h[0]), gainNode(h[1]), g); });
-      g.connect(out);
-    }
-    else if (sound === "breath") { chain(L.noise("pink"), filt("bandpass", f, 4), gainNode(12.5), out); }
-    else if (sound === "whir") { chain(L.noise("pink"), filt("bandpass", f, 14), gainNode(22), out); }
-    else { L.osc("sine", f).connect(out); chain(L.osc("sine", f * 2), gainNode(0.14), out); }
+  var WHATS = { volume: "Volume", pitch: "Pitch", none: "Nothing (steady)" };
+  var RATIOS = { 2: "An octave up", 3: "An octave and a fifth up", 4: "Two octaves up", 5: "Two octaves and a third up", 6: "Two octaves and a fifth up" };
+  var SIDES = { c: "With the main note", l: "In the left ear", r: "In the right ear" };
+  var USES = { warm: "A warm-up", sit: "The whole sit" };
+  var WARMS = { 1: "1 minute", 2: "2 minutes", 3: "3 minutes", 5: "5 minutes", 10: "10 minutes" };
+  var AFTERS = { off: "Silence", scene: "The scene's sound" };
+  var SHOWS = { events: "Comes and goes", always: "Always there" };
+  var DIFFS = {}; Object.keys(T.DIFF).forEach(function (k) { DIFFS[k] = T.DIFF[k].name; });
+  var DUAL_PRESETS = {
+    easy:       { name: "Easy", note: "Far apart in pitch, one in each ear. Headphones help.",
+                  v: { iA: "pure", nA: 54, iB: "pure", nB: 73, bal: 1, spread: 0.7, what: "volume", move: "drift", depth: 0, rate: 0.1 } },
+    medium:     { name: "Medium", note: "A fifth apart and more blended. Each swells and fades a little.",
+                  v: { iA: "pure", nA: 54, iB: "pure", nB: 61, bal: 0.8, spread: 0.3, what: "volume", move: "drift", depth: 0.18, rate: 0.1 } },
+    hard:       { name: "Hard", note: "Close together, the same sound, in the middle. The quieter one keeps slipping away. That's the practice.",
+                  v: { iA: "pure", nA: 57, iB: "pure", nB: 62, bal: 0.5, spread: 0, what: "volume", move: "drift", depth: 0.5, rate: 0.1 } },
+    sync:       { name: "Glide together", note: "Both sounds slide higher and lower together, keeping their distance.",
+                  v: { iA: "pure", nA: 54, iB: "pure", nB: 61, bal: 0.9, spread: 0.4, what: "pitch", move: "sync", depth: 0.6, rate: 0.08 } },
+    opposite:   { name: "Glide apart", note: "One slides up while the other slides down, then back. Keep hearing both.",
+                  v: { iA: "pure", nA: 54, iB: "pure", nB: 61, bal: 0.9, spread: 0.4, what: "pitch", move: "opposite", depth: 0.6, rate: 0.08 } },
+    flutecello: { name: "Flute and cello", note: "Two different instruments, a fifth apart. Easy to tell apart.",
+                  v: { iA: "flute", nA: 57, iB: "cello", nB: 64, bal: 0.9, spread: 0.6, what: "volume", move: "drift", depth: 0.3, rate: 0.1 } },
+    bowlvoice:  { name: "Bowl and voice", note: "Both warm and held, so they blend. It takes more listening.",
+                  v: { iA: "bowl", nA: 52, iB: "voice", nB: 59, bal: 0.9, spread: 0.3, what: "volume", move: "drift", depth: 0.4, rate: 0.1 } },
+    clarinetchoir: { name: "Clarinet and choir", note: "Gliding together, one reedy and one soft.",
+                  v: { iA: "clarinet", nA: 50, iB: "choir", nB: 62, bal: 0.9, spread: 0.5, what: "pitch", move: "sync", depth: 0.35, rate: 0.07 } }
+  };
+  var HID_PRESETS = {
+    warmup: { name: "Short warm-up", note: "For three minutes a faint tone comes and goes behind a singing bowl. Tap when you hear it. Then silence, and your sit.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "events", hSide: "c", hUse: "warm", hWarm: 3, hAfter: "off" } },
+    easy:   { name: "Easy first try", note: "A clearer tone and two minutes. A good way to learn what you're listening for.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "easy", hShow: "events", hSide: "c", hUse: "warm", hWarm: 2, hAfter: "off" } },
+    sit:    { name: "The whole sit", note: "The same game, all the way through. Tap when you hear it.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "events", hSide: "c", hUse: "sit", hWarm: 3, hAfter: "off" } },
+    always: { name: "Always there", note: "A very faint tone sits inside the note the whole time. Keep hearing it, and tap when it slips away.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "always", hSide: "c", hUse: "sit", hWarm: 3, hAfter: "off" } },
+    hard:   { name: "Hard warm-up", note: "A sung note, a much quieter tone, five minutes, then the scene's own sound.",
+              v: { hInst: "voice", hNote: 52, hRatio: 3, hDiff: "hard", hShow: "events", hSide: "c", hUse: "warm", hWarm: 5, hAfter: "scene" } }
+  };
+  var KIND = {
+    dual:   { fields: DUAL_F, presets: DUAL_PRESETS, key: "preset", fallback: "easy" },
+    hidden: { fields: HID_F, presets: HID_PRESETS, key: "hpreset", fallback: "warmup" }
+  };
+  var KEY_TONES = "come-back:tone-presets";
+  var MINE = { dual: [], hidden: [] };   // setups you saved
+  (function () {
+    try {
+      var m = JSON.parse(lsGet(KEY_TONES) || "{}") || {};
+      ["dual", "hidden"].forEach(function (k) {
+        if (Array.isArray(m[k])) MINE[k] = m[k].filter(function (x) { return x && typeof x.id === "string" && typeof x.name === "string" && x.v && typeof x.v === "object"; });
+      });
+    } catch (e) {}
+  })();
+  function saveMine() { lsSet(KEY_TONES, JSON.stringify(MINE)); }
+  function findPreset(kind, id) {
+    var b = KIND[kind].presets[id];
+    if (b) return { name: b.name, note: b.note, v: b.v, builtin: true };
+    var m = MINE[kind].filter(function (x) { return x.id === id; })[0];
+    return m ? { name: m.name, note: "Yours, saved on this device.", v: m.v, builtin: false } : null;
   }
-  function tone(L, sound, f, lvl, pan, depth, rate, sign) {
-    var out = gainNode(lvl), pitch = P.what === "pitch" && depth > 0, lfo;
-    if (pitch) {   // glide: every oscillator in this voice follows one slow sine, in cents (up to about a third of an octave each way)
-      lfo = L.osc("sine", rate); L.pitchBus = gainNode(sign * depth * 400); lfo.connect(L.pitchBus);
-    }
-    voice(L, sound, f, out);
-    L.pitchBus = null;
-    if (depth > 0 && !pitch) { var d = gainNode(sign * lvl * depth * 0.9); chain(L.osc("sine", rate), d); d.connect(out.gain); }
-    chain(out, panner(pan), L.out);
+  // Recorded instruments first (that's what sounds best), then the synthesized ones. Only held sounds: nothing struck.
+  var HELD_ORDER = ["flute", "clarinet", "oboe", "cello", "violin", "choir", "voice", "bowl", "panflute", "shakuhachi", "ocarina"];
+  function heldGroups() {
+    var ids = Object.keys(Lab.INST).filter(function (k) { return Lab.INST[k].kind === "sustained"; });
+    function rank(k) { var i = HELD_ORDER.indexOf(k); return i < 0 ? 99 : i; }
+    return {
+      rec: ids.filter(function (k) { return Lab.INST[k].sampled; }).sort(function (a, b) { return rank(a) - rank(b); }),
+      syn: ids.filter(function (k) { return !Lab.INST[k].sampled; })
+    };
   }
-  function buildDual(L, c) {
-    var lv = 0.12, r1 = c.rate, r2 = c.rate;
-    if (c.move === "drift") r2 = c.rate * 1.6;   // different speeds wander in and out of step
-    tone(L, c.s1, c.f1, lv, -c.spread, c.fade, r1, 1);
-    tone(L, c.s2, c.f2, lv * c.bal, c.spread, c.fade, r2, c.move === "opposite" ? -1 : 1);
-  }
-  function dualKeyOf() { return FIELDS.map(function (k) { return P[k]; }).join("|"); }
 
   /* Real recordings: if a file such as sounds/tree.mp3 exists it replaces the synthesized sound for that scene. */
   var FILES = {};
@@ -1204,12 +1238,29 @@
     play(true);
   }
 
-  var curAmb = null, ambName = "", curDual = null, dualKey = "";
+  var curAmb = null, ambName = "", curTones = null, toneKey = "", toneTok = 0;
+  // Where we are in a sit. A warm-up is timed from when the overtone started, so switching to it partway through still gets a whole warm-up.
+  function elapsedMs() { return S.active ? (S.paused ? S.pausedAt : Date.now()) - S.startWall : 0; }
+  function warmDone() { return !!S.active && P.mode === "hidden" && P.hUse === "warm" && elapsedMs() - (S.hFrom || 0) >= P.hWarm * 60000; }
+  function gameOn() { return !!S.active && P.mode === "hidden" && P.hShow === "events" && !warmDone(); }
+  function ambWanted() { return P.mode === "scene" || (P.mode === "hidden" && warmDone() && P.hAfter === "scene"); }
+  function wantTones() {
+    if (S.preview) return P.mode === "hidden" ? "hidden" : "dual";
+    if (!S.active) return "";
+    if (P.mode === "dual") return "dual";
+    if (P.mode === "hidden" && !warmDone()) return "hidden";
+    return "";
+  }
+  function toneKeyOf(m) {
+    if (!m) return "";
+    var fields = m === "dual" ? DUAL_F : HID_HEARD;
+    return m + "|" + (m === "hidden" && S.preview && !S.active ? "try|" : "") + fields.map(function (f) { return P[f]; }).join("|");
+  }
   function applyAudio() {
     if (!AC || !MASTER) return;
     if (AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
     setMaster();
-    var name = S.active && P.amb && AMBIENT[S.anchor] ? S.anchor : "";
+    var name = S.active && ambWanted() && AMBIENT[S.anchor] ? S.anchor : "";
     if (name !== ambName) {
       if (curAmb) retire(curAmb, 1.5);
       curAmb = null; ambName = name;
@@ -1219,38 +1270,110 @@
         fadeIn(curAmb, 1.5);
       }
     }
-    var key = (S.preview || (S.active && P.dual)) ? dualKeyOf() : "";
-    if (key !== dualKey) {
-      if (curDual) retire(curDual, 0.8);
-      curDual = null; dualKey = key;
-      if (key) { curDual = mkLayer(); buildDual(curDual, P); fadeIn(curDual, 1.5); }
+    var mode = wantTones(), key = toneKeyOf(mode);
+    if (key !== toneKey) {
+      var tok = ++toneTok;
+      toneKey = key;
+      if (curTones) { curTones.alive = false; Lab.retire(curTones, 0.8); curTones = null; T.last = null; }
+      if (mode) {
+        var snap = {}; DUAL_F.concat(HID_F).forEach(function (f) { snap[f] = P[f]; });
+        var trying = !!S.preview && !S.active;
+        // the recordings are fetched the first time they're needed; until then (or if that fails) the synthesized version plays
+        Lab.load((mode === "dual" ? [snap.iA, snap.iB] : [snap.hInst]).map(T.held)).then(function () {
+          if (tok !== toneTok || !AC) return;
+          var L = Lab.layer();
+          if (mode === "dual") T.duo(L, snap);
+          else T.hidden(L, snap, { preview: trying, miss: function () { if (!(S.active && S.paused)) T.clank(); } });
+          Lab.fadeIn(L, 1.5); curTones = L; T.last = L;
+          syncControls();
+        });
+      }
     }
   }
   function ambReact() { if (curAmb && curAmb.react) curAmb.react(); }
 
+  // A tap while the overtone comes and goes means "I hear it". It isn't a return, so it isn't counted.
+  function gameTap() {
+    var L = curTones;
+    if (!L || !L.tap) return;
+    var r = L.tap();
+    if (r === "hit") T.ding(); else if (r === "nothing") T.clank();
+    if (S.active) {
+      if (S.anchor === "circle") ripple(); else V.pulse = Math.min(1, V.pulse + 0.5);
+      try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
+    }
+  }
+  function syncCount() {
+    var hide = gameOn();
+    els.count.classList.toggle("off", !$("showCount").checked || hide);
+    $("dim").classList.toggle("nocount", hide);
+  }
+  // Called a few times a second during a sit: notices when a warm-up ends, or the settings change what's playing.
+  function syncPhase() {
+    var sig = [wantTones(), ambWanted(), gameOn()].join("|");
+    if (sig === S.sig) return;
+    var first = S.sig === "";
+    S.sig = sig;
+    applyAudio();
+    els.hint.textContent = hintText();
+    syncCount(); syncControls();
+    var done = warmDone();
+    if (!first && done && !S.warmWas) bell(528, 0.09);   // a soft bell: the warm-up is over
+    S.warmWas = done;
+  }
+
   /* ---------- sound settings (shared by the home screen and the in-session menu) ---------- */
-  var P = { mode: "scene", amb: true, bells: true, real: true, dual: false, preset: "easy", vol: 0.7 };
+  var P = { mode: "scene", amb: true, bells: true, real: true, dual: false, preset: "easy", hpreset: "warmup", vol: 0.7 };
   function applyMode() { P.amb = P.mode === "scene"; P.dual = P.mode === "dual"; }
-  FIELDS.forEach(function (k) { P[k] = PRESETS.easy[k]; });
+  DUAL_F.forEach(function (f) { P[f] = DUAL_PRESETS.easy.v[f]; });
+  HID_F.forEach(function (f) { P[f] = HID_PRESETS.warmup.v[f]; });
+  var BASE = {};   // the setup you started from before changing something, so a saved one can be updated
+  function loadPresetInto(kind, id) {
+    var pr = findPreset(kind, id);
+    if (!pr) return false;
+    KIND[kind].fields.forEach(function (f) { if (pr.v[f] != null) P[f] = pr.v[f]; });
+    P[KIND[kind].key] = id;
+    return true;
+  }
   (function () {
     try {
       var o = JSON.parse(lsGet(KEY_SND) || "{}") || {};
-      P.mode = (o.mode === "scene" || o.mode === "dual" || o.mode === "off") ? o.mode : (o.dual ? "dual" : o.amb === false ? "off" : "scene");
+      P.mode = (o.mode === "scene" || o.mode === "dual" || o.mode === "hidden" || o.mode === "off") ? o.mode : (o.dual ? "dual" : o.amb === false ? "off" : "scene");
       applyMode();
       if (typeof o.bells === "boolean") P.bells = o.bells;
       if (typeof o.real === "boolean") P.real = o.real;
       if (typeof o.vol === "number" && o.vol >= 0 && o.vol <= 1) P.vol = o.vol;
-      if (o.preset === "custom" || PRESETS[o.preset]) P.preset = o.preset;
-      ["f1", "f2"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 40 && o[k] <= 4000) P[k] = o[k]; });
-      ["bal"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1.5) P[k] = o[k]; });
-      ["spread", "fade"].forEach(function (k) { if (typeof o[k] === "number" && o[k] >= 0 && o[k] <= 1) P[k] = o[k]; });
-      if (MOVES[o.move]) P.move = o.move;
-      if (WHATS[o.what]) P.what = o.what;
-      if (typeof o.rate === "number" && o.rate >= 0.03 && o.rate <= 0.5) P.rate = o.rate;
-      ["s1", "s2"].forEach(function (k) { if (SOUNDS[o[k]]) P[k] = o[k]; });
-      if (PRESETS[P.preset]) FIELDS.forEach(function (k) { P[k] = PRESETS[P.preset][k]; });
+      var num = function (k, lo, hi) { if (typeof o[k] === "number" && o[k] >= lo && o[k] <= hi) P[k] = o[k]; };
+      var inMap = function (k, map) { if (map[o[k]] != null) P[k] = String(o[k]); };
+      var held = function (k, from) { var id = o[from || k]; if (typeof id === "string" && Lab.INST[id] && Lab.INST[id].kind === "sustained") P[k] = id; };
+      var hz = function (v) { return Math.max(36, Math.min(84, Math.round(69 + 12 * Math.log2(v / 440)))); };
+      if (("f1" in o || "s1" in o) && !("iA" in o)) {
+        // saved before the instruments arrived, when the two tones were set by frequency
+        if (typeof o.f1 === "number" && o.f1 > 0) P.nA = hz(o.f1);
+        if (typeof o.f2 === "number" && o.f2 > 0) P.nB = hz(o.f2);
+        held("iA", "s1"); held("iB", "s2");
+        if (typeof o.fade === "number" && o.fade >= 0 && o.fade <= 1) P.depth = o.fade;
+      } else {
+        num("nA", 24, 96); num("nB", 24, 96); held("iA"); held("iB"); num("depth", 0, 1);
+      }
+      num("bal", 0, 1.5); num("spread", 0, 1); num("rate", 0.02, 0.5);
+      inMap("what", WHATS); inMap("move", MOVES);
+      num("hNote", 24, 96); held("hInst");
+      inMap("hRatio", RATIOS); inMap("hDiff", DIFFS); inMap("hShow", SHOWS); inMap("hSide", SIDES); inMap("hUse", USES); inMap("hWarm", WARMS); inMap("hAfter", AFTERS);
+      ["nA", "nB", "hNote"].forEach(function (k) { P[k] = Math.round(P[k]); });
+      ["hRatio", "hWarm"].forEach(function (k) { P[k] = +P[k]; });
+      // a ready-made or saved setup wins over the loose values; "custom" keeps them as they are
+      Object.keys(KIND).forEach(function (kind) {
+        var id = o[KIND[kind].key];
+        if (id === "custom") P[KIND[kind].key] = "custom";
+        else if (id && findPreset(kind, id)) loadPresetInto(kind, id);
+        else P[KIND[kind].key] = "custom";
+        var has = kind === "dual" ? ("iA" in o || "f1" in o) : ("hInst" in o);
+        if (P[KIND[kind].key] === "custom" && !has) loadPresetInto(kind, KIND[kind].fallback);   // nothing saved yet: start from the default
+      });
     } catch (e) {}
   })();
+
   var controls = [], applyTimer = 0;
   function opts(map, label) {
     return Object.keys(map).map(function (k) { return '<option value="' + k + '">' + (label ? label(k) : map[k]) + "</option>"; }).join("");
@@ -1258,13 +1381,32 @@
   function slider(k, label, extra) {
     return '<label class="snd-row stack"><span>' + label + ' <b data-out="' + k + '"></b></span><input type="range" data-k="' + k + '" ' + extra + "></label>";
   }
+  function selRow(k, label, html, role) {
+    return '<label class="snd-row"' + (role ? ' data-role="' + role + '"' : "") + "><span>" + label + '</span><select data-k="' + k + '">' + html + "</select></label>";
+  }
+  function instOptions() {
+    var g = heldGroups();
+    function list(ids) { return ids.map(function (i) { return '<option value="' + i + '">' + Lab.INST[i].name + "</option>"; }).join(""); }
+    return (g.rec.length ? '<optgroup label="Recorded">' + list(g.rec) + "</optgroup>" : "") + '<optgroup label="Synthesized">' + list(g.syn) + "</optgroup>";
+  }
+  function setupBlock(kind) {
+    return '<label class="snd-row"><span>Setup</span><select data-preset="' + kind + '"></select></label>' +
+      '<p class="snd-note" data-role="note-' + kind + '"></p>' +
+      '<div class="snd-save" data-role="save-' + kind + '" hidden>' +
+        '<div class="snd-namerow"><input type="text" maxlength="28" placeholder="Name it to keep it" aria-label="Name for this setup" data-name="' + kind + '">' +
+        '<button type="button" class="btn ghost" data-act="save" data-kind="' + kind + '">Save</button></div>' +
+        '<div class="snd-links"><button type="button" class="linkbtn" data-act="update" data-kind="' + kind + '" data-role="update-' + kind + '" hidden></button></div>' +
+      "</div>" +
+      '<div class="snd-links" data-role="mine-' + kind + '" hidden><button type="button" class="linkbtn" data-act="delete" data-kind="' + kind + '">Delete this setup</button></div>';
+  }
   function buildControls(root) {
     root.innerHTML =
       slider("vol", "Volume", 'min="0.05" max="1" step="0.01"') +
       '<div class="snd-h">Background sound</div>' +
-      '<div class="seg" role="radiogroup" aria-label="Background sound">' +
+      '<div class="seg two-rows" role="radiogroup" aria-label="Background sound">' +
         '<button type="button" role="radio" data-mode="scene">Scene</button>' +
-        '<button type="button" role="radio" data-mode="dual">Two tones</button>' +
+        '<button type="button" role="radio" data-mode="dual">Two voices</button>' +
+        '<button type="button" role="radio" data-mode="hidden">Hidden overtone</button>' +
         '<button type="button" role="radio" data-mode="off">Silent</button>' +
       "</div>" +
       '<div class="snd-pane" data-pane="scene">' +
@@ -1275,93 +1417,200 @@
         "</div></div>" +
       "</div>" +
       '<div class="snd-pane" data-pane="dual">' +
-        '<p class="snd-note">An exercise: two steady tones at once. Keep hearing both, and tap when one slips away.</p>' +
-        '<label class="snd-row"><span>Difficulty</span><select data-k="preset">' + opts(PRESETS, function (k) { return PRESETS[k].name; }) + '<option value="custom">Custom</option></select></label>' +
-        '<p class="snd-note" data-role="note"></p>' +
-        '<button class="btn ghost snd-preview" type="button">Hear the two tones</button>' +
-        '<div class="snd-custom" data-role="custom" hidden>' +
-          '<label class="snd-row"><span>Tone 1 sound</span><select data-k="s1">' + opts(SOUNDS) + "</select></label>" +
-          slider("f1", "Tone 1 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-          '<label class="snd-row"><span>Tone 2 sound</span><select data-k="s2">' + opts(SOUNDS) + "</select></label>" +
-          slider("f2", "Tone 2 pitch", 'min="0" max="1" step="0.002" data-log="1"') +
-          slider("bal", "Tone 2 loudness", 'min="0" max="1.5" step="0.01"') +
+        '<p class="snd-note">An exercise: two sounds at once. Keep hearing both, and tap when one slips away.</p>' +
+        setupBlock("dual") +
+        '<button class="btn ghost snd-preview" type="button" data-pv="dual">Hear the two voices</button>' +
+        '<details class="snd-adv"><summary>Adjust the sounds</summary>' +
+          selRow("iA", "Voice 1 sound", instOptions()) + slider("nA", "Voice 1 pitch", 'min="36" max="84" step="1"') +
+          selRow("iB", "Voice 2 sound", instOptions()) + slider("nB", "Voice 2 pitch", 'min="36" max="84" step="1"') +
+          slider("bal", "Voice 2 loudness", 'min="0" max="1.5" step="0.01"') +
           slider("spread", "Ear spread", 'min="0" max="1" step="0.01"') +
-          '<label class="snd-row"><span>What rises and falls</span><select data-k="what">' + opts(WHATS) + "</select></label>" +
-          '<label class="snd-row"><span>Moving</span><select data-k="move">' + opts(MOVES) + "</select></label>" +
-          slider("fade", "Rise and fall amount", 'min="0" max="1" step="0.01"') +
+          selRow("what", "What rises and falls", opts(WHATS)) +
+          selRow("move", "Moving", opts(MOVES)) +
+          slider("depth", "Rise and fall amount", 'min="0" max="1" step="0.01"') +
           slider("rate", "Rise and fall speed", 'min="0.03" max="0.5" step="0.01"') +
-          '<p class="snd-note">Tones a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
+          '<p class="snd-note">Two sounds a few Hz apart beat against each other into a harsh buzz. Keep them well apart.</p>' +
+        "</details>" +
+      "</div>" +
+      '<div class="snd-pane" data-pane="hidden">' +
+        '<p class="snd-note">A held note with a much quieter tone hidden inside it. Listen for the hidden one.</p>' +
+        setupBlock("hidden") +
+        selRow("hUse", "Use it as", opts(USES)) +
+        selRow("hWarm", "Warm-up length", opts(WARMS), "warm") +
+        selRow("hAfter", "Afterwards, play", opts(AFTERS), "warm") +
+        selRow("hShow", "The hidden tone", opts(SHOWS)) +
+        selRow("hDiff", "How hard", opts(DIFFS)) +
+        '<div class="snd-game" data-role="game" hidden>' +
+          '<div class="snd-gamebtns"><button class="btn" type="button" data-game="tap">I hear it</button>' +
+          '<button class="btn ghost" type="button" data-game="show">Hold to hear it</button></div>' +
+          '<p class="snd-note" data-role="game-note"></p>' +
         "</div>" +
+        '<button class="btn ghost snd-preview" type="button" data-pv="hidden">Try the overtone</button>' +
+        '<details class="snd-adv"><summary>Adjust the sounds</summary>' +
+          selRow("hInst", "Main sound", instOptions()) + slider("hNote", "Main note", 'min="36" max="84" step="1"') +
+          selRow("hRatio", "The hidden tone is", opts(RATIOS)) +
+          selRow("hSide", "Where it sits", opts(SIDES)) +
+        "</details>" +
       "</div>" +
       '<div class="snd-h">Bells</div>' +
       '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>';
-    root.querySelector(".snd-preview").addEventListener("click", togglePreview);
     root.addEventListener("input", onSoundChange);
     root.addEventListener("change", onSoundChange);
     root.addEventListener("click", function (e) {
-      var b = e.target.closest && e.target.closest("[data-mode], [data-real]");
+      var b = e.target.closest && e.target.closest("[data-mode], [data-real], [data-act], [data-pv]");
       if (!b) return;
+      if (b.hasAttribute("data-pv")) { togglePreview(); return; }
+      if (b.hasAttribute("data-act")) { onSetupAction(b, root); return; }
       if (b.hasAttribute("data-mode")) {
         P.mode = b.getAttribute("data-mode"); applyMode();
-        if (P.mode !== "dual" && S.preview) { S.preview = false; clearTimeout(S.pvTimer); updatePreviewBtn(); }
+        if (P.mode !== "dual" && P.mode !== "hidden" && S.preview) { S.preview = false; clearTimeout(S.pvTimer); }
+        if (S.active && P.mode === "hidden") S.hFrom = elapsedMs();   // a warm-up counts from now
       } else { P.real = b.getAttribute("data-real") === "1"; ambName = ""; }
       lsSet(KEY_SND, JSON.stringify(P));
       syncControls(); initAudio(); applyAudio();
-      if (S.active) els.hint.textContent = hintText();
+      if (S.active) { els.hint.textContent = hintText(); syncCount(); }
+    });
+    // the "I hear it" and "Hold to hear it" buttons: pressed, so there is no delay
+    root.addEventListener("pointerdown", function (e) {
+      var g = e.target.closest && e.target.closest("[data-game]");
+      if (!g) return;
+      e.preventDefault();
+      if (g.getAttribute("data-game") === "tap") gameTap();
+      else { if (curTones && curTones.reveal) curTones.reveal(true); try { g.setPointerCapture(e.pointerId); } catch (x) {} }
+    });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) {
+      root.addEventListener(t, function (e) {
+        var g = e.target.closest && e.target.closest('[data-game="show"]');
+        if (g && curTones && curTones.reveal) curTones.reveal(false);
+      });
     });
     controls.push(root);
     syncControls();
   }
-  function fHz(v) { return Math.round(40 * Math.pow(100, v)); }
-  function onSoundChange(e) {
-    var k = e.target.getAttribute && e.target.getAttribute("data-k");
-    if (!k) return;
-    var el = e.target;
-    if (el.type === "checkbox") P[k] = el.checked;
-    else if (el.getAttribute("data-log")) { P[k] = fHz(parseFloat(el.value)); P.preset = "custom"; }
-    else if (el.type === "range") { P[k] = parseFloat(el.value) || 0; if (k !== "vol") P.preset = "custom"; }
-    else if (k === "preset") { P.preset = el.value; if (PRESETS[el.value]) FIELDS.forEach(function (f) { P[f] = PRESETS[el.value][f]; }); }
-    else { P[k] = el.value; P.preset = "custom"; }
-    lsSet(KEY_SND, JSON.stringify(P));
-    if (k === "bells" && S.active) { if (P.bells) scheduleEndBell(); else cancelEndBell(); }
-    syncControls();
-    initAudio();
+
+  var NUMERIC = { nA: 1, nB: 1, bal: 1, spread: 1, depth: 1, rate: 1, hNote: 1, hRatio: 1, hWarm: 1 };
+  var KIND_OF = {}; DUAL_F.forEach(function (f) { KIND_OF[f] = "dual"; }); HID_F.forEach(function (f) { KIND_OF[f] = "hidden"; });
+  function persist() { lsSet(KEY_SND, JSON.stringify(P)); }
+  function markCustom(kind) {   // changing anything makes it "your own, not saved yet"
+    var key = KIND[kind].key;
+    if (P[key] !== "custom") { BASE[kind] = P[key]; P[key] = "custom"; }
+  }
+  function afterSoundChange(soon) {
+    syncControls(); initAudio();
     clearTimeout(applyTimer);
-    applyTimer = setTimeout(applyAudio, el.type === "range" ? 250 : 0);   // let a slider settle before rebuilding the tones
-    if (S.active) els.hint.textContent = hintText();
+    applyTimer = setTimeout(applyAudio, soon ? 250 : 0);   // let a slider settle before rebuilding the sound
+    if (S.active) { els.hint.textContent = hintText(); syncCount(); }
+  }
+  function onSoundChange(e) {
+    var el = e.target;
+    if (!el.getAttribute) return;
+    var pk = el.getAttribute("data-preset");
+    if (pk) {
+      if (el.value !== "custom") { loadPresetInto(pk, el.value); BASE[pk] = null; persist(); afterSoundChange(false); }
+      return;
+    }
+    var k = el.getAttribute("data-k");
+    if (!k) return;
+    if (el.type === "checkbox") P[k] = el.checked;
+    else if (el.type === "range") P[k] = parseFloat(el.value) || 0;
+    else P[k] = NUMERIC[k] ? parseFloat(el.value) : el.value;
+    if (KIND_OF[k]) markCustom(KIND_OF[k]);
+    persist();
+    if (k === "bells" && S.active) { if (P.bells) scheduleEndBell(); else cancelEndBell(); }
+    afterSoundChange(el.type === "range");
+  }
+
+  /* saving, updating and deleting your own setups */
+  function snapshot(kind) { var v = {}; KIND[kind].fields.forEach(function (f) { v[f] = P[f]; }); return v; }
+  function onSetupAction(b, root) {
+    var kind = b.getAttribute("data-kind"), act = b.getAttribute("data-act"), key = KIND[kind].key, list = MINE[kind], i;
+    if (act === "save") {
+      var input = root.querySelector('[data-name="' + kind + '"]');
+      var name = (input.value || "").trim().slice(0, 28) || "My setup " + (list.length + 1);
+      var id = "u" + Date.now().toString(36);
+      list.push({ id: id, name: name, v: snapshot(kind) });
+      P[key] = id; BASE[kind] = null; input.value = "";
+    } else if (act === "update") {
+      for (i = 0; i < list.length; i++) if (list[i].id === BASE[kind]) { list[i].v = snapshot(kind); P[key] = list[i].id; BASE[kind] = null; }
+    } else if (act === "delete") {
+      if (b.getAttribute("data-sure") !== "1") {   // a second tap confirms
+        b.setAttribute("data-sure", "1"); b.textContent = "Tap again to delete";
+        setTimeout(function () { b.removeAttribute("data-sure"); b.textContent = "Delete this setup"; }, 3000);
+        return;
+      }
+      MINE[kind] = list.filter(function (x) { return x.id !== P[key]; });
+      loadPresetInto(kind, KIND[kind].fallback); BASE[kind] = null;
+    }
+    saveMine(); persist(); afterSoundChange(false);
+  }
+
+  function toneLabel(m) { return Lab.noteName(m) + " · " + Math.round(Lab.mtof(m)) + " Hz"; }
+  var pct = function (v) { return Math.round(v * 100) + "%"; };
+  var FMT = { vol: pct, bal: pct, spread: pct, depth: pct, nA: toneLabel, nB: toneLabel, hNote: toneLabel,
+    rate: function (v) { return (Math.round(v * 60 * 10) / 10) + " per min"; } };
+  function presetOptions(kind) {
+    var key = KIND[kind].key, h = '<optgroup label="Ready-made">';
+    Object.keys(KIND[kind].presets).forEach(function (id) { h += '<option value="' + id + '">' + KIND[kind].presets[id].name + "</option>"; });
+    h += "</optgroup>";
+    if (MINE[kind].length) {
+      h += '<optgroup label="Mine">';
+      MINE[kind].forEach(function (m) { h += '<option value="' + m.id + '">' + m.name.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</option>"; });
+      h += "</optgroup>";
+    }
+    if (P[key] === "custom") h += '<option value="custom">Changed, not saved</option>';
+    return h;
   }
   function syncControls() {
     var anyFile = Object.keys(FILES).length > 0;
+    var hearing = wantTones() === "hidden";
     controls.forEach(function (root) {
       Array.prototype.forEach.call(root.querySelectorAll("[data-k]"), function (el) {
         var k = el.getAttribute("data-k");
         if (el === document.activeElement && el.type === "range") return;
         if (el.type === "checkbox") el.checked = !!P[k];
-        else if (el.getAttribute("data-log")) el.value = String(Math.log(P[k] / 40) / Math.log(100));
         else el.value = String(P[k]);
       });
       Array.prototype.forEach.call(root.querySelectorAll("[data-out]"), function (b) {
         var k = b.getAttribute("data-out");
-        b.textContent = (k === "f1" || k === "f2") ? P[k] + " Hz" : k === "rate" ? (Math.round(P[k] * 60 * 10) / 10) + " per min" : Math.round(P[k] * 100) + "%";
+        b.textContent = FMT[k] ? FMT[k](P[k]) : String(P[k]);
       });
       Array.prototype.forEach.call(root.querySelectorAll("[data-mode]"), function (b) { b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === P.mode)); });
       Array.prototype.forEach.call(root.querySelectorAll("[data-real]"), function (b) { b.setAttribute("aria-checked", String((b.getAttribute("data-real") === "1") === P.real)); });
       Array.prototype.forEach.call(root.querySelectorAll("[data-pane]"), function (p) { p.hidden = p.getAttribute("data-pane") !== P.mode; });
       root.querySelector(".snd-real").hidden = !anyFile;
-      root.querySelector('[data-role="custom"]').hidden = P.preset !== "custom";
-      root.querySelector('[data-role="note"]').textContent = PRESETS[P.preset] ? PRESETS[P.preset].note : "Your own mix.";
+      Object.keys(KIND).forEach(function (kind) {
+        var key = KIND[kind].key, sel = root.querySelector('[data-preset="' + kind + '"]'), custom = P[key] === "custom";
+        var sig = presetOptions(kind);
+        if (sel.getAttribute("data-sig") !== sig) { sel.innerHTML = sig; sel.setAttribute("data-sig", sig); }
+        sel.value = P[key];
+        var pr = findPreset(kind, P[key]);
+        root.querySelector('[data-role="note-' + kind + '"]').textContent = custom ? "Your own mix. Name it below to keep it." : pr ? pr.note : "";
+        root.querySelector('[data-role="save-' + kind + '"]').hidden = !custom;
+        root.querySelector('[data-role="mine-' + kind + '"]').hidden = custom || !pr || pr.builtin;
+        var up = root.querySelector('[data-role="update-' + kind + '"]'), base = custom && BASE[kind] ? findPreset(kind, BASE[kind]) : null;
+        up.hidden = !(base && !base.builtin);
+        if (!up.hidden) up.textContent = "Update “" + base.name + "” instead";
+      });
+      Array.prototype.forEach.call(root.querySelectorAll('[data-role="warm"]'), function (r) { r.hidden = P.hUse !== "warm"; });
+      var game = root.querySelector('[data-role="game"]');
+      game.hidden = !(P.mode === "hidden" && hearing);
+      game.querySelector('[data-game="tap"]').hidden = P.hShow !== "events";
+      game.querySelector('[data-role="game-note"]').textContent = P.hShow === "events"
+        ? "A small ding means it was there. A wooden knock means it wasn't, or it came and went."
+        : "Hold the button to hear the hidden tone clearly, then let go and keep listening for it.";
+      Array.prototype.forEach.call(root.querySelectorAll(".snd-preview"), function (b) {
+        b.hidden = !!S.active;   // during a sit the real thing is already playing
+        b.textContent = S.preview ? "Stop" : b.getAttribute("data-pv") === "dual" ? "Hear the two voices" : "Try the overtone";
+      });
     });
   }
   function updateRealUI() { syncControls(); }
-  function updatePreviewBtn() {
-    Array.prototype.forEach.call(document.querySelectorAll(".snd-preview"), function (b) { b.textContent = S.preview ? "Stop" : "Hear the two tones"; });
-    syncControls();
-  }
+  function updatePreviewBtn() { syncControls(); }
   function togglePreview() {
     initAudio(); if (!AC) return;
     S.preview = !S.preview;
     clearTimeout(S.pvTimer);
-    if (S.preview) S.pvTimer = setTimeout(function () { S.preview = false; applyAudio(); updatePreviewBtn(); }, 45000);
+    if (S.preview) S.pvTimer = setTimeout(function () { S.preview = false; applyAudio(); updatePreviewBtn(); }, 60000);
     applyAudio(); updatePreviewBtn();
   }
 
@@ -1934,10 +2183,17 @@
       circle: "Tap anywhere, or press space, when you notice your mind has wandered.",
       dark: "Close your eyes and breathe at your own pace. Tap anywhere, or press space, when you notice your mind has wandered."
     }[S.anchor] || "Rest your eyes here and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.";
+    if (S.active && P.mode === "hidden" && !warmDone()) {
+      var game = P.hShow === "events"
+        ? "A held note is playing. Now and then a very faint tone slips in behind it. When you hear it, tap. A small ding means you caught it; a wooden knock means it wasn't there."
+        : "A very faint tone sits inside the held note the whole time. Keep listening for it, and tap when it slips away.";
+      if (P.hUse === "warm") game += " This is your warm-up: " + WARMS[P.hWarm] + ", then you sit on.";
+      return game + " Swipe to change scene.";
+    }
     var extra = "";
     if (S.mode === "label") extra = " Then type where it went.";
     if (S.mode === "voice") extra = S.voiceOK ? " Then say a word or two about where it went." : " Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so you'll type where it went.";
-    if (P.dual) extra += " Listen for two separate tones. When one slips away, or both do, tap.";
+    if (P.dual) extra += " Listen for two separate sounds. When one slips away, or both do, tap.";
     return base + extra + " Swipe to change scene.";
   }
 
@@ -2081,6 +2337,7 @@
 
     show("session");
     S.startWall = Date.now(); S.startPerf = performance.now(); S.startedAt = S.startWall; S.active = true;
+    S.sig = ""; S.warmWas = false; S.hFrom = 0; syncCount();
     setScene(S.anchor, true);
     updateClock();
     lockScreen();
@@ -2095,6 +2352,7 @@
     }, 9000);
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
+      syncPhase();
       if (S.paused) return;
       if (S.limit && Date.now() - S.startWall >= S.limit) finish(); else updateClock();
     }, 250);
@@ -2113,6 +2371,7 @@
     var now = Date.now();
     if (now - S.lastCatch < 250) return;
     S.lastCatch = now;
+    if (gameOn()) { gameTap(); return; }   // listening for the hidden tone: a tap means "I hear it", not "I came back"
     var entry = { at: now - S.startWall, label: "" };
     S.entries.push(entry);
     var n = S.entries.length;

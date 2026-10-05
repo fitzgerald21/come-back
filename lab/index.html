@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two sounds lab</title>
+<meta name="theme-color" content="#E8EFEB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1A1F" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E8EFEB; --ink: #14272C; --muted: #536A70; --line: rgba(20, 39, 44, 0.16); --card: rgba(255, 255, 255, 0.55);
+    --accent: #A9761C; --btn-bg: #14272C; --btn-ink: #E8EFEB; --good: #2F7D5B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0D1A1F; --ink: #DCEAE5; --muted: #8DA6A7; --line: rgba(220, 234, 229, 0.16); --card: rgba(220, 234, 229, 0.05);
+      --accent: #E8C27A; --btn-bg: #DCEAE5; --btn-ink: #0D1A1F; --good: #7CCBA2;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  main { max-width: 640px; margin: 0 auto; padding: 1.5rem 16px 7rem; }
+  h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(2.4rem, 9vw, 3.4rem); line-height: 1; margin: 0.4rem 0 0.5rem; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 1.4rem; }
+  h2 { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 1.6rem 0 0.6rem; }
+
+  /* mode picker */
+  .modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.55rem; }
+  .mode { text-align: left; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0.7rem 0.8rem; cursor: pointer; }
+  .mode b { display: block; font-weight: 600; font-size: 0.98rem; }
+  .mode span { display: block; color: var(--muted); font-size: 0.82rem; line-height: 1.35; margin-top: 0.15rem; }
+  .mode[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1rem 1.05rem 1.1rem; margin-top: 1.1rem; }
+  .panel h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.7rem; margin: 0; }
+  .listen { margin: 0.35rem 0 0; }
+  .hp { display: inline-block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0.05rem 0.6rem; }
+
+  .hp[hidden], .score[hidden] { display: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip { font: inherit; font-size: 0.88rem; color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.35rem 0.8rem; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pnote { color: var(--muted); font-size: 0.9rem; margin: 0.5rem 0 0; min-height: 2.6em; }
+
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.7rem 0 0; font-size: 0.93rem; }
+  .row > label, .row > .lab { color: var(--muted); flex: 0 0 auto; max-width: 42%; }
+  .row .ctl { display: flex; align-items: center; gap: 0.5rem; flex: 1 1 auto; justify-content: flex-end; min-width: 0; }
+  .row select { font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.4rem 0.5rem; min-width: 0; max-width: 100%; }
+  .row input[type="range"] { width: 100%; accent-color: var(--ink); }
+  .stack { flex-wrap: wrap; gap: 0.15rem; }
+  .stack > label { flex: 1 1 auto; max-width: none; }
+  .stack .val { color: var(--ink); font-size: 0.88rem; text-align: right; }
+  .stack .ctl { flex: 1 1 100%; }
+  .hear { font: inherit; font-size: 0.82rem; color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.65rem; cursor: pointer; white-space: nowrap; }
+  .hear:active { background: var(--line); }
+
+  .btn { font: inherit; font-size: 1rem; font-weight: 500; color: var(--btn-ink); background: var(--btn-bg); border: 1px solid transparent; border-radius: 999px; padding: 0.7rem 1.3rem; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:active { transform: translateY(1px); }
+
+  /* game panel for the hidden overtone */
+  .game { margin-top: 1rem; border-top: 1px dashed var(--line); padding-top: 0.9rem; display: none; }
+  .game.on { display: block; }
+  .game .btns { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .game .btn { flex: 1 1 140px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .score { color: var(--muted); font-size: 0.9rem; margin: 0.6rem 0 0; }
+  .score b { color: var(--ink); font-weight: 600; }
+  .flash { color: var(--good); }
+
+  /* the transport bar */
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 0.7rem 16px calc(0.7rem + env(safe-area-inset-bottom)); }
+  .bar > div { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 0.9rem; }
+  .bar .btn { flex: 0 0 auto; min-width: 7.5rem; font-family: "Instrument Serif", Georgia, serif; font-size: 1.3rem; font-weight: 400; padding: 0.55rem 1.4rem; }
+  .bar input[type="range"] { flex: 1; accent-color: var(--ink); }
+  .bar small { color: var(--muted); }
+  footer { color: var(--muted); font-size: 0.82rem; margin-top: 1.6rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Two sounds lab</h1>
+  <p class="sub">A place to try new ways of listening to two things at once, before they go into Come back.</p>
+
+  <h2>Way of listening</h2>
+  <div class="modes" id="modes"></div>
+
+  <section class="panel" id="panel" aria-live="polite">
+    <h3 id="mName"></h3>
+    <p class="listen" id="mListen"></p>
+    <span class="hp" id="mHp" hidden>Headphones needed</span>
+
+    <h2>Starting points</h2>
+    <div class="chips" id="presets"></div>
+    <p class="pnote" id="pnote"></p>
+
+    <h2>Adjust</h2>
+    <div id="controls"></div>
+
+    <div class="game" id="game">
+      <div class="btns">
+        <button class="btn" id="tap" type="button">I hear it</button>
+        <button class="btn ghost" id="show" type="button">Hold: show me</button>
+      </div>
+      <p class="score" id="score"></p>
+    </div>
+  </section>
+
+  <footer>Everything here is synthesized in your browser, so it works offline. Your settings are remembered on this device.</footer>
+</main>
+
+<div class="bar"><div>
+  <button class="btn" id="go" type="button">Listen</button>
+  <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" aria-label="Volume">
+</div></div>
+
+<script src="../samples/manifest.js"></script>
+<script src="../instruments.js"></script>
+<script>Lab.sampleBase = "../samples/";</script>
+<script src="modes.js"></script>
+<script>
+(function () {
+  var KEY = "twoSoundsLab.v1", $ = function (id) { return document.getElementById(id); };
+  var saved = {}, cur = null, playing = false, restartTimer = 0, preset = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} }
+
+  var params = {};   // current values of the open mode
+  function loadParams(m) {
+    params = {};
+    var s = (saved.modes && saved.modes[m.id]) || {};
+    Object.keys(m.defaults).forEach(function (k) { params[k] = s[k] != null ? s[k] : m.defaults[k]; });
+    preset = { name: (saved.preset && saved.preset[m.id]) || m.presets[0].n };
+  }
+  function store() {
+    saved.modes = saved.modes || {}; saved.modes[cur.id] = params;
+    saved.preset = saved.preset || {}; saved.preset[cur.id] = preset.name;
+    saved.mode = cur.id; persist();
+  }
+
+  /* ----- audio on/off ----- */
+  function ensureAudio() {
+    if (Lab.ac()) { if (Lab.ac().state === "suspended") Lab.ac().resume(); return true; }
+    try {
+      var C = window.AudioContext || window.webkitAudioContext;
+      Lab.useContext(new C());
+      Lab.setVolume(+$("vol").value);
+      return true;
+    } catch (e) { alert("This browser can’t play web audio."); return false; }
+  }
+  var beginToken = 0;
+  function begin() {
+    if (!ensureAudio()) return;
+    var m = cur, token = ++beginToken, btn = $("go");
+    playing = true; btn.textContent = "Stop";
+    var loading = !Lab.isLoaded || Object.keys(params).some(function (k) { return typeof params[k] === "string" && !Lab.isLoaded(params[k]); });
+    if (loading) { btn.textContent = "Loading…"; }
+    Lab.ready(params).then(function () {
+      if (token !== beginToken || !playing) return;   // stopped, or changed again, while loading
+      var L = Lab.start(m.id, params);
+      btn.textContent = "Stop";
+      $("score").hidden = false; resetScore(L);
+    });
+  }
+  function stop() { beginToken++; Lab.stop(); playing = false; $("go").textContent = "Listen"; }
+  function rebuild() {   // a control changed: remake the sound after a short pause, so dragging a slider isn't a stutter
+    clearTimeout(restartTimer);
+    if (playing) restartTimer = setTimeout(begin, 300);
+  }
+
+  /* ----- drawing a mode ----- */
+  function drawModes() {
+    $("modes").innerHTML = "";
+    Lab.MODES.forEach(function (m) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "mode"; b.setAttribute("aria-pressed", cur && cur.id === m.id ? "true" : "false");
+      b.innerHTML = "<b></b><span></span>"; b.firstChild.textContent = m.name; b.lastChild.textContent = m.blurb;
+      b.onclick = function () { choose(m.id); };
+      $("modes").appendChild(b);
+    });
+  }
+  function choose(id) {
+    var was = playing;
+    cur = Lab.mode(id); loadParams(cur); drawModes(); drawPanel(); store();
+    if (was) begin();
+  }
+  function noteLabel(v) { return Lab.noteName(+v) + " · " + Math.round(Lab.mtof(+v)) + " Hz"; }
+  function instOptions(c) {
+    var ids = c.only || Lab.instIds(c.kinds), h = c.none ? '<option value="none">None</option>' : "";
+    if (c.only || c.kinds) return h + ids.map(function (i) { return '<option value="' + i + '">' + Lab.INST[i].name + "</option>"; }).join("");
+    function grp(label, kind, sampled) {
+      var ids = Lab.instIds(kind).filter(function (i) { return !!Lab.INST[i].sampled === sampled; });
+      return ids.length ? '<optgroup label="' + label + '">' + ids.map(function (i) { return '<option value="' + i + '">' + Lab.INST[i].name + "</option>"; }).join("") + "</optgroup>" : "";
+    }
+    return h + grp("Held · recorded", "sustained", true) + grp("Struck · recorded", "struck", true) + grp("Held · synthesized", "sustained", false) + grp("Struck · synthesized", "struck", false);
+  }
+  function drawPanel() {
+    $("mName").textContent = cur.name; $("mListen").textContent = cur.listen; $("mHp").hidden = !cur.headphones;
+    $("presets").innerHTML = "";
+    cur.presets.forEach(function (pr) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = pr.n; b.setAttribute("aria-pressed", preset.name === pr.n ? "true" : "false");
+      b.onclick = function () {
+        preset.name = pr.n;
+        params = {}; Object.keys(cur.defaults).forEach(function (k) { params[k] = pr.v[k] != null ? pr.v[k] : cur.defaults[k]; });
+        store(); drawPanel(); if (playing) begin();
+      };
+      $("presets").appendChild(b);
+    });
+    var cp = cur.presets.filter(function (p) { return p.n === preset.name; })[0];
+    $("pnote").textContent = cp ? cp.note : "";
+    var box = $("controls"); box.innerHTML = "";
+    cur.controls.forEach(function (c) { box.appendChild(drawControl(c)); });
+    $("game").className = "game" + (cur.id === "hidden" ? " on" : "");
+  }
+  function drawControl(c) {
+    var row = document.createElement("div"), id = "c_" + c.k, ctl, val;
+    row.className = "row" + (c.t === "range" || c.t === "note" ? " stack" : "");
+    var lab = '<label for="' + id + '">' + c.label + "</label>";
+    if (c.t === "range" || c.t === "note") {
+      var min = c.min, max = c.max, step = c.t === "note" ? 1 : c.step;
+      row.innerHTML = lab + '<span class="val" id="' + id + 'v"></span><div class="ctl"><input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '"></div>';
+      ctl = row.querySelector("input"); val = row.querySelector(".val");
+      var show = function () { val.textContent = c.t === "note" ? noteLabel(ctl.value) : c.fmt(ctl.value); };
+      ctl.value = params[c.k]; show();
+      ctl.oninput = function () { params[c.k] = +ctl.value; show(); store(); rebuild(); };
+      return row;
+    }
+    var opts = "";
+    if (c.t === "inst") opts = instOptions(c);
+    else Object.keys(c.opts).forEach(function (k) { opts += '<option value="' + k + '">' + c.opts[k] + "</option>"; });
+    row.innerHTML = lab + '<div class="ctl"><select id="' + id + '">' + opts + "</select>" + (c.t === "inst" ? '<button type="button" class="hear">hear</button>' : "") + "</div>";
+    ctl = row.querySelector("select"); ctl.value = String(params[c.k]);
+    if (ctl.value !== String(params[c.k])) { params[c.k] = ctl.value; }
+    ctl.onchange = function () { params[c.k] = ctl.value; store(); rebuild(); };
+    if (c.t === "inst") {
+      row.querySelector(".hear").onclick = function () {
+        if (!ensureAudio()) return;
+        var pk = pitchKeyFor(c.k), midi = pk ? +params[pk] : 57;
+        if (ctl.value !== "none") Lab.audition(ctl.value, midi);
+      };
+    }
+    return row;
+  }
+  // an instrument control sits right before its pitch control (iA/nA, iB/nB, iC/nC, mA…), so hear it at that pitch
+  function pitchKeyFor(k) {
+    var pairs = { iA: ["nA", "mA", "root", "note"], iB: ["nB", "mB"], iC: ["nC"], inst: ["note"], ground: ["root"] };
+    return (pairs[k] || []).filter(function (p) { return p in params; })[0];
+  }
+
+  /* ----- hidden-overtone game ----- */
+  function resetScore(L) {
+    $("score").textContent = !L || !L.reveal ? "" : L.tap ? "Tap when you hear it. The count appears here." : "It never leaves, so there is nothing to tap. Hold “Show me” to remind yourself what you’re listening for.";
+  }
+  function showScore() {
+    var L = Lab.current(); if (!L || !L.tally) return;
+    var s = L.tally();
+    if (!L.events.length && !s.extra) return;
+    $("score").innerHTML = "Heard <b>" + s.hits + "</b> · missed <b>" + s.misses + "</b> · taps with nothing there <b>" + s.extra + "</b>";
+  }
+  $("tap").addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    var L = Lab.current(); if (!playing || !L || !L.tap) return;
+    var r = L.tap(); showScore();
+    if (r === "hit") { var f = document.createElement("span"); f.className = "flash"; $("score").appendChild(document.createElement("br")); f.textContent = "Yes, it was there."; $("score").appendChild(f); }
+  });
+  $("show").addEventListener("pointerdown", function (e) { e.preventDefault(); var L = Lab.current(); if (L && L.reveal) L.reveal(true); try { e.target.setPointerCapture(e.pointerId); } catch (x) {} });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) { $("show").addEventListener(t, function () { var L = Lab.current(); if (L && L.reveal) L.reveal(false); }); });
+  setInterval(function () { if (playing && cur && cur.id === "hidden") showScore(); }, 1500);
+
+  /* ----- transport ----- */
+  $("go").onclick = function () { if (playing) stop(); else begin(); };
+  $("vol").oninput = function () { Lab.setVolume(+this.value); saved.vol = +this.value; persist(); };
+  if (saved.vol != null) $("vol").value = saved.vol;
+
+  choose(saved.mode && Lab.mode(saved.mode) ? saved.mode : "duo");
+})();
+</script>
+</body>
+</html>

@@ -1,14 +1,23 @@
 /* Come back: offline support.
    Pages load network-first so a new version shows up on the next open; sounds and fonts are cached after first use. */
-var CACHE = "come-back-v7";
-var CORE = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"]
+var CACHE = "come-back-v8";
+var CORE = ["./", "index.html", "instruments.js", "tones.js", "samples/manifest.js", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"]
   .concat(["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "previews/" + n + ".jpg"; }));
 var SOUNDS = ["daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "sounds/" + n + ".mp3"; });
+// The recorded instruments for the held tones. The list comes from the same manifest the page reads, so they can't drift apart.
+try { importScripts("samples/manifest.js"); } catch (e) {}
+var TONES = [];
+try {
+  var DEFS = (self.Lab && self.Lab.SAMPLE_DEFS) || {};
+  Object.keys(DEFS).forEach(function (id) {
+    if (DEFS[id].kind === "sustained") DEFS[id].notes.forEach(function (n) { TONES.push("samples/" + n.f); });
+  });
+} catch (e) {}
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
     // the recordings are large, so fetch them in the background without holding up the install
-    SOUNDS.forEach(function (u) { c.add(u).catch(function () {}); });
+    SOUNDS.concat(TONES).forEach(function (u) { c.add(u).catch(function () {}); });
     return c.addAll(CORE);
   }).then(function () { return self.skipWaiting(); }));
 });
@@ -39,7 +48,7 @@ self.addEventListener("fetch", function (e) {
     }));
     return;
   }
-  if (sameOrigin && url.pathname.indexOf("/sounds/") >= 0 && /\.(mp3|ogg)$/.test(url.pathname)) {
+  if (sameOrigin && (url.pathname.indexOf("/sounds/") >= 0 || url.pathname.indexOf("/samples/") >= 0) && /\.(mp3|ogg)$/.test(url.pathname)) {
     // recordings never change underneath us: cache first
     e.respondWith(caches.match(req).then(function (m) { return m || fetch(req).then(function (r) { return put(req, r); }); }));
     return;
