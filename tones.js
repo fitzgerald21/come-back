@@ -2,12 +2,12 @@
 
    Two voices      two steady sounds at once. Hold both in mind.
    Hidden overtone one held note with a much quieter pure tone hidden inside it. It can sit there the whole time, or come
-                   and go, in which case a tap is scored by sound only: a small ding when the tone was there, a wooden
-                   knock when it wasn't (or when it came and went and you didn't tap). No numbers, nothing to feel bad about. */
+                   and go. Then a tap answers by sound: a small ding when the tone was there, a wooden knock when it
+                   wasn't. A visit you let slip by makes no sound; the app just counts it. */
 (function (global) {
   "use strict";
   var Lab = global.Lab, u = Lab.u, INST = Lab.INST, mtof = Lab.mtof;
-  var gainNode = u.gain, chain = u.chain, rnd = u.rnd;
+  var gainNode = u.gain, filt = u.filt, chain = u.chain, rnd = u.rnd;
   var T = Lab.Tones = { last: null };
   function ac() { return Lab.ac(); }
 
@@ -49,7 +49,12 @@
     var id = T.held(p.hInst), midi = Lab.actualMidi(id, p.hNote), f = mtof(midi);
     var out = gainNode(0.35), level = function (db) { return 0.5 * 1.4142 * Math.pow(10, db / 20); }, amp = level(D.db);
     chain(out, u.pan({ c: 0, l: -0.9, r: 0.9 }[p.hSide] || 0), L.out);
-    Lab.play(L, id, f, t0, Infinity, 1, out);
+    // A note made of harmonics (an organ, a triangle wave, a buzz) already has energy at exactly the pitch the hidden tone
+    // lands on, so the tone would just merge into it and never stand out. A narrow notch there clears the space, so the
+    // hidden tone is a separate thing that appears and disappears.
+    var held = out;
+    if (hooks.notch !== false) { held = filt("notch", f * p.hRatio, 14); held.connect(out); }
+    Lab.play(L, id, f, t0, Infinity, 1, held);
 
     // the quiet partner: a pure harmonic of the same note
     var o = L.osc("sine", f * p.hRatio), hg = gainNode(0), rv = gainNode(0);

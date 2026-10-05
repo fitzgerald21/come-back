@@ -87,8 +87,49 @@ def process(x, sustain, maxlen):
     if (last - first) * w < 0.9 * SR:
         first, last = int(n * 0.35), n
     x = x[: min(len(x), last * w)]
-    fade = int(0.01 * SR); x[-fade:] *= np.linspace(1, 0, fade)
-    return x, first * w / SR
+    return flatten(x, first * w), first * w / SR
+
+
+def flatten(x, start, win=0.15):
+    """Hold a recording's level steady from `start` on. Real players swell and fade a little, and a looped swell
+    comes round again every few seconds as an obvious pulse. This keeps the quick detail (vibrato, breath) and
+    removes only the slow rise and fall."""
+    w = int(win * SR)
+    env = np.sqrt(np.convolve(x ** 2, np.ones(w) / w, mode="same")) + 1e-6
+    ref = np.median(env[start:])
+    gain = np.clip(ref / env, 0.4, 2.5)
+    ramp = int(0.25 * SR); a = max(0, start - ramp)
+    gain[:a] = 1
+    gain[a:start] = np.linspace(1, gain[start], start - a)   # ease in, so the attack is untouched
+    return x * gain
+
+
+def find_loop(x, ls0, xb):
+    """Where to join the recording to itself. For a held note we play it once, then keep crossfading into its steady part.
+    The crossfade is only seamless if, at the join, the end of the old pass and the start of the new one are the same
+    waveform. So we search for the pair of points whose surrounding sound matches best (normalized cross-correlation).
+    Returns (samples cut at the best end, loop start in seconds, correlation 0-1)."""
+    n = int(xb * SR); L = len(x)
+    best = (-1.0, L, int(ls0 * SR))
+    for cut in range(L, max(L - int(0.6 * SR), 2 * n + SR), -int(0.02 * SR)):
+        B = x[cut - n: cut]; nb = np.sqrt(np.sum(B ** 2)) + 1e-9
+        hi = cut - n - int(1.0 * SR)          # the loop must be at least a second long
+        lo = int(0.05 * SR)
+        if hi <= lo:
+            continue
+        seg = x[: hi + n]
+        size = 1 << int(np.ceil(np.log2(len(seg) + n)))
+        c = np.fft.irfft(np.fft.rfft(seg, size) * np.conj(np.fft.rfft(B, size)), size)[: hi + 1]
+        cs = np.concatenate([[0], np.cumsum(seg ** 2)])
+        p = np.arange(lo, hi + 1)
+        ncc = c[lo: hi + 1] / (np.sqrt(cs[p + n] - cs[p]) * nb + 1e-9)
+        k = int(np.argmax(ncc))
+        if ncc[k] > best[0]:
+            best = (float(ncc[k]), cut, int(p[k]) + n)
+    corr, cut, ls = best
+    out = x[:cut].copy()
+    fade = int(0.01 * SR); out[-fade:] *= np.linspace(1, 0, fade)
+    return out, ls / SR, corr
 
 
 def loudness(x, sustain):
@@ -190,13 +231,17 @@ def main():
         for note, m, x, lv, ls in rows:
             x = x * (target / lv)
             peak = np.max(np.abs(x)); x = x * min(1, 0.95 / peak)   # a very peaky note (kalimba) is capped, so it sits a little lower
+            xf = None; cc = None
             if ls is not None and kind == "sustained" and iid not in ("bowl",):
-                # make the loop a whole number of pitch cycles long, so where it joins itself the waveform is continuous
-                period = SR / (440 * 2 ** ((m - 69) / 12)); dsec = len(x) / SR
-                cycles = max(1, round((dsec - ls) * SR / period)); ls = dsec - cycles * period / SR
+                xf = min(0.4, 0.3 * (len(x) / SR - ls))
+                x0, ls0_, xf0 = x, ls, xf
+                x, ls, cc = find_loop(x0, ls0_, xf)
+                if cc < 0.85:   # an ensemble never repeats exactly: blend over longer instead, which hides the join
+                    xf = min(0.8, 0.3 * (len(x0) / SR - ls0_))
+                    x, ls, cc = find_loop(x0, ls0_, xf)
             rel = "%s/%s.mp3" % (iid, note.replace("#", "s"))
             total += encode(x, os.path.join(OUT, rel))
-            out.append({"f": rel, "m": round(float(m), 2), "d": round(len(x) / SR, 2), "ls": None if ls is None else round(ls, 4)})
+            out.append({"f": rel, "m": round(float(m), 2), "d": round(len(x) / SR, 2), "ls": None if ls is None else round(ls, 4), "xf": None if xf is None else round(xf, 3), "cc": None if cc is None else round(cc, 2)})
         manifest[iid] = {"name": name, "kind": kind, "level": target, "notes": out}
         print("%-11s %2d notes  pitch error (cents) max %3.0f" % (iid, len(out), max(abs(o["m"] - midi(r[0])) for o, r in zip(out, rows)) * 100))
 

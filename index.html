@@ -276,6 +276,8 @@
   .dot { width: 1.5rem; height: 1.5rem; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
   .dot::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--muted); opacity: 0.45; transition: opacity 0.3s, transform 0.3s; }
   .dot.on::before { opacity: 1; background: var(--ink); transform: scale(1.25); }
+  .gamescore { margin-top: 0.4rem; color: var(--muted); font-size: 0.95rem; letter-spacing: 0.02em; text-align: center; font-variant-numeric: tabular-nums; flex: none; }
+  .gamescore b, .snd-game b { color: var(--ink); font-weight: 600; }
   .scene-name { position: absolute; top: 3.6rem; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.04em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 1; }
   .scene-name.show { opacity: 1; }
   .bottom { min-height: 6.5rem; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.25rem; }
@@ -641,6 +643,7 @@
       <div class="phase" id="phase" aria-hidden="true">Breathe in</div>
       <div class="reminder" id="reminder" role="status"></div>
     </div>
+    <div class="gamescore" id="gameScore" hidden></div>
   </div>
   <div class="dots" id="dots" role="group" aria-label="Scenes"></div>
   <div class="bottom">
@@ -1271,7 +1274,7 @@
           if (tok !== toneTok || !AC) return;
           var L = Lab.layer();
           if (mode === "dual") T.duo(L, snap);
-          else T.hidden(L, snap, { preview: trying, miss: function () { if (!(S.active && S.paused)) T.clank(); } });
+          else T.hidden(L, snap, { preview: trying, miss: function () { if (!(S.active && S.paused)) { SC.missed++; renderScore(); } } });
           Lab.fadeIn(L, 1.5); curTones = L; T.last = L;
           syncControls();
         });
@@ -1280,12 +1283,22 @@
   }
   function ambReact() { if (curAmb && curAmb.react) curAmb.react(); }
 
-  // A tap while the overtone comes and goes means "I hear it". It isn't a return, so it isn't counted.
+  // A running tally for the Challenge, only for you: how many you caught, how many slipped by, and taps when nothing was there.
+  var SC = { caught: 0, missed: 0, extra: 0 };
+  function scoreHTML() { return "Caught <b>" + SC.caught + "</b> · Slipped by <b>" + SC.missed + "</b> · Extra taps <b>" + SC.extra + "</b>"; }
+  function renderScore() {
+    $("gameScore").innerHTML = scoreHTML();
+    controls.forEach(function (root) { var p = root.querySelector('[data-role="score"]'); if (p) p.innerHTML = scoreHTML(); });
+  }
+  function resetScore() { SC.caught = SC.missed = SC.extra = 0; renderScore(); }
+  // A tap while the overtone comes and goes means "I hear it". It isn't a return, so it isn't counted as one.
+  // A ding means it was there, a wooden knock means it wasn't. A visit you let slip by makes no sound.
   function gameTap() {
     var L = curTones;
     if (!L || !L.tap) return;
     var r = L.tap();
-    if (r === "hit") T.ding(); else if (r === "nothing") T.clank();
+    if (r === "hit") { SC.caught++; T.ding(); } else if (r === "nothing") { SC.extra++; T.clank(); }
+    renderScore();
     if (S.active) {
       if (S.anchor === "circle") ripple(); else V.pulse = Math.min(1, V.pulse + 0.5);
       try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
@@ -1293,6 +1306,7 @@
   }
   function syncCount() {
     var hide = gameOn();
+    $("gameScore").hidden = !hide;
     els.count.classList.toggle("off", !$("showCount").checked || hide);
     $("dim").classList.toggle("nocount", hide);
   }
@@ -1420,6 +1434,7 @@
         '<div class="snd-game" data-role="game" hidden>' +
           '<div class="snd-gamebtns"><button class="btn" type="button" data-game="tap">I hear it</button>' +
           '<button class="btn ghost" type="button" data-game="show">Hold to hear it</button></div>' +
+          '<p class="snd-note" data-role="score"></p>' +
           '<p class="snd-note" data-role="game-note"></p>' +
         "</div>" +
         '<button class="btn ghost snd-preview" type="button" data-pv="hidden">Try the overtone</button>' +
@@ -1578,9 +1593,10 @@
         : "It stays in the note the whole time. Keep listening for it.";
       var game = root.querySelector('[data-role="game"]');
       game.hidden = !(P.mode === "hidden" && hearing);
+      game.querySelector('[data-role="score"]').innerHTML = scoreHTML();
       game.querySelector('[data-game="tap"]').hidden = P.hShow !== "events";
       game.querySelector('[data-role="game-note"]').textContent = P.hShow === "events"
-        ? "A small ding means it was there. A wooden knock means it wasn't, or it came and went."
+        ? "A small ding means you caught it. A wooden knock means nothing was there. If one slips by, nothing sounds."
         : "Hold the button to hear the hidden tone clearly, then let go and keep listening for it.";
       Array.prototype.forEach.call(root.querySelectorAll(".snd-preview"), function (b) {
         b.hidden = !!S.active;   // during a sit the real thing is already playing
@@ -1593,6 +1609,7 @@
   function togglePreview() {
     initAudio(); if (!AC) return;
     S.preview = !S.preview;
+    if (S.preview) resetScore();
     clearTimeout(S.pvTimer);
     if (S.preview) S.pvTimer = setTimeout(function () { S.preview = false; applyAudio(); updatePreviewBtn(); }, 60000);
     applyAudio(); updatePreviewBtn();
@@ -2169,7 +2186,7 @@
     }[S.anchor] || "Rest your eyes here and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.";
     if (S.active && P.mode === "hidden") {
       var game = P.hShow === "events"
-        ? "A held note is playing. Now and then a very faint tone slips in behind it. When you hear it, tap. A small ding means you caught it; a wooden knock means it wasn't there."
+        ? "A held note is playing. Now and then a very faint tone slips in behind it. When you hear it, tap. A small ding means you caught it; a wooden knock means nothing was there. The count is just for you."
         : "A very faint tone sits inside the held note the whole time. Keep listening for it, and tap when it slips away.";
       return game + " Swipe to change scene.";
     }
@@ -2317,7 +2334,7 @@
 
     show("session");
     S.startWall = Date.now(); S.startPerf = performance.now(); S.startedAt = S.startWall; S.active = true;
-    syncCount(); syncControls();   // in a sit the real thing is playing, so the "try it" buttons go away
+    resetScore(); syncCount(); syncControls();   // in a sit the real thing is playing, so the "try it" buttons go away
     setScene(S.anchor, true);
     updateClock();
     lockScreen();

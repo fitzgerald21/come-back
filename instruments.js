@@ -110,10 +110,10 @@
   def("organ", "Organ", "sustained", { atk: 0.3, rel: 0.4, trim: 0.559, make: function (n, f, out) {
     [[1, 1], [2, 0.5], [3, 0.3], [4, 0.15]].forEach(function (h) { chain(n.osc("sine", f * h[0]), gainNode(h[1]), out); });
   } });
-  def("hollow", "Hollow (square)", "sustained", { atk: 0.4, rel: 0.5, trim: 0.82, make: function (n, f, out) {
+  def("hollow", "Hollow (square)", "sustained", { atk: 0.4, rel: 0.5, trim: 0.72, make: function (n, f, out) {
     chain(n.osc("square", f), filt("lowpass", f * 3.5, 0.5), gainNode(0.76), out);
   } });
-  def("buzz", "Buzzy hum", "sustained", { atk: 0.4, rel: 0.5, trim: 0.65, make: function (n, f, out) {
+  def("buzz", "Buzzy hum", "sustained", { atk: 0.4, rel: 0.5, trim: 0.75, make: function (n, f, out) {
     chain(n.osc("sawtooth", f), filt("lowpass", Math.min(f * 5, 5000), 0.7), gainNode(1.3), out);
   } });
   def("chime", "Chime", "sustained", { atk: 0.5, rel: 0.6, trim: 0.7, make: function (n, f, out) {
@@ -294,7 +294,7 @@
       if (!LOADING[id]) {
         var def = Lab.SAMPLE_DEFS[id];
         LOADING[id] = Promise.all(def.notes.map(function (nt) {
-          return fetchBuf(Lab.sampleBase + nt.f).then(decode).then(function (buf) { return { m: nt.m, ls: nt.ls, buf: buf }; });
+          return fetchBuf(Lab.sampleBase + nt.f).then(decode).then(function (buf) { return { m: nt.m, ls: nt.ls, xf: nt.xf, cc: nt.cc, buf: buf }; });
         })).then(function (notes) { SAMP[id] = { notes: notes, def: def }; })
           .catch(function (e) { console.warn("Could not load " + id + ", using the synthesized version.", e); });
       }
@@ -325,9 +325,11 @@
       // held: play the recording once, then keep crossfading into its steady part. Each new pass starts a little before the
       // loop point, so that by the time its fade-in ends it is exactly where the old pass would loop to: the waveform
       // continues smoothly instead of two copies fighting.
-      var ls = best.ls, xb = Math.min(0.6, 0.4 * (d - ls), ls * 0.95);   // crossfade length, in recording seconds
+      // crossfade length, in recording seconds: the one the loop was matched with when the file was built
+      var ls = best.ls, xb = best.xf ? Math.min(best.xf, ls * 0.95) : Math.min(0.6, 0.4 * (d - ls), ls * 0.95);
       var D = d / rate, XF = xb / rate, LOOP = (d - ls) / rate, SEG = (d - ls + xb) / rate, first = src(t, 0);
-      var power = S.def.power, UP = [], DOWN = [];   // recordings that don't line up between passes (a bowl) crossfade by equal power
+      // recordings whose two passes don't line up (a bowl, or a whole section of players) crossfade by equal power instead
+      var power = S.def.power || (best.cc != null && best.cc < 0.85), UP = [], DOWN = [];
       for (var q = 0; q < 24; q++) { UP.push(Math.sin(q / 23 * Math.PI / 2)); DOWN.push(Math.cos(q / 23 * Math.PI / 2)); }
       function fadeIn(g, at) { if (power) g.setValueCurveAtTime(new Float32Array(UP), at, XF); else g.linearRampToValueAtTime(1, at + XF); }
       function fadeOut(g, at) { if (power) g.setValueCurveAtTime(new Float32Array(DOWN), at, XF); else { g.setValueAtTime(1, at); g.linearRampToValueAtTime(0, at + XF); } }
