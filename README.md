@@ -8,11 +8,11 @@ On iPhone, open the link in Safari, tap Share, then **Add to Home Screen** to us
 
 ## What it does
 
-- Pick a scene to rest on (Eyes closed, flame, trees, rain, ocean, stars) and a length, or no limit.
+- Pick a scene to rest on (Eyes closed, flame, trees, rain, ocean, stars) and a length, or no limit. Eyes closed is a black screen with one big number in the middle.
 - Tap each time you return. A reminder from your own list appears.
 - Background sound is one of: **Scene sounds**, **Two voices**, **Hidden overtone** or **Silent**. Bells are a separate option.
   - **Two voices:** two held sounds at once (real recorded flute, cello, clarinet, bowl, choir and more, or synthesized ones). Keep hearing both, and tap when one slips away.
-  - **Hidden overtone:** one held note with a much quieter tone inside it. Use it as a short warm-up before your sit, or for the whole sit. It can sit there quietly the whole time, or come and go: tap when you hear it, and a small ding says you caught it, a wooden knock says it wasn't there. There's no score. Those taps aren't counted as returns.
+  - **Hidden overtone:** one held note with a much quieter tone inside it. Either **Always there** (keep listening for it, and tap when it slips away) or **Challenge** (it comes and goes: tap when you hear it, and a small ding says you caught it, a wooden knock says it wasn't there. There's no score, and those taps aren't counted as returns).
   - Both have ready-made setups at different difficulties, and you can save your own and come back to them. You can change anything during a sit from the Sound menu.
 - Past sessions and insights are kept on your device only.
 

@@ -137,7 +137,7 @@
     --btn-bg: #E6EDE9;
     --btn-ink: #0A0F12;
   }
-  :root.dimmed { --bg: #000; }   /* the whole page, including the strips by the notch and home bar, goes black with the dim screen */
+  :root.eyes-closed { --bg: #000; }   /* the whole page, including the strips by the notch and home bar, is black in the Eyes closed scene */
   html { background: var(--bg); scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   *, *::before, *::after { box-sizing: inherit; }
   body {
@@ -236,7 +236,7 @@
   #session { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: pan-y; overflow: hidden; }
   #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0; }
   #session > .bar, #session > .stage, #session > .dots, #session > .bottom { position: relative; z-index: 1; }
-  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
+  .bar { position: relative; z-index: 4; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }   /* above the scene, always */
   .count { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .count b { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.7rem; color: var(--ink); margin-right: 0.3rem; display: inline-block; }
   .count.bump b { animation: bump 0.6s ease-out; }
@@ -395,14 +395,13 @@
   .end-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
   /* ---------- Dim screen: black, with one big quiet number ---------- */
-  .dim { position: absolute; inset: 0; z-index: 8; background: #000; color: #4A565A; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-  .dim-num { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(7rem, 42vmin, 18rem); line-height: 1; font-variant-numeric: tabular-nums; }
+  .darkcount { display: flex; flex-direction: column; align-items: center; color: #4A565A; flex: none; }
+  .dim-num { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(4rem, min(42vmin, calc(100vh - 21rem)), 18rem); line-height: 1; font-variant-numeric: tabular-nums; }
   .dim-num.bump { animation: dimbump 0.7s ease-out; }
   @keyframes dimbump { 0% { color: #B8C4C6; transform: scale(1.06); } 100% { color: #4A565A; transform: scale(1); } }
   .dim-word { font-size: 1rem; letter-spacing: 0.04em; margin-top: 0.25rem; }
-  .dim-wake { position: absolute; bottom: max(1.5rem, env(safe-area-inset-bottom, 0px)); background: none; border: 1px solid #2A3336; border-radius: 999px; color: #5C696D; padding: 0.45rem 1.1rem; font-size: 0.9rem; cursor: pointer; }
-  .dim.off .dim-num, .dim.off .dim-word { visibility: hidden; }
-  .dim.nocount .dim-num, .dim.nocount .dim-word { visibility: hidden; }
+  #session[data-anchor="dark"] .bar .count { visibility: hidden; }   /* the big number in the middle is the count */
+  .darkcount.nocount .dim-num, .darkcount.nocount .dim-word { visibility: hidden; }
 
   /* ---------- Trends ---------- */
   .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0 0 1.5rem; }
@@ -634,6 +633,10 @@
       <div class="orb" id="orb"></div>
     </div>
     <div class="spacer" id="spacer" aria-hidden="true" hidden></div>
+    <div class="darkcount" id="dim" hidden>
+      <div class="dim-num" id="dimNum" aria-live="polite">0</div>
+      <div class="dim-word" id="dimWord">returns</div>
+    </div>
     <div class="slot" id="slot">
       <div class="phase" id="phase" aria-hidden="true">Breathe in</div>
       <div class="reminder" id="reminder" role="status"></div>
@@ -657,11 +660,6 @@
       <button class="btn ghost" id="doneListen" type="button">Done</button>
       <small>Or tap anywhere, or press space, to finish.</small>
     </div>
-  </div>
-  <div class="dim" id="dim" hidden>
-    <div class="dim-num" id="dimNum" aria-live="polite">0</div>
-    <div class="dim-word" id="dimWord">returns</div>
-    <button class="dim-wake" id="dimWake" type="button">Show screen</button>
   </div>
 </section>
 
@@ -826,7 +824,7 @@
     entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
     listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
-    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null, dim: false, peek: false
+    nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null
   };
 
   /* ---------- storage (guarded) ---------- */
@@ -1130,16 +1128,12 @@
      Each has ready-made setups, plus any you save yourself, which stay on this device. */
   var T = Lab.Tones;
   var DUAL_F = ["iA", "nA", "iB", "nB", "bal", "spread", "what", "move", "depth", "rate"];
-  var HID_F = ["hInst", "hNote", "hRatio", "hDiff", "hShow", "hSide", "hUse", "hWarm", "hAfter"];
-  var HID_HEARD = ["hInst", "hNote", "hRatio", "hDiff", "hShow", "hSide"];   // the settings that change what you hear; the rest only change how the sit runs
+  var HID_F = ["hInst", "hNote", "hRatio", "hDiff", "hShow", "hSide"];
   var MOVES = { drift: "Each on its own", sync: "Together (in sync)", opposite: "Opposite (out of sync)" };
   var WHATS = { volume: "Volume", pitch: "Pitch", none: "Nothing (steady)" };
   var RATIOS = { 2: "An octave up", 3: "An octave and a fifth up", 4: "Two octaves up", 5: "Two octaves and a third up", 6: "Two octaves and a fifth up" };
   var SIDES = { c: "With the main note", l: "In the left ear", r: "In the right ear" };
-  var USES = { warm: "A warm-up", sit: "The whole sit" };
-  var WARMS = { 1: "1 minute", 2: "2 minutes", 3: "3 minutes", 5: "5 minutes", 10: "10 minutes" };
-  var AFTERS = { off: "Silence", scene: "The scene's sound" };
-  var SHOWS = { events: "Comes and goes", always: "Always there" };
+  var SHOWS = { always: "Always there", events: "Challenge" };
   var DIFFS = {}; Object.keys(T.DIFF).forEach(function (k) { DIFFS[k] = T.DIFF[k].name; });
   var DUAL_PRESETS = {
     easy:       { name: "Easy", note: "Far apart in pitch, one in each ear. Headphones help.",
@@ -1160,20 +1154,20 @@
                   v: { iA: "clarinet", nA: 50, iB: "choir", nB: 62, bal: 0.9, spread: 0.5, what: "pitch", move: "sync", depth: 0.35, rate: 0.07 } }
   };
   var HID_PRESETS = {
-    warmup: { name: "Short warm-up", note: "For three minutes a faint tone comes and goes behind a singing bowl. Tap when you hear it. Then silence, and your sit.",
-              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "events", hSide: "c", hUse: "warm", hWarm: 3, hAfter: "off" } },
-    easy:   { name: "Easy first try", note: "A clearer tone and two minutes. A good way to learn what you're listening for.",
-              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "easy", hShow: "events", hSide: "c", hUse: "warm", hWarm: 2, hAfter: "off" } },
-    sit:    { name: "The whole sit", note: "The same game, all the way through. Tap when you hear it.",
-              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "events", hSide: "c", hUse: "sit", hWarm: 3, hAfter: "off" } },
     always: { name: "Always there", note: "A very faint tone sits inside the note the whole time. Keep hearing it, and tap when it slips away.",
-              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "always", hSide: "c", hUse: "sit", hWarm: 3, hAfter: "off" } },
-    hard:   { name: "Hard warm-up", note: "A sung note, a much quieter tone, five minutes, then the scene's own sound.",
-              v: { hInst: "voice", hNote: 52, hRatio: 3, hDiff: "hard", hShow: "events", hSide: "c", hUse: "warm", hWarm: 5, hAfter: "scene" } }
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "always", hSide: "c" } },
+    easy:   { name: "Challenge: easy", note: "The tone comes and goes. Tap when you hear it: a ding means you caught it, a wooden knock means it wasn't there.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "easy", hShow: "events", hSide: "c" } },
+    medium: { name: "Challenge: medium", note: "Quieter, and gone for longer. Tap when you hear it.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "medium", hShow: "events", hSide: "c" } },
+    hard:   { name: "Challenge: hard, in a voice", note: "A sung note with a much quieter tone inside it. Tap when you hear it.",
+              v: { hInst: "voice", hNote: 52, hRatio: 3, hDiff: "hard", hShow: "events", hSide: "c" } },
+    barely: { name: "Challenge: barely there", note: "As quiet as it gets. Expect to lose it.",
+              v: { hInst: "bowl", hNote: 52, hRatio: 3, hDiff: "barely", hShow: "events", hSide: "c" } }
   };
   var KIND = {
     dual:   { fields: DUAL_F, presets: DUAL_PRESETS, key: "preset", fallback: "easy" },
-    hidden: { fields: HID_F, presets: HID_PRESETS, key: "hpreset", fallback: "warmup" }
+    hidden: { fields: HID_F, presets: HID_PRESETS, key: "hpreset", fallback: "always" }
   };
   var KEY_TONES = "come-back:tone-presets";
   var MINE = { dual: [], hidden: [] };   // setups you saved
@@ -1239,22 +1233,16 @@
   }
 
   var curAmb = null, ambName = "", curTones = null, toneKey = "", toneTok = 0;
-  // Where we are in a sit. A warm-up is timed from when the overtone started, so switching to it partway through still gets a whole warm-up.
-  function elapsedMs() { return S.active ? (S.paused ? S.pausedAt : Date.now()) - S.startWall : 0; }
-  function warmDone() { return !!S.active && P.mode === "hidden" && P.hUse === "warm" && elapsedMs() - (S.hFrom || 0) >= P.hWarm * 60000; }
-  function gameOn() { return !!S.active && P.mode === "hidden" && P.hShow === "events" && !warmDone(); }
-  function ambWanted() { return P.mode === "scene" || (P.mode === "hidden" && warmDone() && P.hAfter === "scene"); }
+  function gameOn() { return !!S.active && P.mode === "hidden" && P.hShow === "events"; }
+  function ambWanted() { return P.mode === "scene"; }
   function wantTones() {
     if (S.preview) return P.mode === "hidden" ? "hidden" : "dual";
     if (!S.active) return "";
-    if (P.mode === "dual") return "dual";
-    if (P.mode === "hidden" && !warmDone()) return "hidden";
-    return "";
+    return P.mode === "dual" || P.mode === "hidden" ? P.mode : "";
   }
   function toneKeyOf(m) {
     if (!m) return "";
-    var fields = m === "dual" ? DUAL_F : HID_HEARD;
-    return m + "|" + (m === "hidden" && S.preview && !S.active ? "try|" : "") + fields.map(function (f) { return P[f]; }).join("|");
+    return m + "|" + (m === "hidden" && S.preview && !S.active ? "try|" : "") + (m === "dual" ? DUAL_F : HID_F).map(function (f) { return P[f]; }).join("|");
   }
   function applyAudio() {
     if (!AC || !MASTER) return;
@@ -1308,25 +1296,12 @@
     els.count.classList.toggle("off", !$("showCount").checked || hide);
     $("dim").classList.toggle("nocount", hide);
   }
-  // Called a few times a second during a sit: notices when a warm-up ends, or the settings change what's playing.
-  function syncPhase() {
-    var sig = [wantTones(), ambWanted(), gameOn()].join("|");
-    if (sig === S.sig) return;
-    var first = S.sig === "";
-    S.sig = sig;
-    applyAudio();
-    els.hint.textContent = hintText();
-    syncCount(); syncControls();
-    var done = warmDone();
-    if (!first && done && !S.warmWas) bell(528, 0.09);   // a soft bell: the warm-up is over
-    S.warmWas = done;
-  }
 
   /* ---------- sound settings (shared by the home screen and the in-session menu) ---------- */
-  var P = { mode: "scene", amb: true, bells: true, real: true, dual: false, preset: "easy", hpreset: "warmup", vol: 0.7 };
+  var P = { mode: "scene", amb: true, bells: true, real: true, dual: false, preset: "easy", hpreset: "always", vol: 0.7 };
   function applyMode() { P.amb = P.mode === "scene"; P.dual = P.mode === "dual"; }
   DUAL_F.forEach(function (f) { P[f] = DUAL_PRESETS.easy.v[f]; });
-  HID_F.forEach(function (f) { P[f] = HID_PRESETS.warmup.v[f]; });
+  HID_F.forEach(function (f) { P[f] = HID_PRESETS.always.v[f]; });
   var BASE = {};   // the setup you started from before changing something, so a saved one can be updated
   function loadPresetInto(kind, id) {
     var pr = findPreset(kind, id);
@@ -1359,12 +1334,13 @@
       num("bal", 0, 1.5); num("spread", 0, 1); num("rate", 0.02, 0.5);
       inMap("what", WHATS); inMap("move", MOVES);
       num("hNote", 24, 96); held("hInst");
-      inMap("hRatio", RATIOS); inMap("hDiff", DIFFS); inMap("hShow", SHOWS); inMap("hSide", SIDES); inMap("hUse", USES); inMap("hWarm", WARMS); inMap("hAfter", AFTERS);
+      inMap("hRatio", RATIOS); inMap("hDiff", DIFFS); inMap("hShow", SHOWS); inMap("hSide", SIDES);
       ["nA", "nB", "hNote"].forEach(function (k) { P[k] = Math.round(P[k]); });
-      ["hRatio", "hWarm"].forEach(function (k) { P[k] = +P[k]; });
+      P.hRatio = +P.hRatio;
       // a ready-made or saved setup wins over the loose values; "custom" keeps them as they are
       Object.keys(KIND).forEach(function (kind) {
         var id = o[KIND[kind].key];
+        if (id === "warmup" || id === "sit") id = "medium";   // setups from an earlier version
         if (id === "custom") P[KIND[kind].key] = "custom";
         else if (id && findPreset(kind, id)) loadPresetInto(kind, id);
         else P[KIND[kind].key] = "custom";
@@ -1435,11 +1411,12 @@
       '<div class="snd-pane" data-pane="hidden">' +
         '<p class="snd-note">A held note with a much quieter tone hidden inside it. Listen for the hidden one.</p>' +
         setupBlock("hidden") +
-        selRow("hUse", "Use it as", opts(USES)) +
-        selRow("hWarm", "Warm-up length", opts(WARMS), "warm") +
-        selRow("hAfter", "Afterwards, play", opts(AFTERS), "warm") +
-        selRow("hShow", "The hidden tone", opts(SHOWS)) +
-        selRow("hDiff", "How hard", opts(DIFFS)) +
+        '<div class="seg small snd-showseg" role="radiogroup" aria-label="The hidden tone">' +
+          '<button type="button" role="radio" data-set="hShow" data-val="always">Always there</button>' +
+          '<button type="button" role="radio" data-set="hShow" data-val="events">Challenge</button>' +
+        "</div>" +
+        '<p class="snd-note" data-role="show-note"></p>' +
+        selRow("hDiff", "How quiet", opts(DIFFS)) +
         '<div class="snd-game" data-role="game" hidden>' +
           '<div class="snd-gamebtns"><button class="btn" type="button" data-game="tap">I hear it</button>' +
           '<button class="btn ghost" type="button" data-game="show">Hold to hear it</button></div>' +
@@ -1457,14 +1434,18 @@
     root.addEventListener("input", onSoundChange);
     root.addEventListener("change", onSoundChange);
     root.addEventListener("click", function (e) {
-      var b = e.target.closest && e.target.closest("[data-mode], [data-real], [data-act], [data-pv]");
+      var b = e.target.closest && e.target.closest("[data-mode], [data-real], [data-act], [data-pv], [data-set]");
       if (!b) return;
       if (b.hasAttribute("data-pv")) { togglePreview(); return; }
       if (b.hasAttribute("data-act")) { onSetupAction(b, root); return; }
+      if (b.hasAttribute("data-set")) {   // a choice between two things, such as Always there / Challenge
+        var sk = b.getAttribute("data-set");
+        if (String(P[sk]) !== b.getAttribute("data-val")) { P[sk] = b.getAttribute("data-val"); markCustom(KIND_OF[sk]); persist(); afterSoundChange(false); }
+        return;
+      }
       if (b.hasAttribute("data-mode")) {
         P.mode = b.getAttribute("data-mode"); applyMode();
         if (P.mode !== "dual" && P.mode !== "hidden" && S.preview) { S.preview = false; clearTimeout(S.pvTimer); }
-        if (S.active && P.mode === "hidden") S.hFrom = elapsedMs();   // a warm-up counts from now
       } else { P.real = b.getAttribute("data-real") === "1"; ambName = ""; }
       lsSet(KEY_SND, JSON.stringify(P));
       syncControls(); initAudio(); applyAudio();
@@ -1488,7 +1469,7 @@
     syncControls();
   }
 
-  var NUMERIC = { nA: 1, nB: 1, bal: 1, spread: 1, depth: 1, rate: 1, hNote: 1, hRatio: 1, hWarm: 1 };
+  var NUMERIC = { nA: 1, nB: 1, bal: 1, spread: 1, depth: 1, rate: 1, hNote: 1, hRatio: 1 };
   var KIND_OF = {}; DUAL_F.forEach(function (f) { KIND_OF[f] = "dual"; }); HID_F.forEach(function (f) { KIND_OF[f] = "hidden"; });
   function persist() { lsSet(KEY_SND, JSON.stringify(P)); }
   function markCustom(kind) {   // changing anything makes it "your own, not saved yet"
@@ -1591,7 +1572,10 @@
         up.hidden = !(base && !base.builtin);
         if (!up.hidden) up.textContent = "Update “" + base.name + "” instead";
       });
-      Array.prototype.forEach.call(root.querySelectorAll('[data-role="warm"]'), function (r) { r.hidden = P.hUse !== "warm"; });
+      Array.prototype.forEach.call(root.querySelectorAll("[data-set]"), function (b) { b.setAttribute("aria-checked", String(String(P[b.getAttribute("data-set")]) === b.getAttribute("data-val"))); });
+      root.querySelector('[data-role="show-note"]').textContent = P.hShow === "events"
+        ? "It comes and goes. Tap when you hear it."
+        : "It stays in the note the whole time. Keep listening for it.";
       var game = root.querySelector('[data-role="game"]');
       game.hidden = !(P.mode === "hidden" && hearing);
       game.querySelector('[data-game="tap"]').hidden = P.hShow !== "events";
@@ -2183,11 +2167,10 @@
       circle: "Tap anywhere, or press space, when you notice your mind has wandered.",
       dark: "Close your eyes and breathe at your own pace. Tap anywhere, or press space, when you notice your mind has wandered."
     }[S.anchor] || "Rest your eyes here and breathe at your own pace. Tap anywhere, or press space, when your mind has wandered.";
-    if (S.active && P.mode === "hidden" && !warmDone()) {
+    if (S.active && P.mode === "hidden") {
       var game = P.hShow === "events"
         ? "A held note is playing. Now and then a very faint tone slips in behind it. When you hear it, tap. A small ding means you caught it; a wooden knock means it wasn't there."
         : "A very faint tone sits inside the held note the whole time. Keep listening for it, and tap when it slips away.";
-      if (P.hUse === "warm") game += " This is your warm-up: " + WARMS[P.hWarm] + ", then you sit on.";
       return game + " Swipe to change scene.";
     }
     var extra = "";
@@ -2199,7 +2182,6 @@
 
   function setScene(name, quiet) {
     S.anchor = name;
-    S.peek = false;
     var isCanvas = CANVAS_SCENES.indexOf(name) >= 0;
     document.documentElement.classList.toggle("dark-session", name !== "circle");
     $("session").setAttribute("data-anchor", name);
@@ -2232,10 +2214,8 @@
   /* ---------- main loop ---------- */
   function loop(now) {
     if (!S.active) return;
-    if (!S.dim) {   // nothing is visible while the screen is dim, so skip the drawing
-      if (S.anchor === "circle") drawCircle();
-      else if (!els.canvas.hidden) drawScene(now);
-    }
+    if (S.anchor === "circle") drawCircle();
+    else if (!els.canvas.hidden) drawScene(now);
     S.raf = requestAnimationFrame(loop);
   }
 
@@ -2337,7 +2317,7 @@
 
     show("session");
     S.startWall = Date.now(); S.startPerf = performance.now(); S.startedAt = S.startWall; S.active = true;
-    S.sig = ""; S.warmWas = false; S.hFrom = 0; syncCount();
+    syncCount(); syncControls();   // in a sit the real thing is playing, so the "try it" buttons go away
     setScene(S.anchor, true);
     updateClock();
     lockScreen();
@@ -2352,7 +2332,6 @@
     }, 9000);
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
-      syncPhase();
       if (S.paused) return;
       if (S.limit && Date.now() - S.startWall >= S.limit) finish(); else updateClock();
     }, 250);
@@ -2489,7 +2468,6 @@
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
     cancelEndBell();
-    setDim(false);
   }
   function endPause() {
     var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
@@ -2535,6 +2513,7 @@
     if (S.listening) endListening(true);
     commitLabel();
     S.active = false;
+    syncControls();   // the "try it" buttons come back now that the sit is over
     cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer); clearTimeout(S.nameTimer);
     unlockScreen();
     closeMenu();
@@ -2543,8 +2522,8 @@
     var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
     if (P.bells && !rung) bell(396, 0.12);
     if (rung) S.endBell = null; else cancelEndBell();
-    S.peek = false; clearTimeout(peekTimer); setDim(false);
-    document.documentElement.classList.remove("dark-session");
+    document.documentElement.classList.remove("dark-session", "eyes-closed");
+    $("dim").hidden = true;
 
     var dur = Date.now() - S.startWall, n = S.entries.length;
     var counts_ = !discard && dur >= MIN_RECORD_MS;
@@ -3064,25 +3043,13 @@
     trRange = b.getAttribute("data-range"); renderTrends();
   });
 
-  /* ---------- dim screen ---------- */
-  // The Eyes closed scene is the black screen with one big number. Typing a label needs the screen,
-  // so the black comes back once it's saved. "Show screen" reveals the controls for a few seconds.
-  var peekTimer = 0;
-  function syncDim() { setDim(S.active && !S.paused && S.anchor === "dark" && els.panel.hidden && !S.peek); }
-  function setDim(on) {
-    on = !!on && S.active;
-    S.dim = on;
+  /* ---------- eyes closed scene ---------- */
+  // Just a black scene with one big number in the middle. The menu stays at the top, like every other scene.
+  function syncDim() {
+    var on = !!S.active && S.anchor === "dark";
     $("dim").hidden = !on;
-    document.documentElement.classList.toggle("dimmed", on);
-    if (on) { closeMenu(); blurActive(); }
+    document.documentElement.classList.toggle("eyes-closed", on);
   }
-  function peek() {
-    S.peek = true; syncDim();
-    clearTimeout(peekTimer);
-    peekTimer = setTimeout(function () { S.peek = false; syncDim(); }, 10000);
-  }
-  $("dimWake").addEventListener("click", function (e) { e.stopPropagation(); peek(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dim) { e.preventDefault(); peek(); } });
 
   /* ---------- sound menu ---------- */
   function closeMenu() { els.menu.hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); }
