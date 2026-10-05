@@ -33,22 +33,21 @@
   };
 
   /* ---------- hidden overtone ---------- */
-  // hide: how far below the main note the hidden tone sits (0 is easy to hear, 1 is almost gone).
-  // hold: seconds it stays at full level. gap: seconds of silence between visits, a range.
+  // db: how far below the main note the hidden tone sits. Easy is meant to be obvious, so you can learn what you are listening for;
+  // each step down is about 8 dB quieter. gap: the usual silence between visits, a range in seconds (the real gaps vary a lot more, see below).
   T.DIFF = {
-    easy:     { name: "Easy",         hide: 0.25, hold: 6, gap: [8, 14] },
-    medium:   { name: "Medium",       hide: 0.45, hold: 5, gap: [10, 20] },
-    hard:     { name: "Hard",         hide: 0.65, hold: 4, gap: [12, 24] },
-    veryhard: { name: "Very hard",    hide: 0.8,  hold: 3, gap: [14, 28] },
-    barely:   { name: "Barely there", hide: 0.92, hold: 3, gap: [14, 30] }
+    easy:     { name: "Easy",         db: -6,  hold: 6, gap: [8, 14] },
+    medium:   { name: "Medium",       db: -14, hold: 5, gap: [10, 20] },
+    hard:     { name: "Hard",         db: -22, hold: 4, gap: [12, 24] },
+    veryhard: { name: "Very hard",    db: -30, hold: 3, gap: [14, 28] },
+    barely:   { name: "Barely there", db: -38, hold: 3, gap: [14, 30] }
   };
-  var RAMP = 3;   // seconds to swell in, and again to fade out
 
   T.hidden = function (L, p, hooks) {
     hooks = hooks || {};
     var D = T.DIFF[p.hDiff] || T.DIFF.medium, t0 = ac().currentTime + 0.1;
     var id = T.held(p.hInst), midi = Lab.actualMidi(id, p.hNote), f = mtof(midi);
-    var out = gainNode(0.35), amp = 0.25 * 1.4142 * Math.pow(10, (-8 - D.hide * 44) / 20);
+    var out = gainNode(0.35), level = function (db) { return 0.5 * 1.4142 * Math.pow(10, db / 20); }, amp = level(D.db);
     chain(out, u.pan({ c: 0, l: -0.9, r: 0.9 }[p.hSide] || 0), L.out);
     Lab.play(L, id, f, t0, Infinity, 1, out);
 
@@ -56,28 +55,35 @@
     var o = L.osc("sine", f * p.hRatio), hg = gainNode(0), rv = gainNode(0);
     chain(o, hg, out); chain(o, rv, out);
     // "show me": a separate louder path, so it never disturbs the scheduled swells
-    L.reveal = function (on) { rv.gain.setTargetAtTime(on ? amp * 5 : 0, ac().currentTime, 0.15); };
+    L.reveal = function (on) { rv.gain.setTargetAtTime(on ? level(T.DIFF.easy.db) : 0, ac().currentTime, 0.15); };   // as clear as Easy
 
     L.events = [];
     if (p.hShow !== "events") { hg.gain.value = amp; L.tap = null; return; }
 
-    // comes and goes: swells in, holds, fades, then a longer silence before the next visit
+    // Comes and goes, with no pattern to find: it can sit silent for a long while, then come, or come twice in a row.
     var timers = [];
     // if it came and went and you never tapped, say so, gently (each visit keeps its own watch)
     function watch(e) {
       timers.push(setTimeout(function () { if (L.alive && !e.hit && hooks.miss) hooks.miss(); }, Math.max(0, (e.b + 0.5 - ac().currentTime) * 1000)));
     }
-    var len = 2 * RAMP + D.hold, next = t0 + (hooks.preview ? rnd(3, 5) : rnd(7, 12));
+    function nextGap() {   // seconds of silence after a visit has faded
+      var u = Math.random();
+      if (u < 0.22) return rnd(1.5, 5);                          // soon: sometimes it comes again right away
+      if (u < 0.7) return rnd(D.gap[0], D.gap[1]);               // the usual
+      return rnd(D.gap[1], D.gap[1] * 3.2);                      // a long wait
+    }
+    var next = t0 + (hooks.preview ? rnd(3, 5) : rnd(4, 30));
     L.sched(function (upTo) {
       while (next < upTo) {
-        var s = next, e = { a: s + 1, b: s + len + 1, hit: false };   // you can answer from a second in until a second after it has gone
+        var s = next, ramp = rnd(2.2, 4), hold = D.hold * rnd(0.7, 1.4), len = 2 * ramp + hold;
+        var e = { a: s + 1, b: s + len + 1, hit: false };   // you can answer from a second in until a second after it has gone
         hg.gain.setValueAtTime(0, s);
-        hg.gain.linearRampToValueAtTime(amp, s + RAMP);
-        hg.gain.linearRampToValueAtTime(amp, s + RAMP + D.hold);
+        hg.gain.linearRampToValueAtTime(amp, s + ramp);
+        hg.gain.linearRampToValueAtTime(amp, s + ramp + hold);
         hg.gain.linearRampToValueAtTime(0, s + len);
         L.events.push(e);
         watch(e);
-        next = s + len + rnd(D.gap[0], D.gap[1]);
+        next = s + len + nextGap();
       }
       var now = ac().currentTime;
       L.events = L.events.filter(function (v) { return v.b > now - 30; });
