@@ -1,8 +1,8 @@
 /* Come back: offline support.
    Pages load network-first so a new version shows up on the next open; sounds and fonts are cached after first use. */
-var CACHE = "come-back-v12";
+var CACHE = "come-back-v13";
 var CORE = ["./", "index.html", "instruments.js", "tones.js", "samples/manifest.js", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"]
-  .concat(["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "previews/" + n + ".jpg"; }));
+  .concat(["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars", "aurora", "snow", "koi"].map(function (n) { return "previews/" + n + ".jpg"; }));
 var SOUNDS = ["daytree", "tree", "rain", "ocean", "stars"].map(function (n) { return "sounds/" + n + ".mp3"; });
 // The recorded instruments for the held tones. The list comes from the same manifest the page reads, so they can't drift apart.
 try { importScripts("samples/manifest.js"); } catch (e) {}

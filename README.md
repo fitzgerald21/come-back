@@ -8,7 +8,7 @@ On iPhone, open the link in Safari, tap Share, then **Add to Home Screen** to us
 
 ## What it does
 
-- Swipe through the scenes on the start screen (Eyes closed, breathing circle, flame, trees, rain, ocean, stars), pick a length, and Begin. Your last scene, length and choices are remembered. Eyes closed is a black screen with one big number in the middle.
+- Swipe through the scenes on the start screen (Eyes closed, breathing circle, candle, tree by day and by night, rain on a lake, night ocean, starry sky, northern lights, snowy cabin, koi pond), pick a length, and Begin. Your last scene, length and choices are remembered. Eyes closed is a black screen with one big number in the middle.
 - During a sit the controls fade back after a few seconds. Pause sits at the top; the options button opens a sheet with sound, a note, and cancel.
 - Tap each time you return. A reminder from your own list appears.
 - Background sound is one of: **Scene sounds**, **Two voices**, **Hidden overtone** or **Silent**. Bells are a separate option.
