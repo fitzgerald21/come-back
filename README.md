@@ -8,13 +8,14 @@ On iPhone, open the link in Safari, tap Share, then **Add to Home Screen** to us
 
 ## What it does
 
-- Pick a scene to rest on (Eyes closed, flame, trees, rain, ocean, stars) and a length, or no limit. Eyes closed is a black screen with one big number in the middle.
+- Swipe through the scenes on the start screen (Eyes closed, breathing circle, flame, trees, rain, ocean, stars), pick a length, and Begin. Your last scene, length and choices are remembered. Eyes closed is a black screen with one big number in the middle.
+- During a sit the controls fade back after a few seconds. Pause sits at the top; the options button opens a sheet with sound, a note, and cancel.
 - Tap each time you return. A reminder from your own list appears.
 - Background sound is one of: **Scene sounds**, **Two voices**, **Hidden overtone** or **Silent**. Bells are a separate option.
   - **Two voices:** two held sounds at once (real recorded flute, cello, clarinet, bowl, choir and more, or synthesized ones). Keep hearing both, and tap when one slips away.
   - **Hidden overtone:** one held note with a much quieter tone inside it. Either **Always there** (keep listening for it, and tap when it slips away) or **Challenge** (it comes and goes: tap when you hear it. A small ding says you caught it and a wooden knock says nothing was there; a visit that slips by makes no sound. A gentle running count of caught, slipped by and extra taps shows while you play. Those taps aren't counted as returns).
   - Both have ready-made setups at different difficulties, and you can save your own and come back to them. You can change anything during a sit from the Sound menu.
-- Past sessions and insights are kept on your device only.
+- The start screen shows your streak and time sat today and this week; the end of a sit shows a short summary. Past sessions, trends and insights are kept on your device only.
 
 ## Development
 

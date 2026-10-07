@@ -172,10 +172,14 @@
   .choices.two .choice span { font-size: 0.85rem; line-height: 1.35; display: block; }
   .choice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
-  .seg { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .seg .choice { padding: 0.55rem 1rem; border-radius: 999px; }
-  .seg .choice span { color: inherit; font-size: 0.95rem; }
+  /* a row of radio choices drawn as one segmented control (length, and what you do when you notice) */
+  .pills { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  .pills .choice { border: 0; background: none; border-radius: 11px; padding: 0.62rem 0.2rem; text-align: center; transition: background-color 0.25s, color 0.25s; }
+  .pills .choice span { color: var(--muted); font-size: 0.92rem; white-space: nowrap; transition: color 0.25s; }
+  .pills .choice:has(input:checked) { background: var(--ink); box-shadow: none; }
+  .pills .choice:has(input:checked) span { color: var(--bg); font-weight: 600; }
   .subnote { color: var(--muted); font-size: 0.88rem; margin: 0.6rem 0 0; }
+  .mode-note { min-height: 2.7em; transition: opacity 0.3s; }
   .custom { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
   .custom input { width: 7rem; }
   .custom span { color: var(--muted); }
@@ -201,15 +205,29 @@
     padding: 0.8rem 1.7rem; border-radius: 999px; font-weight: 600; font-size: 1.02rem; cursor: pointer;
   }
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-  .btn:active { transform: translateY(1px); }
+  .btn { transition: transform 0.15s ease, opacity 0.2s, background-color 0.25s, box-shadow 0.25s; }
+  .btn:active { transform: scale(0.97); }
   .btn:disabled { opacity: 0.6; cursor: default; }
   /* sticks flush to the true bottom edge: the screen's own bottom padding is offset so nothing scrolls by underneath */
   .begin-bar { position: sticky; bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom, 0px))); z-index: 3; margin: 1.5rem -1.25rem 0;
     padding: 1.4rem 1.25rem calc(max(1.25rem, env(safe-area-inset-bottom, 0px)) + 0.4rem);
     background: linear-gradient(to bottom, transparent, var(--bg) 1.2rem); }
   .btn.begin { display: flex; width: 100%; padding: 1.15rem 1.5rem; font-size: 1.45rem; font-family: "Instrument Serif", Georgia, serif; font-weight: 400; letter-spacing: 0.02em; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
-  .theme-wrap { margin-top: 2rem; }
-  .theme-wrap .themes { margin: 0.75rem 0 0; }
+  .btn.begin:hover { box-shadow: 0 8px 30px var(--glow); }
+  .greet { color: var(--muted); font-size: 0.95rem; letter-spacing: 0.02em; margin: 0 0 0.35rem; min-height: 1.4em; }
+  .streak-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: -0.75rem 0 2rem; }
+  .streak-row:empty { display: none; }
+  .stat-pill { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.88rem; color: var(--muted); }
+  .stat-pill b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat-pill i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .sect { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1.1; margin: 2.75rem 0 0.9rem; }
+  .sum-val { margin-left: auto; margin-right: 0.8rem; color: var(--muted); font-weight: 400; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+  .nav-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  .nav-card { display: flex; flex-direction: column; align-items: flex-start; gap: 0.55rem; border: 1px solid var(--line); background: var(--card); border-radius: 16px; padding: 0.85rem 0.8rem; cursor: pointer; text-align: left; font-weight: 600; font-size: 0.92rem; transition: transform 0.15s, border-color 0.25s; }
+  .nav-card:active { transform: scale(0.97); }
+  .nav-card:hover { border-color: var(--muted); }
+  .nav-card svg { width: 1.35rem; height: 1.35rem; color: var(--accent); }
+  .themes .theme-opt { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--muted); background: none; border: 0; padding: 0; cursor: pointer; }
   .home-foot { margin-top: 2.25rem; color: var(--muted); font-size: 0.95rem; }
   .home-foot q { font-family: "Instrument Serif", Georgia, serif; font-size: 1.35rem; line-height: 1.25; color: var(--ink); display: block; margin-bottom: 0.5rem; quotes: none; }
 
@@ -242,16 +260,29 @@
   .count.bump b { animation: bump 0.6s ease-out; }
   .count.off, .clock.off { visibility: hidden; }
   .clock { flex: 1; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 1.05rem; letter-spacing: 0.03em; }
-  .bar-actions { display: flex; gap: 0.4rem; }
-  @media (max-width: 520px) {
-    /* Five buttons don't fit beside the count and timer: Finish stays top right, the rest drop to their own row. */
-    .bar-actions { display: contents; }
-    .bar .count { order: 0; } .bar .clock { order: 1; }
-    #finish { order: 1; }
-    #soundBtn, #noteBtn, #pauseBtn, #cancel { order: 3; flex: 1 1 0; padding-left: 0.3rem; padding-right: 0.3rem; }
-    .bar::before { content: ""; order: 2; flex: 0 0 100%; height: 0; }
-    .soundmenu { top: 6.6rem; max-height: calc(100% - 7.5rem); }
-  }
+  .bar { display: grid; grid-template-columns: 1fr auto 1fr; transition: opacity 1.4s ease; }
+  .bar .count { min-width: 0; }
+  .bar-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
+  /* after a few quiet seconds the controls fade back, so there's less to look at; they still work while faded */
+  #session.idle .bar { opacity: 0.32; }
+  #session.idle[data-anchor="dark"] .bar { opacity: 0.16; }
+  #session.idle .dots { opacity: 0.3; }
+  .icon-btn { width: 2.35rem; height: 2.35rem; padding: 0; display: inline-grid; place-items: center; }
+  .icon-btn svg { width: 1.05rem; height: 1.05rem; }
+  .touch-ring { position: fixed; z-index: 2; width: 9rem; height: 9rem; margin: -4.5rem 0 0 -4.5rem; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 240, 210, 0.22), rgba(255, 240, 210, 0) 65%); border: 1.5px solid rgba(255, 240, 210, 0.45);
+    animation: touchring 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+  #session[data-anchor="dark"] .touch-ring { border-color: rgba(140, 160, 165, 0.25); background: radial-gradient(circle, rgba(140, 160, 165, 0.12), transparent 65%); }
+  @keyframes touchring { from { transform: scale(0.2); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  .scrim { position: fixed; inset: 0; z-index: 5; background: rgba(0, 0, 0, 0.45); animation: fadein 0.3s ease both; cursor: default; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheetup { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes popin { from { opacity: 0; transform: translateY(1.5rem) scale(0.98); } to { opacity: 1; transform: none; } }
+  .menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.4rem 0 0.2rem; }
+  .menu-act { display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 14px; padding: 0.75rem 0.5rem; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.15s; }
+  .menu-act:active { transform: scale(0.97); }
+  .menu-act svg { width: 1.05rem; height: 1.05rem; color: var(--muted); }
+  .grab { width: 2.5rem; height: 0.3rem; border-radius: 999px; background: var(--line); margin: 0.2rem auto 0.6rem; }
   @keyframes bump { 0% { transform: scale(1); color: var(--ink); } 25% { transform: scale(1.35); color: var(--accent); } 100% { transform: scale(1); color: var(--ink); } }
   .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .orb-wrap { position: relative; width: min(66vmin, 26rem); aspect-ratio: 1; flex: none; }
@@ -268,9 +299,10 @@
   .slot { position: relative; width: min(92vw, 34rem); height: 6rem; margin-top: 1rem; flex: none; }
   .phase, .reminder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; transition: opacity 0.9s ease; }
   .phase { color: var(--muted); font-size: 0.98rem; letter-spacing: 0.03em; }
-  .reminder { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.3rem); line-height: 1.15; text-wrap: balance; opacity: 0; padding: 0 0.5rem; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5); }
+  .reminder { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.3rem); line-height: 1.15; text-wrap: balance; opacity: 0; padding: 0 0.5rem; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+    transform: translateY(0.6rem); filter: blur(6px); transition: opacity 1.1s ease, transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1), filter 1.1s ease; }
   #session[data-anchor="circle"] .reminder { text-shadow: none; }
-  .slot.has-reminder .reminder { opacity: 1; }
+  .slot.has-reminder .reminder { opacity: 1; transform: none; filter: none; }
   .slot.has-reminder .phase { opacity: 0; }
   .dots { display: none; }
   .dot { width: 1.5rem; height: 1.5rem; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
@@ -323,8 +355,12 @@
   details.panel { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.85rem 1rem; margin: 0 0 0.75rem; }
   details.panel > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 1.02rem; }
   details.panel > summary::-webkit-details-marker { display: none; }
-  details.panel > summary::after { content: ""; width: 0.55rem; height: 0.55rem; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.2s; margin-right: 0.2rem; }
-  details.panel[open] > summary::after { transform: rotate(225deg); }
+  details.panel > summary::after { content: ""; flex: none; width: 0.55rem; height: 0.55rem; border: solid var(--muted); border-width: 0 2px 2px 0; transform: translateY(-0.15rem) rotate(45deg); transition: transform 0.25s; margin-right: 0.2rem; }
+  details.panel[open] > summary::after { transform: translateY(0.1rem) rotate(225deg); }
+  details.panel[open] > summary ~ * { animation: panelin 0.35s ease both; }
+  details.panel[open] > summary .sum-val { opacity: 0; }
+  .sum-val { transition: opacity 0.2s; }
+  @keyframes panelin { from { opacity: 0; transform: translateY(-0.3rem); } to { opacity: 1; transform: none; } }
   .snd-row.stack { flex-wrap: wrap; gap: 0.2rem; }
   .snd-row.stack > span { flex: 1 1 100%; }
   .snd-row.stack input[type="range"] { width: 100%; }
@@ -332,16 +368,20 @@
   .snd-adv summary { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
   .snd-row b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; margin-left: 0.3rem; }
   .snd-note { color: var(--muted); font-size: 0.84rem; margin: 0.5rem 0 0; min-height: 2.4em; }
-  .soundmenu { position: absolute; top: 3.7rem; right: 1.25rem; z-index: 5; width: min(21rem, calc(100% - 2.5rem)); max-height: calc(100% - 5rem); overflow-y: auto; cursor: default;
-    background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 0.4rem 1rem 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+  /* the in-session menu: a sheet that slides up from the bottom, in easy reach of a thumb */
+  .soundmenu { position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; z-index: 6; width: min(100%, 32rem); max-height: 80vh; max-height: 80dvh; overflow-y: auto; overscroll-behavior: contain; cursor: default;
+    background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0;
+    padding: 0.5rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
+    animation: sheetup 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   .soundmenu .check { margin-top: 0.8rem; }
   .snd-preview { margin-top: 0.6rem; padding: 0.5rem 1.2rem; font-size: 0.93rem; }
   
   /* ---------- Theme picker ---------- */
   .themes { display: flex; gap: 0.55rem; flex-wrap: wrap; margin: 0 0 1.75rem; }
   .themes[hidden] { display: none; }
-  .theme-btn { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 1px solid var(--line); padding: 0; cursor: pointer; }
-  .theme-btn[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .theme-btn { display: block; width: 2.3rem; height: 2.3rem; border-radius: 50%; border: 1px solid var(--line); padding: 0; transition: transform 0.2s; }
+  .theme-opt[aria-pressed="true"] .theme-btn { outline: 2px solid var(--ink); outline-offset: 2px; transform: scale(1.06); }
+  .theme-opt[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
 
   /* ---------- Past sessions / distractions ---------- */
   .home-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
@@ -375,8 +415,14 @@
   .addrow .btn { padding: 0.6rem 1.2rem; }
 
   /* ---------- Note sheet ---------- */
-  .sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; background: rgba(0, 0, 0, 0.5); padding: 1rem; padding-top: 10vh; cursor: default; }
-  .sheet-card { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 1.25rem; width: min(100%, 32rem); }
+  .sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; background: rgba(0, 0, 0, 0.5); padding: 1rem; padding-top: 12vh; cursor: default;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadein 0.3s ease both; }
+  .sheet-card { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 22px; padding: 1.4rem 1.35rem; width: min(100%, 32rem);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); animation: popin 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  #pauseSheet .sheet-card { text-align: center; }
+  #pauseSheet .sheet-actions { justify-content: center; }
+  .pause-orb { width: 4.5rem; height: 4.5rem; margin: 0.25rem auto 1rem; border-radius: 50%; background: radial-gradient(circle at 38% 34%, var(--orb-hi), var(--orb-lo) 78%); box-shadow: 0 0 2.5rem var(--glow); animation: idlebreathe 10s ease-in-out infinite; }
+  @keyframes idlebreathe { 0%, 100% { transform: scale(0.8); } 40% { transform: scale(1); } }
   .sheet-card h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1; margin: 0 0 0.4rem; }
   .sheet-card p { color: var(--muted); font-size: 0.93rem; margin: 0 0 0.8rem; }
   .sheet-card textarea { min-height: 7rem; }
@@ -438,13 +484,36 @@
   .scene-btn .st span { color: var(--muted); font-size: 0.88rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .caret { width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 0.3rem 0.25rem 0; flex: none; transition: transform 0.2s; }
   .scene-btn[aria-expanded="true"] .caret { transform: rotate(225deg); margin-bottom: 0; }
-  .scene-menu { display: flex; gap: 0.7rem; overflow-x: auto; scroll-snap-type: x proximity; padding: 0.8rem 0.25rem 0.6rem; margin: 0 -0.25rem; -webkit-overflow-scrolling: touch; }
-  .scene-card { flex: 0 0 9.5rem; scroll-snap-align: start; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0; overflow: hidden; }
-  .scene-card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; background: rgba(127, 127, 127, 0.2); }
-  .scene-card .t { display: block; padding: 0.5rem 0.65rem 0.65rem; }
-  .scene-card strong { display: block; font-size: 0.95rem; font-weight: 600; }
-  .scene-card .d { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); font-size: 0.8rem; line-height: 1.35; margin-top: 0.15rem; }
-  .scene-card[aria-selected="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+  /* scenes: a row of picture cards you swipe through, always in view */
+  .scene-menu { display: flex; gap: 0.65rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 1.25rem; padding: 0.55rem 1.25rem 0.6rem; margin: -0.2rem -1.25rem 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .scene-menu::-webkit-scrollbar { display: none; }
+  .scene-card { position: relative; flex: 0 0 7.6rem; scroll-snap-align: start; cursor: pointer; border: 0; background: rgba(127, 127, 127, 0.2); border-radius: 16px; padding: 0; overflow: hidden; color: #fff; text-align: left;
+    box-shadow: 0 0 0 1px var(--line); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s; }
+  .scene-card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; transition: transform 0.6s ease, filter 0.3s; filter: saturate(0.85) brightness(0.9); }
+  .scene-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0) 55%); pointer-events: none; }
+  .scene-card strong { position: absolute; z-index: 1; left: 0.65rem; right: 0.5rem; bottom: 0.55rem; font-size: 0.88rem; font-weight: 600; line-height: 1.2; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+  .scene-card[aria-selected="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); transform: translateY(-2px); }
+  .scene-card[aria-selected="true"] img { filter: none; transform: scale(1.05); }
+  .scene-card:active { transform: scale(0.97); }
+  .scene-desc { color: var(--muted); font-size: 0.9rem; margin: 0.35rem 0 0; min-height: 2.7em; }
+  .scene-desc b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- screen changes ---------- */
+  /* opacity only on the session: a transform there would break its fixed-position scene canvas */
+  .screen:not([hidden]) { animation: screenin 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  #session:not([hidden]) { animation: fadein 1.1s ease both; }
+  @keyframes screenin { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
+
+  /* ---------- end of a sit ---------- */
+  .end-wrap .end-orb { width: 5.5rem; height: 5.5rem; border-radius: 50%; margin: 0 0 1.75rem; background: radial-gradient(circle at 38% 34%, var(--orb-hi), var(--orb-lo) 78%); box-shadow: 0 0 4rem var(--glow); animation: endorb 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both, idlebreathe 10s ease-in-out 1.6s infinite; }
+  @keyframes endorb { from { transform: scale(0.3); opacity: 0; } to { transform: scale(0.8); opacity: 1; } }
+  .end-wrap > * { animation: screenin 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .end-wrap > :nth-child(2) { animation-delay: 0.15s; }
+  .end-wrap > :nth-child(3) { animation-delay: 0.3s; }
+  .end-wrap > :nth-child(4) { animation-delay: 0.45s; }
+  .end-wrap > :nth-child(n+5) { animation-delay: 0.6s; }
+  .end-tiles { margin-bottom: 2rem; }
+  .end-tiles .tile b { font-size: 1.7rem; }
   .tnote { color: var(--muted); font-size: 0.88rem; margin: 0.3rem 0 0; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -452,7 +521,10 @@
     .ripple { display: none; }
     .count.bump b { animation: none; }
     .pulse { animation: none; }
-    .phase, .reminder, .hint, .scene-name { transition-duration: 0.01s; }
+    .phase, .reminder, .hint, .scene-name, .bar { transition-duration: 0.01s; }
+    .screen:not([hidden]), #session:not([hidden]), .end-wrap > *, .end-wrap .end-orb, .sheet, .sheet-card, .soundmenu, .scrim, .pause-orb, details.panel[open] > summary ~ * { animation: none !important; }
+    .touch-ring { display: none; }
+    .reminder { transform: none; filter: none; }
   }
 </style>
 </head>
@@ -461,40 +533,15 @@
 <!-- HOME -->
 <section id="home" class="screen">
   <div class="home-wrap">
+    <p class="greet" id="greet"></p>
     <h1>Come back</h1>
-    <p class="lede">Settle in and breathe. Each time you notice your mind has wandered, tap. That noticing is the whole practice, and every tap counts as a point. You can't lose.</p>
-
-
-    <fieldset>
-      <legend>When you notice, you…</legend>
-      <div class="choices">
-        <label class="choice">
-          <input type="radio" name="mode" value="tap" checked>
-          <strong>Just tap</strong>
-          <span>Tap the screen or press space. That's all.</span>
-        </label>
-        <label class="choice">
-          <input type="radio" name="mode" value="label">
-          <strong>Tap and type it</strong>
-          <span>Then type one or two words for where your mind went.</span>
-        </label>
-        <label class="choice">
-          <input type="radio" name="mode" value="voice">
-          <strong>Tap and say it</strong>
-          <span>Then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text.<span id="voiceNote"></span></span>
-        </label>
-      </div>
-    </fieldset>
+    <p class="lede">Rest your attention somewhere. When you notice it has wandered, tap, and come back. That noticing is the whole practice, so every tap counts. You can't lose.</p>
+    <div class="streak-row" id="streakRow"></div>
 
     <fieldset>
-      <legend>What do you rest on?</legend>
+      <legend>Rest on</legend>
       <div class="scene-pick">
-        <button class="scene-btn" id="sceneBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sceneMenu">
-          <img id="sceneThumb" alt="" width="48" height="60">
-          <span class="st"><strong id="sceneBtnName"></strong><span id="sceneBtnDesc"></span></span>
-          <i class="caret" aria-hidden="true"></i>
-        </button>
-        <div class="scene-menu" id="sceneMenu" role="listbox" aria-label="Scenes" hidden></div>
+        <div class="scene-menu" id="sceneMenu" role="listbox" aria-label="Scenes"></div>
       </div>
       <div class="choices two" hidden>
         <label class="choice">
@@ -538,12 +585,12 @@
           <span>The screen goes black, with just one big number counting your returns. Best with sound on or a handheld button.</span>
         </label>
       </div>
-      <p class="subnote">During a sit, swipe left or right to change the scene.</p>
+      <p class="scene-desc" id="sceneDesc" aria-live="polite"></p>
     </fieldset>
 
     <fieldset>
-      <legend>How long?</legend>
-      <div class="seg">
+      <legend>How long</legend>
+      <div class="pills">
         <label class="choice"><input type="radio" name="len" value="300000"><span>5 min</span></label>
         <label class="choice"><input type="radio" name="len" value="600000"><span>10 min</span></label>
         <label class="choice"><input type="radio" name="len" value="1200000"><span>20 min</span></label>
@@ -557,13 +604,27 @@
       </div>
     </fieldset>
 
+    <fieldset>
+      <legend>When you notice</legend>
+      <div class="pills">
+        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all."><span>Just tap</span></label>
+        <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
+        <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
+      </div>
+      <p class="subnote mode-note" id="modeNote" aria-live="polite"></p>
+      <span id="voiceNote" hidden></span>
+    </fieldset>
+
+    <div class="begin-bar"><button class="btn begin" id="begin" type="button">Begin</button></div>
+
+    <h2 class="sect">Settings</h2>
     <details class="panel">
-      <summary>Sound</summary>
+      <summary>Sound<span class="sum-val" id="sumSound"></span></summary>
       <div id="homeSound"></div>
     </details>
 
     <details class="panel">
-      <summary>Display</summary>
+      <summary>Display<span class="sum-val" id="sumDisplay"></span></summary>
       <label class="check">
         <input type="checkbox" id="showClock" checked>
         <span>Show the timer while I sit
@@ -579,31 +640,31 @@
     </details>
 
     <details class="panel">
-      <summary>Your reminders</summary>
+      <summary>Your reminders<span class="sum-val" id="sumRem"></span></summary>
       <p>One per line. A different one appears each time you catch yourself.</p>
       <textarea id="reminders" aria-label="Your reminders, one per line"></textarea>
       <button class="link-btn" id="resetRem" type="button">Restore the starter set</button>
     </details>
 
-    <div class="begin-bar"><button class="btn begin" id="begin" type="button">Begin</button></div>
+    <details class="panel">
+      <summary>Look<span class="sum-val" id="sumTheme"></span></summary>
+      <p>The colours for these screens. Scenes stay dark so they're easy on your eyes.</p>
+      <div class="themes" id="themes" role="group" aria-label="Theme"><button type="button" class="theme-opt" data-theme-set="auto"><span class="theme-btn" style="background:linear-gradient(135deg,#E8EFEB 50%,#0D1A1F 50%)"></span>Auto</button><button type="button" class="theme-opt" data-theme-set="light"><span class="theme-btn" style="background:#E8EFEB"></span>Mist</button><button type="button" class="theme-opt" data-theme-set="sand"><span class="theme-btn" style="background:#F3EBDD"></span>Sand</button><button type="button" class="theme-opt" data-theme-set="rose"><span class="theme-btn" style="background:#F6E9EA"></span>Rose</button><button type="button" class="theme-opt" data-theme-set="dusk"><span class="theme-btn" style="background:#1B1830"></span>Dusk</button><button type="button" class="theme-opt" data-theme-set="forest"><span class="theme-btn" style="background:#0F1D15"></span>Forest</button><button type="button" class="theme-opt" data-theme-set="ember"><span class="theme-btn" style="background:#1E1412"></span>Ember</button><button type="button" class="theme-opt" data-theme-set="dark"><span class="theme-btn" style="background:#0D1A1F"></span>Night</button></div>
+    </details>
 
-    <div class="home-links">
-      <button class="btn ghost" id="openHist" type="button">Past sessions</button>
-      <button class="btn ghost" id="openTrends" type="button">Trends</button>
-      <button class="btn ghost" id="openDist" type="button">Distractions</button>
+    <h2 class="sect">Your practice</h2>
+    <div class="nav-cards">
+      <button class="nav-card" id="openHist" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Past sessions</button>
+      <button class="nav-card" id="openTrends" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3.5-4 3 2.5L19 8"/></svg>Trends</button>
+      <button class="nav-card" id="openDist" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="18" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></svg>Distractions</button>
     </div>
 
     <div class="cal">
-      <h2>Your practice</h2>
+      <h2>Last few months</h2>
       <div class="cal-months" id="calMonths" aria-hidden="true"></div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-legend" id="calLegend"></div>
       <div class="cal-detail" id="calDetail" aria-live="polite"></div>
-    </div>
-
-    <div class="theme-wrap">
-      <button class="link-btn" id="themeBtn" type="button" aria-expanded="false" aria-controls="themes">Theme</button>
-    <div class="themes" id="themes" hidden role="group" aria-label="Theme"><button type="button" class="theme-btn" data-theme-set="auto" style="background:linear-gradient(135deg,#E8EFEB 50%,#0D1A1F 50%)" aria-label="Auto" title="Auto"></button><button type="button" class="theme-btn" data-theme-set="light" style="background:#E8EFEB" aria-label="Mist" title="Mist"></button><button type="button" class="theme-btn" data-theme-set="sand" style="background:#F3EBDD" aria-label="Sand" title="Sand"></button><button type="button" class="theme-btn" data-theme-set="rose" style="background:#F6E9EA" aria-label="Rose" title="Rose"></button><button type="button" class="theme-btn" data-theme-set="dusk" style="background:#1B1830" aria-label="Dusk" title="Dusk"></button><button type="button" class="theme-btn" data-theme-set="forest" style="background:#0F1D15" aria-label="Forest" title="Forest"></button><button type="button" class="theme-btn" data-theme-set="ember" style="background:#1E1412" aria-label="Ember" title="Ember"></button><button type="button" class="theme-btn" data-theme-set="dark" style="background:#0D1A1F" aria-label="Night" title="Night"></button></div>
     </div>
 
     <div class="home-foot">
@@ -620,15 +681,21 @@
     <div class="count" id="count" aria-live="polite"><b id="countNum">0</b><span id="countWord">returns</span></div>
     <div class="clock" id="clock" aria-label="Timer">0:00</div>
     <div class="bar-actions">
-      <button class="finish" id="soundBtn" type="button" aria-expanded="false" aria-controls="soundMenu">Sound</button>
-      <button class="finish" id="noteBtn" type="button">Note</button>
-      <button class="finish" id="pauseBtn" type="button">Pause</button>
-      <button class="finish" id="cancel" type="button">Cancel</button>
+      <button class="finish icon-btn" id="pauseBtn" type="button" aria-label="Pause" title="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
+      <button class="finish icon-btn" id="soundBtn" type="button" aria-label="Sound and options" title="Sound and options" aria-expanded="false" aria-controls="soundMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/><circle cx="9" cy="8" r="2.2" fill="currentColor"/><circle cx="15" cy="16" r="2.2" fill="currentColor"/></svg></button>
       <button class="finish" id="finish" type="button">Finish</button>
     </div>
   </div>
   <div class="scene-name" id="sceneName" aria-live="polite"></div>
-  <div class="soundmenu" id="soundMenu" role="group" aria-label="Sound" hidden></div>
+  <div class="scrim" id="menuScrim" hidden></div>
+  <div class="soundmenu" id="soundMenu" role="dialog" aria-label="Sound and options" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <div class="menu-actions">
+      <button class="menu-act" id="noteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19h4L19 9l-4-4L5 15v4z"/></svg>Jot a note</button>
+      <button class="menu-act" id="cancel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>Cancel sit</button>
+    </div>
+    <div id="menuSound"></div>
+  </div>
   <div class="stage">
     <div class="orb-wrap" id="orbWrap" aria-hidden="true">
       <div class="ring"></div>
@@ -721,8 +788,10 @@
 <!-- END -->
 <section id="end" class="screen" hidden>
   <div class="end-wrap">
+    <div class="end-orb" aria-hidden="true"></div>
     <h2 id="endHead"></h2>
     <p class="sub" id="endSub"></p>
+    <div class="tiles end-tiles" id="endTiles"></div>
     <div id="logBlock" hidden>
       <p class="list-head">Where your mind went</p>
       <p class="often" id="often"></p>
@@ -754,8 +823,9 @@
 <!-- PAUSE SHEET -->
 <div id="pauseSheet" class="sheet" hidden role="alertdialog" aria-modal="true" aria-labelledby="pauseTitle">
   <div class="sheet-card">
+    <div class="pause-orb" aria-hidden="true"></div>
     <h3 id="pauseTitle">Paused</h3>
-    <p>The timer is stopped. This time won't count.</p>
+    <p>The timer is stopped. Take your time.</p>
     <div class="sheet-actions">
       <button class="btn" id="pauseResume" type="button">Resume</button>
     </div>
@@ -795,6 +865,8 @@
   var KEY_SND = "come-back:sound";
   var KEY_PRE = "come-back:presets";
   var KEY_THEME = "come-back:theme";
+  var KEY_SCENE = "come-back:scene";
+  var KEY_PREFS = "come-back:prefs";
   var PRESET_DEFAULTS = ["Physical discomfort", "Planning", "Worry", "Sounds", "Memory", "Sleepy"];
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
@@ -1556,8 +1628,10 @@
     if (P[key] === "custom") h += '<option value="custom">Changed, not saved</option>';
     return h;
   }
+  var MODE_NAMES = { scene: "Scene sounds", dual: "Two voices", hidden: "Hidden overtone", off: "Silent" };
   function syncControls() {
     var anyFile = Object.keys(FILES).length > 0;
+    $("sumSound").textContent = MODE_NAMES[P.mode] + (P.bells ? " · bells" : "");
     var hearing = wantTones() === "hidden";
     controls.forEach(function (root) {
       Array.prototype.forEach.call(root.querySelectorAll("[data-k]"), function (el) {
@@ -2347,6 +2421,7 @@
       S.hintDone = true;
       els.hint.classList.add(S.anchor === "dark" ? "gone" : "dim");
     }, 9000);
+    wakeChrome();
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
       if (S.paused) return;
@@ -2367,6 +2442,8 @@
     var now = Date.now();
     if (now - S.lastCatch < 250) return;
     S.lastCatch = now;
+    var tp = S.tapAt && now - S.tapAt.t < 300 && !remote ? S.tapAt : null;
+    touchRing(tp && tp.x, tp && tp.y);
     if (gameOn()) { gameTap(); return; }   // listening for the hidden tone: a tap means "I hear it", not "I came back"
     var entry = { at: now - S.startWall, label: "" };
     S.entries.push(entry);
@@ -2494,6 +2571,7 @@
     updateClock();
     scheduleEndBell();
     syncDim();
+    wakeChrome();
   }
   function openNote() {
     if (!S.active || S.paused) return;
@@ -2534,6 +2612,7 @@
     cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer); clearTimeout(S.nameTimer);
     unlockScreen();
     closeMenu();
+    screens.session.classList.remove("idle");
     applyAudio();
     // if the scheduled closing bell has already rung (or is ringing now), don't ring it twice
     var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
@@ -2562,6 +2641,14 @@
       sub.textContent = "In " + span + " of sitting. Every one of those was the practice.";
     }
     if (!counts_) sub.textContent += " That was under " + Math.round(MIN_RECORD_MS / 1000) + " seconds, so it wasn't saved or counted.";
+
+    var tiles = $("endTiles"), dm = dayMap(), st = streaks(dm), td = dm[dayKey(new Date())];
+    tiles.innerHTML = "";
+    var tl = [[fmtDur(dur), "time sat"], [dur >= 60000 ? fmtRate(n / (dur / 60000)) : String(n), dur >= 60000 ? "returns a minute" : n === 1 ? "return" : "returns"]];
+    if (counts_ && td) tl.push([plural(st.cur, "day"), st.cur > 1 ? "in a row" : "streak, starting today"], [fmtMins(td.ms), "sat today in all"]);
+    tl.forEach(function (t) {
+      var d = el("div", "tile"); d.appendChild(el("b", "", t[0])); d.appendChild(el("span", "", t[1])); tiles.appendChild(d);
+    });
 
     var block = $("logBlock");
     if (S.mode !== "tap" && n > 0) {
@@ -2601,8 +2688,8 @@
     }
 
     var same = document.querySelector('input[name="anchor"][value="' + S.anchor + '"]');
-    if (same) same.checked = true;   // "Sit again" starts on the scene you ended on
-    refreshScene();
+    if (same) { same.checked = true; lsSet(KEY_SCENE, S.anchor); }   // "Sit again" starts on the scene you ended on
+    refreshScene(true);
     loadTotal();
     renderCalendar();
     show("end");
@@ -2613,7 +2700,9 @@
     var root = document.documentElement;
     if (!t || t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
     Array.prototype.forEach.call($("themes").children, function (b) {
-      b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-set") === (t || "auto")));
+      var on = b.getAttribute("data-theme-set") === (t || "auto");
+      b.setAttribute("aria-pressed", String(on));
+      if (on) $("sumTheme").textContent = b.textContent;
     });
   }
   Array.prototype.forEach.call($("themes").children, function (b) {
@@ -2825,13 +2914,33 @@
     [0, 15, 30, 45, 60].forEach(function (m) {
       var i = document.createElement("i"); if (m) i.style.background = shade(m); lg.appendChild(i);
     });
-    var more = document.createElement("span"); more.textContent = "More (1 hr a day or more is darkest)"; lg.appendChild(more);
+    var more = document.createElement("span"); more.textContent = "More"; more.title = "An hour or more in a day is darkest"; lg.appendChild(more);
     var todayKey = dayKey(today);
     if (!calSel) calSel = todayKey;
     var sel = new Date(today);
     var parts = calSel.split("-");
     sel = new Date(+parts[0], +parts[1] - 1, +parts[2]);
     showDay(calSel, sel, map[calSel]);
+    renderGreeting(map);
+  }
+  // A greeting for the time of day, and a few quiet facts: your streak, and how long you've sat today and this week.
+  function renderGreeting(map) {
+    var now = new Date(), h = now.getHours();
+    $("greet").textContent = h < 5 ? "Up late" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : h < 22 ? "Good evening" : "Good night";
+    var row = $("streakRow"); row.innerHTML = "";
+    if (!Object.keys(map).length) return;
+    function pill(strong, text, dot) {
+      var p = el("span", "stat-pill");
+      if (dot) p.appendChild(el("i"));
+      if (strong) p.appendChild(el("b", "", strong));
+      p.appendChild(document.createTextNode(text));
+      row.appendChild(p);
+    }
+    var st = streaks(map), today = map[dayKey(now)], week = 0, i;
+    for (i = 0; i < 7; i++) { var d = map[dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i))]; if (d) week += d.ms; }
+    if (st.cur > 1) pill(st.cur + "-day", " streak", true);
+    pill(today ? fmtMins(today.ms) : "", today ? " today" : "No sit yet today");
+    if (week) pill(fmtMins(week), " this week");
   }
 
   /* ---------- trends ---------- */
@@ -3021,38 +3130,36 @@
     var r = document.querySelector('input[name="anchor"][value="' + name + '"]'), d = r && r.parentNode.querySelector("span");
     return d ? d.textContent : "";
   }
-  function refreshScene() {
-    var r = document.querySelector('input[name="anchor"]:checked'), name = r ? r.value : ORDER[0];
-    $("sceneThumb").src = "previews/" + name + ".jpg";
-    $("sceneBtnName").textContent = NAMES[name]; $("sceneBtnDesc").textContent = sceneDesc(name);
-    Array.prototype.forEach.call($("sceneMenu").children, function (c) { c.setAttribute("aria-selected", String(c.getAttribute("data-scene") === name)); });
+  function refreshScene(scroll) {
+    var r = document.querySelector('input[name="anchor"]:checked'), name = r ? r.value : ORDER[0], sel = null;
+    Array.prototype.forEach.call($("sceneMenu").children, function (c) {
+      var on = c.getAttribute("data-scene") === name;
+      c.setAttribute("aria-selected", String(on)); if (on) sel = c;
+    });
+    var d = $("sceneDesc"); d.innerHTML = "";
+    d.appendChild(el("b", "", NAMES[name])); d.appendChild(document.createTextNode(". " + sceneDesc(name)));
+    if (scroll && sel) {
+      var m = $("sceneMenu"), left = m.scrollLeft + sel.getBoundingClientRect().left - m.getBoundingClientRect().left - (m.clientWidth - sel.offsetWidth) / 2;
+      try { m.scrollTo({ left: Math.max(0, left), behavior: scroll === "smooth" ? "smooth" : "auto" }); } catch (e) { m.scrollLeft = left; }
+    }
   }
-  function closeSceneMenu() { $("sceneMenu").hidden = true; $("sceneBtn").setAttribute("aria-expanded", "false"); }
   ORDER.forEach(function (name) {
     var c = el("button", "scene-card"); c.type = "button"; c.setAttribute("role", "option"); c.setAttribute("data-scene", name);
+    c.setAttribute("aria-label", NAMES[name]);
     var im = el("img"); im.alt = ""; im.loading = "lazy"; im.src = "previews/" + name + ".jpg"; im.width = 390; im.height = 488;
-    var t = el("span", "t"); t.appendChild(el("strong", "", NAMES[name])); t.appendChild(el("span", "d", sceneDesc(name)));
-    c.appendChild(im); c.appendChild(t);
+    c.appendChild(im); c.appendChild(el("strong", "", NAMES[name]));
     c.addEventListener("click", function () {
       var r = document.querySelector('input[name="anchor"][value="' + name + '"]'); if (r) r.checked = true;
-      refreshScene(); closeSceneMenu();
+      lsSet(KEY_SCENE, name);
+      refreshScene("smooth");
     });
     $("sceneMenu").appendChild(c);
   });
-  $("sceneBtn").addEventListener("click", function () {
-    var open = $("sceneMenu").hidden;
-    $("sceneMenu").hidden = !open;
-    this.setAttribute("aria-expanded", String(open));
-    if (open) { var sel = $("sceneMenu").querySelector('[aria-selected="true"]'); if (sel) { try { sel.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} } }
-  });
-  document.addEventListener("click", function (e) { if (!e.target.closest(".scene-pick")) closeSceneMenu(); });
-  refreshScene();
-  $("themeBtn").addEventListener("click", function () {
-    var open = $("themes").hidden;
-    $("themes").hidden = !open;
-    this.setAttribute("aria-expanded", String(open));
-    if (open) { try { $("themes").scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {} }
-  });
+  (function () {   // start on the scene you used last
+    var last = lsGet(KEY_SCENE), r = last && document.querySelector('input[name="anchor"][value="' + last + '"]');
+    if (r) r.checked = true;
+  })();
+  refreshScene(true);
   $("openTrends").addEventListener("click", function () { renderTrends(); show("trends"); });
   $("trBack").addEventListener("click", function () { show("home"); });
   $("trTabs").addEventListener("click", function (e) {
@@ -3069,12 +3176,64 @@
   }
 
   /* ---------- sound menu ---------- */
-  function closeMenu() { els.menu.hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); }
+  function closeMenu() { els.menu.hidden = true; $("menuScrim").hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); wakeChrome(); }
   function toggleMenu() {
     var open = els.menu.hidden;
     els.menu.hidden = !open;
+    $("menuScrim").hidden = !open;
     $("soundBtn").setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) { els.menu.scrollTop = 0; screens.session.classList.remove("idle"); clearTimeout(chromeTimer); } else wakeChrome();
   }
+  // The controls at the top fade back after a few quiet seconds, and come forward again when you reach for them.
+  var chromeTimer = 0;
+  function wakeChrome() {
+    screens.session.classList.remove("idle");
+    clearTimeout(chromeTimer);
+    if (!S.active) return;
+    chromeTimer = setTimeout(function () { if (S.active && els.menu.hidden) screens.session.classList.add("idle"); }, 5000);
+  }
+  // A soft ring where your finger landed (or in the middle, for a key or a handheld button).
+  function touchRing(x, y) {
+    if (S.anchor === "circle") return;   // the circle has its own ripple
+    var r = document.createElement("div");
+    r.className = "touch-ring";
+    r.style.left = (x == null ? window.innerWidth / 2 : x) + "px";
+    r.style.top = (y == null ? window.innerHeight * 0.45 : y) + "px";
+    screens.session.appendChild(r);
+    setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, 1700);
+  }
+
+  /* ---------- the choices on the start screen are remembered ---------- */
+  function checked(name) { return document.querySelector('input[name="' + name + '"]:checked'); }
+  function savePrefs() {
+    lsSet(KEY_PREFS, JSON.stringify({ len: checked("len").value, custom: $("customMin").value, mode: checked("mode").value,
+      clock: $("showClock").checked, count: $("showCount").checked }));
+  }
+  function loadPrefs() {
+    var o = {};
+    try { o = JSON.parse(lsGet(KEY_PREFS) || "{}") || {}; } catch (e) {}
+    function pick(name, v) { var r = v != null && document.querySelector('input[name="' + name + '"][value="' + String(v).replace(/"/g, "") + '"]'); if (r) r.checked = true; }
+    pick("len", o.len); pick("mode", o.mode);
+    if (typeof o.custom === "string") $("customMin").value = o.custom;
+    if (typeof o.clock === "boolean") $("showClock").checked = o.clock;
+    if (typeof o.count === "boolean") $("showCount").checked = o.count;
+    $("customRow").hidden = checked("len").value !== "custom";
+  }
+  function syncHome() {
+    var m = checked("mode");
+    $("modeNote").textContent = m.getAttribute("data-desc") + (m.value === "voice" ? $("voiceNote").textContent : "");
+    var on = [];
+    if ($("showClock").checked) on.push("timer"); if ($("showCount").checked) on.push("count");
+    $("sumDisplay").textContent = on.length ? "Show " + on.join(" and ") : "Just the scene";
+    var n = els.reminders.value.split("\n").filter(function (x) { return x.trim(); }).length;
+    $("sumRem").textContent = n ? plural(n, "reminder") : "Starter set";
+  }
+  screens.home.addEventListener("change", function (e) {
+    var nm = e.target && e.target.name, id = e.target && e.target.id;
+    if (nm === "len" || nm === "mode" || id === "showClock" || id === "showCount" || id === "customMin") { savePrefs(); syncHome(); }
+  });
+  els.reminders.addEventListener("input", syncHome);
+  els.reminders.addEventListener("change", function () { lsSet(KEY_REM, els.reminders.value); });
 
   /* ---------- events ---------- */
   $("begin").addEventListener("click", begin);
@@ -3084,6 +3243,7 @@
   $("cancel").addEventListener("click", function (e) {
     e.stopPropagation();
     if (!S.active) return;
+    closeMenu();
     $("cancelSheet").hidden = false;
     $("cancelKeep").focus();
   });
@@ -3096,7 +3256,7 @@
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
   buildControls($("homeSound"));
-  buildControls(els.menu);
+  buildControls($("menuSound"));
   $("noteSave").addEventListener("click", function () { closeNote(true); });
   $("noteSkip").addEventListener("click", function () { closeNote(false); });
   els.noteText.addEventListener("keydown", function (e) {
@@ -3104,7 +3264,7 @@
     else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); closeNote(true); }
   });
   $("doneListen").addEventListener("click", function () { stopListening(); });
-  $("resetRem").addEventListener("click", function () { els.reminders.value = DEFAULTS.join("\n"); });
+  $("resetRem").addEventListener("click", function () { els.reminders.value = DEFAULTS.join("\n"); lsSet(KEY_REM, els.reminders.value); syncHome(); });
 
   Array.prototype.forEach.call(document.querySelectorAll('input[name="len"]'), function (r) {
     r.addEventListener("change", function () {
@@ -3122,6 +3282,7 @@
     els.dots.appendChild(b);
   });
 
+  document.querySelector("#session .bar").addEventListener("pointerdown", wakeChrome);
   screens.session.addEventListener("click", function (e) {
     if (!S.active || S.paused) return;
     if (Date.now() - S.swipedAt < 400) return;
@@ -3130,12 +3291,13 @@
     if (S.listening) { stopListening(); return; }
     if (e.target.closest("button, .panel")) return;
     if (!els.panel.hidden) { els.input.focus({ preventScroll: true }); return; }
+    S.tapAt = { x: e.clientX, y: e.clientY, t: Date.now() };
     catchIt();
   });
 
   var touch = null;
   screens.session.addEventListener("touchstart", function (e) {
-    if (!S.active || S.paused || S.listening || e.touches.length !== 1 || e.target.closest("input, select, .soundmenu")) { touch = null; return; }
+    if (!S.active || S.paused || S.listening || !els.menu.hidden || e.touches.length !== 1 || e.target.closest("input, select, .soundmenu")) { touch = null; return; }
     touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }, { passive: true });
   screens.session.addEventListener("touchend", function (e) {
@@ -3147,6 +3309,7 @@
 
   document.addEventListener("keydown", function (e) {
     if (!S.active || S.paused) return;
+    if (e.key === "Escape" && !els.menu.hidden) { closeMenu(); return; }
     var tag = document.activeElement && document.activeElement.tagName;
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
@@ -3186,6 +3349,8 @@
 
   if (!SR) { $("voiceNote").textContent = " Not supported in this browser, so you'd type instead."; }
   loadReminders();
+  loadPrefs();
+  syncHome();
   loadTotal();
   renderCalendar();
   try { ORDER.forEach(function (n) { tryFile(n, ["mp3", "ogg"]); }); } catch (e) {}
