@@ -466,6 +466,8 @@
   .tl-shape { margin: 0.5rem 0 0; }
   .rgroup { margin: 0.9rem 0 0.1rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .rrow { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; font-size: 0.93rem; }
+  .remote-ui .addrow { margin-top: 0.9rem; }
+  .remote-adv { margin-top: 0.9rem; }
   .rrow select { font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.4rem 0.6rem; max-width: 58%; }
 
   /* ---------- Trends ---------- */
@@ -714,7 +716,7 @@
     <fieldset>
       <legend>When you notice</legend>
       <div class="pills">
-        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also tag what pulled you away. Choose the buttons under Settings, Remote buttons."><span>Just tap</span></label>
+        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also tag what pulled you away. Choose the buttons under Settings, Remote buttons, or from the menu during a sit."><span>Just tap</span></label>
         <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
         <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
       </div>
@@ -755,9 +757,8 @@
 
     <details class="panel">
       <summary>Remote buttons<span class="sum-val" id="sumRemote"></span></summary>
-      <p>For a handheld remote or earbuds in Just tap mode. Every press counts as a return right away, and a quick follow-up press (within half a second) can say what it was. "Twice" means two quick presses; a "then" pair means one button right after the other. Leave a row on "Just a return" to keep it plain.</p>
-      <div id="remoteMap"></div>
-      <button class="link-btn" id="resetRemote" type="button">Restore the suggested set</button>
+      <p>For a handheld remote or earbuds in Just tap mode. Pick what each button means. You can change these during a sit too, from the menu.</p>
+      <div id="homeRemote"></div>
     </details>
 
     <details class="panel">
@@ -809,6 +810,7 @@
       <button class="menu-act" id="cancel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>Cancel sit</button>
     </div>
     <div id="menuSound"></div>
+    <details class="snd-adv remote-adv"><summary>Remote buttons</summary><div id="menuRemote"></div></details>
   </div>
   <div class="stage">
     <div class="orb-wrap" id="orbWrap" aria-hidden="true">
@@ -1005,6 +1007,15 @@
     { id: "body", name: "Physical sensation", short: "Sensation", color: "#5FB58A" },
     { id: "lost", name: "Lost in thought", short: "Lost", color: "#D07AAE" }
   ];
+  // A tag is just a label from the Distractions catalogue; these four are always in it. Old sits stored them as a "kind" instead.
+  var TAG_COLORS = ["#E0954F", "#7F8FE0", "#5FB58A", "#D07AAE", "#C9B25A", "#5AA9C9", "#B07FD6", "#D4786A"];
+  function entryLabel(e) { if (!e) return ""; if (e.label) return String(e.label).trim(); var k = kindById(e.kind); return k ? k.name : ""; }
+  function labelColor(label) {
+    var l = String(label).toLowerCase(), i, h = 0;
+    for (i = 0; i < KINDS.length; i++) if (KINDS[i].name.toLowerCase() === l) return KINDS[i].color;
+    for (i = 0; i < l.length; i++) h = (h * 31 + l.charCodeAt(i)) >>> 0;
+    return TAG_COLORS[h % TAG_COLORS.length];
+  }
   function kindById(id) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i].id === id) return KINDS[i]; return null; }
   var NAMES = {
     circle: "Breathing circle", flame: "Candle flame", daytree: "Tree by day", tree: "Tree at night", rain: "Rain",
@@ -1081,52 +1092,103 @@
   // the centre button (or the phone button) = just a return, next twice quickly = lost in thought, previous twice quickly = physical sensation.
   // The return is counted at the first press, so a quick second press re-tags it instead of waiting to find out.
   // Which sequence of presses means what. C = centre (pause/play, or the phone button), N = next (right), P = previous (left).
-  var REMOTE_DEFAULT = { N: "lost", NN: "future", P: "body", PP: "ruminating" };
+  // Each one maps to a label from the Distractions catalogue. (The centre button pressed twice or three times arrives as next or previous.)
+  var REMOTE_DEFAULT = { N: "Lost in thought", NN: "Worrying about the future", P: "Physical sensation", PP: "Ruminating" };
   var REMOTE_ROWS = [
-    ["One press", [["C", "Centre"], ["N", "Next (right)"], ["P", "Previous (left)"]]],
-    ["Twice", [["CC", "Centre twice"], ["NN", "Next twice"], ["PP", "Previous twice"]]],
-    ["Three times", [["CCC", "Centre three times"], ["NNN", "Next three times"], ["PPP", "Previous three times"]]],
-    ["One then the other", [["CN", "Centre, then next"], ["CP", "Centre, then previous"], ["NP", "Next, then previous"], ["PN", "Previous, then next"], ["NC", "Next, then centre"], ["PC", "Previous, then centre"]]]
+    ["Single press", false, [["C", "Centre or phone button"], ["N", "Right (next)"], ["P", "Left (previous)"]]],
+    ["Quick double press", false, [["NN", "Right, twice"], ["PP", "Left, twice"]]],
+    ["More combinations", true, [["NNN", "Right, three times"], ["PPP", "Left, three times"], ["NP", "Right, then left"], ["PN", "Left, then right"],
+      ["CN", "Centre, then right"], ["CP", "Centre, then left"], ["NC", "Right, then centre"], ["PC", "Left, then centre"]]]
   ];
-  var remoteMap = {};
+  var remoteMap = {}, remoteRoots = [];
   function loadRemote() {
     var raw = lsGet(KEY_REMOTE), m = null;
     if (raw !== null) { try { m = JSON.parse(raw); } catch (e) {} }
     if (!m || typeof m !== "object" || Array.isArray(m)) m = REMOTE_DEFAULT;
     remoteMap = {};
-    Object.keys(m).forEach(function (k) { if (/^[CNP]{1,3}$/.test(k) && kindById(m[k])) remoteMap[k] = m[k]; });
+    Object.keys(m).forEach(function (k) {
+      var v = typeof m[k] === "string" ? m[k].trim() : "";
+      var kd = kindById(v); if (kd) v = kd.name;   // an earlier version stored the four built-in tags by id
+      if (/^[CNP]{1,3}$/.test(k) && v) remoteMap[k] = v.slice(0, 40);
+    });
   }
   function saveRemote() { lsSet(KEY_REMOTE, JSON.stringify(remoteMap)); }
+  // the four built-in tags join the Distractions presets once, so they're there to pick (and to tap in the typing mode) like any other
+  function seedTags() {
+    if (lsGet("come-back:tags-seeded")) return;
+    var a = loadPresets();
+    KINDS.forEach(function (k) { if (!hasPreset(a, k.name)) a.push(k.name); });
+    savePresets(a); lsSet("come-back:tags-seeded", "1");
+  }
+  // everything in the Distractions catalogue: the four built-ins, your presets, and anything you've logged before
+  function allTags() {
+    var out = [], seen = {};
+    function add(t) { t = String(t || "").trim(); var k = t.toLowerCase(); if (t && !seen[k]) { seen[k] = 1; out.push(t); } }
+    KINDS.forEach(function (k) { add(k.name); });
+    loadPresets().forEach(add);
+    tally((function () { var a = []; loadHist().forEach(function (r) { a = a.concat(r.entries || []); }); return a; })()).forEach(function (x) { add(x.name); });
+    Object.keys(remoteMap).forEach(function (k) { add(remoteMap[k]); });
+    return out;
+  }
+  function buildRemote(root) {
+    root.className = "remote-ui";
+    remoteRoots.push(root);
+    renderRemote();
+  }
   function renderRemote() {
-    var box = $("remoteMap"); box.innerHTML = "";
-    REMOTE_ROWS.forEach(function (g) {
-      box.appendChild(el("p", "rgroup", g[0]));
-      g[1].forEach(function (r) {
-        var row = el("label", "rrow"), sel = el("select");
-        row.appendChild(el("span", "", r[1]));
-        sel.setAttribute("aria-label", r[1]);
-        var o0 = el("option", "", "Just a return"); o0.value = ""; sel.appendChild(o0);
-        KINDS.forEach(function (k) { var o = el("option", "", k.name); o.value = k.id; sel.appendChild(o); });
-        sel.value = remoteMap[r[0]] || "";
-        sel.addEventListener("change", function () {
-          if (sel.value) remoteMap[r[0]] = sel.value; else delete remoteMap[r[0]];
-          saveRemote(); syncRemoteSum();
+    var tags = allTags();
+    remoteRoots.forEach(function (root) {
+      root.innerHTML = "";
+      root.appendChild(el("p", "subnote", "Every press counts as a return right away. A quick second press (within half a second) can say what it was."));
+      REMOTE_ROWS.forEach(function (g) {
+        var host = root;
+        if (g[1]) {
+          var d = el("details", "snd-adv"), sm = el("summary", "", g[0]);
+          d.appendChild(sm);
+          if (g[2].some(function (r) { return remoteMap[r[0]]; })) d.open = true;
+          root.appendChild(d); host = d;
+        } else host.appendChild(el("p", "rgroup", g[0]));
+        g[2].forEach(function (r) {
+          var row = el("label", "rrow"), sel = el("select");
+          row.appendChild(el("span", "", r[1]));
+          sel.setAttribute("aria-label", r[1]); sel.setAttribute("data-key", r[0]);
+          var o0 = el("option", "", "Just a return"); o0.value = ""; sel.appendChild(o0);
+          tags.forEach(function (t) { var o = el("option", "", t); o.value = t; sel.appendChild(o); });
+          sel.value = remoteMap[r[0]] || "";
+          sel.addEventListener("change", function () {
+            if (sel.value) remoteMap[r[0]] = sel.value; else delete remoteMap[r[0]];
+            saveRemote(); syncRemoteSum();
+            remoteRoots.forEach(function (rt) {   // keep the home screen and the in-session menu showing the same thing
+              Array.prototype.forEach.call(rt.querySelectorAll("select[data-key]"), function (x) { if (x.getAttribute("data-key") === r[0]) x.value = remoteMap[r[0]] || ""; });
+            });
+          });
+          row.appendChild(sel); host.appendChild(row);
         });
-        row.appendChild(sel); box.appendChild(row);
       });
+      var add = el("div", "addrow"), inp = el("input"), btn = el("button", "btn", "Add"), submit = function () {
+        var t = inp.value.trim().slice(0, 32);
+        if (!t) return;
+        var a = loadPresets(); if (!hasPreset(a, t)) { a.push(t); savePresets(a); }
+        inp.value = ""; renderRemote(); if (!screens.dist.hidden) renderDist();
+      };
+      inp.type = "text"; inp.maxLength = 32; inp.placeholder = "Add your own tag"; inp.setAttribute("autocomplete", "off"); inp.setAttribute("aria-label", "New tag");
+      btn.type = "button"; btn.addEventListener("click", submit);
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+      add.appendChild(inp); add.appendChild(btn); root.appendChild(add);
+      root.appendChild(el("p", "subnote", "Your own tags join the Distractions list, so they're there for the typing mode too."));
+      var rs = el("button", "link-btn", "Restore the suggested set"); rs.type = "button";
+      rs.addEventListener("click", function () { remoteMap = {}; Object.keys(REMOTE_DEFAULT).forEach(function (k) { remoteMap[k] = REMOTE_DEFAULT[k]; }); saveRemote(); renderRemote(); });
+      root.appendChild(rs);
     });
     syncRemoteSum();
   }
   function syncRemoteSum() { var n = Object.keys(remoteMap).length; $("sumRemote").textContent = n ? plural(n, "button set", "buttons set") : "None set"; }
-  function tagEntry(entry, kind) {
-    entry.kind = kind;
-    var k = kindById(kind);
-    if (k) {
-      els.sceneName.textContent = k.name; els.sceneName.classList.add("show");
-      clearTimeout(S.nameTimer);
-      S.nameTimer = setTimeout(function () { els.sceneName.classList.remove("show"); }, 1600);
-    }
-    try { if (navigator.vibrate) navigator.vibrate(kind === "lost" ? [10, 60, 10] : kind === "body" ? 30 : 12); } catch (e) {}
+  function tagEntry(entry, label) {
+    entry.label = label; delete entry.kind;
+    els.sceneName.textContent = label; els.sceneName.classList.add("show");
+    clearTimeout(S.nameTimer);
+    S.nameTimer = setTimeout(function () { els.sceneName.classList.remove("show"); }, 1600);
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
   }
   function remotePress(btn) {
     if (!S.active || S.paused) return;
@@ -3730,7 +3792,7 @@
   function tally(entries) {
     var c = {}, order = [];
     (entries || []).forEach(function (e) {
-      var l = e && e.label ? String(e.label).trim() : "";
+      var l = entryLabel(e);
       if (!l) return;
       var k = l.toLowerCase();
       if (!c[k]) { c[k] = { name: l, n: 0 }; order.push(k); }
@@ -3745,41 +3807,30 @@
     return m + " min" + (r >= 10 && m < 10 ? " " + r + " sec" : "");
   }
   // A line for the whole sit with a tick wherever you came back, coloured by what pulled you away when that was tagged.
-  function kindColor(kind) { var k = kindById(kind); return k ? k.color : ""; }
   function drawTimeline(entries, dur, small) {
     var wrap = el("div", "tl" + (small ? " sm" : "")), track = el("div", "tl-track");
     (entries || []).forEach(function (e) {
       if (!e || typeof e.at !== "number" || !(dur > 0)) return;
-      var t = el("i", "tl-tick");
+      var t = el("i", "tl-tick"), lb = entryLabel(e);
       t.style.left = Math.max(0, Math.min(100, e.at / dur * 100)) + "%";
-      var c = kindColor(e.kind); if (c) t.style.background = c;
-      var k = kindById(e.kind);
-      t.title = fmtClock(e.at) + (k ? " · " + k.name : "");
+      if (lb) t.style.background = labelColor(lb);
+      t.title = fmtClock(e.at) + (lb ? " · " + lb : "");
       track.appendChild(t);
     });
     wrap.appendChild(track);
     var ax = el("div", "tl-axis"); ax.appendChild(el("span", "", "0:00")); ax.appendChild(el("span", "", fmtClock(dur))); wrap.appendChild(ax);
     return wrap;
   }
-  function kindCounts(entries) {
-    var c = { none: 0 }, any = false;
-    KINDS.forEach(function (k) { c[k.id] = 0; });
-    (entries || []).forEach(function (e) {
-      if (e && kindById(e.kind)) { c[e.kind]++; any = true; } else c.none++;
-    });
-    c.any = any;
-    return c;
-  }
+  // colour key for a timeline, only when something on it was named
   function kindLegend(entries) {
-    var c = kindCounts(entries);
-    if (!c.any) return null;
+    var tl = tally(entries), plain = (entries || []).filter(function (e) { return !entryLabel(e); }).length;
+    if (!tl.length) return null;
     var lg = el("div", "tl-legend");
-    KINDS.concat([{ id: "none", name: "Just a return", color: "" }]).forEach(function (k) {
-      if (!c[k.id]) return;
-      var sp = el("span"), dot = el("i"); if (k.color) dot.style.background = k.color;
-      sp.appendChild(dot); sp.appendChild(document.createTextNode(k.name + " ")); sp.appendChild(el("b", "", "×" + c[k.id]));
-      lg.appendChild(sp);
+    tl.slice(0, 8).forEach(function (x) {
+      var sp = el("span"), dot = el("i"); dot.style.background = labelColor(x.name);
+      sp.appendChild(dot); sp.appendChild(document.createTextNode(x.name + " ")); sp.appendChild(el("b", "", "×" + x.n)); lg.appendChild(sp);
     });
+    if (plain) { var sp2 = el("span"); sp2.appendChild(el("i")); sp2.appendChild(document.createTextNode("Just a return ")); sp2.appendChild(el("b", "", "×" + plain)); lg.appendChild(sp2); }
     return lg;
   }
   function shapeLine(entries, dur) {
@@ -4156,20 +4207,6 @@
     }
     box.appendChild(b1);
 
-    var kt = {}, kn = 0, ksits = 0;
-    KINDS.forEach(function (k) { kt[k.id] = 0; });
-    all.forEach(function (r) {
-      var c = kindCounts(r.entries); if (!c.any) return;
-      ksits++;
-      KINDS.forEach(function (k) { kt[k.id] += c[k.id]; kn += c[k.id]; });
-    });
-    if (kn) {
-      var bk2 = insightBlock("What pulled you away", "From returns you tagged with the remote, across " + plural(ksits, "sit") + ".");
-      var kmax = Math.max.apply(null, KINDS.map(function (k) { return kt[k.id]; }));
-      KINDS.forEach(function (k) { bk2.appendChild(irow(k.short, kt[k.id] / kmax, kt[k.id] + " · " + Math.round(kt[k.id] / kn * 100) + "%")); });
-      box.appendChild(bk2);
-    }
-
     var parts = DAY_PARTS.map(function (p) { return { name: p[0], sits: 0, ms: 0, ret: 0 }; });
     all.forEach(function (r) {
       var h = new Date(r.start).getHours(); if (h < 5) h += 24;
@@ -4353,8 +4390,9 @@
   $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") closeNote(false); });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
-  loadRemote(); renderRemote();
-  $("resetRemote").addEventListener("click", function () { lsSet(KEY_REMOTE, JSON.stringify(REMOTE_DEFAULT)); loadRemote(); renderRemote(); });
+  seedTags(); loadRemote();
+  buildRemote($("homeRemote"));
+  buildRemote($("menuRemote"));
   buildControls($("homeSound"));
   buildControls($("menuSound"));
   $("noteSave").addEventListener("click", function () { closeNote(true); });
