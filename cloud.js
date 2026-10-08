@@ -5,18 +5,18 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { FIREBASE_CONFIG } from "./firebase-config.js";
 
 var PREFIX = "come-back:", SESSIONS = "come-back:sessions", TOTAL = "come-back:total";
-var K_UID = "come-back:cloud-uid", K_DIRTY = "come-back:cloud-dirty";
+var K_UID = "come-back:cloud-uid", K_DIRTY = "come-back:cloud-dirty", K_SESS = "come-back:cloud-sess";   // K_SESS: starts of the sessions already in the cloud
 var el = function (id) { return document.getElementById(id); };
 var ui = { box: el("cloudBox"), status: el("cloudStatus"), signIn: el("cloudSignIn"), signOut: el("cloudSignOut"), sum: el("sumCloud") };
 
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
-function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_UID && k !== K_DIRTY; }
+function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_UID && k !== K_DIRTY && k !== K_SESS; }
 function say(msg, signedIn) {
   if (ui.status) ui.status.textContent = msg;
   if (ui.sum) ui.sum.textContent = signedIn ? "On" : "";
@@ -40,14 +40,37 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
     try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (syncKey(k)) out[k] = localStorage.getItem(k); } } catch (e) {}
     return out;
   }
+  function syncedStarts() { var a = parse(lsGet(K_SESS), null); return a ? new Set(a) : null; }
+  function sessDoc(start) { return doc(db, "users", user.uid, "sessions", String(start)); }
+  function chunked(ops) {            // Firestore batches hold at most 500 writes
+    var p = Promise.resolve();
+    for (var i = 0; i < ops.length; i += 400) (function (part) {
+      p = p.then(function () { var b = writeBatch(db); part.forEach(function (f) { f(b); }); return b.commit(); });
+    })(ops.slice(i, i + 400));
+    return p;
+  }
+  // one document per sit: upload sits the cloud hasn't seen, delete ones removed on this device
+  function pushSessions() {
+    var local = parse(lsGet(SESSIONS), []), synced = syncedStarts() || new Set(), now = new Set(), ops = [];
+    local.forEach(function (r) {
+      now.add(r.start);
+      if (!synced.has(r.start)) ops.push(function (b) { b.set(sessDoc(r.start), { rec: JSON.stringify(r) }); });
+    });
+    synced.forEach(function (st) { if (!now.has(st)) ops.push(function (b) { b.delete(sessDoc(st)); }); });
+    return chunked(ops).then(function () {
+      lsSet(K_SESS, JSON.stringify(Array.from(now)));
+      return updateDoc(ref(), { "data.sessions": deleteField() }).catch(function () {});   // clear the old single-document copy
+    });
+  }
   function pushNow() {
     pushTimer = 0;
-    if (!user) return;
+    if (!user) return Promise.resolve();
     var d = dirtySet(), data = {};
+    d.delete(SESSIONS);
     d.forEach(function (k) { var v = lsGet(k); data[esc(k)] = v == null ? "" : v; });
-    if (!d.size) return;
-    setDoc(ref(), { data: data, updated: Date.now() }, { merge: true })
-      .then(function () { var cur = dirtySet(); d.forEach(function (k) { if (lsGet(k) === (data[esc(k)] === "" ? null : data[esc(k)])) cur.delete(k); }); dirtySave(cur); say("Backed up to " + user.email, true); })
+    var main = d.size ? setDoc(ref(), { data: data, updated: Date.now() }, { merge: true }) : Promise.resolve();
+    return main.then(pushSessions)
+      .then(function () { var cur = dirtySet(); d.forEach(function (k) { if (lsGet(k) === (data[esc(k)] === "" ? null : data[esc(k)])) cur.delete(k); }); cur.delete(SESSIONS); dirtySave(cur); say("Backed up to " + user.email, true); })
       .catch(function () { say("Couldn't reach the cloud. Changes are kept on this device and will upload later.", true); });
   }
 
@@ -60,33 +83,40 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
     }
   };
 
-  function mergeSessions(a, b) {
-    var seen = {}, out = [];
-    a.concat(b).forEach(function (r) { if (r && !seen[r.start]) { seen[r.start] = 1; out.push(r); } });
-    return out.sort(function (x, y) { return x.start - y.start; });
-  }
-
   function pull() {
     if (!user || pulling) return Promise.resolve();
     pulling = true;
     say("Syncing…", true);
-    return getDoc(ref()).then(function (snap) {
-      var remote = {};
+    return Promise.all([getDoc(ref()), getDocs(collection(db, "users", user.uid, "sessions"))]).then(function (res) {
+      var snap = res[0], remote = {};
       if (snap.exists()) { var m = snap.data().data || {}; Object.keys(m).forEach(function (k) { remote[PREFIX + k] = m[k]; }); }
       var local = localData(), dirty = dirtySet(), firstLink = lsGet(K_UID) !== user.uid, changed = false;
+
+      // sessions: the cloud copy is the subcollection (plus the old single-document list, which gets migrated)
+      var R = {}, order = [];
+      parse(remote[SESSIONS], []).forEach(function (r) { if (r) R[r.start] = r; });
+      res[1].forEach(function (d) { var r = parse(d.data().rec, null); if (r) R[r.start] = r; });
+      var synced = firstLink ? new Set() : (syncedStarts() || new Set());
+      var L = parse(local[SESSIONS], []), seen = {}, out = [];
+      L.forEach(function (r) {
+        if (!r) return;
+        if (R[r.start] || !synced.has(r.start)) { out.push(r); seen[r.start] = 1; }   // else it was deleted from the cloud elsewhere
+      });
+      Object.keys(R).forEach(function (st) {
+        var r = R[st];
+        if (!seen[r.start] && !synced.has(r.start)) out.push(r);                        // new from another device (or never seen here)
+      });
+      out.sort(function (x, y) { return x.start - y.start; });
+      var str = JSON.stringify(out);
+      if (str !== (local[SESSIONS] || "[]")) { lsSet(SESSIONS, str); changed = true; }
+      if (firstLink) lsDel(K_SESS);
+      dirty.delete(SESSIONS);
+
       var keys = {}; Object.keys(remote).concat(Object.keys(local)).forEach(function (k) { keys[k] = 1; });
       Object.keys(keys).forEach(function (k) {
         var r = remote[k], l = local[k];
-        if (k === TOTAL) return;                     // worked out after the sessions
-        if (k === SESSIONS) {
-          var rs = parse(r, []), ls = parse(l, []), merged;
-          if (firstLink || dirty.has(k) && r == null) merged = mergeSessions(rs, ls);
-          else if (dirty.has(k)) merged = ls;       // this device deleted or added since the last sync
-          else merged = rs;
-          var str = JSON.stringify(merged);
-          if (str !== l) { lsSet(k, str); changed = true; }
-          if (str !== r) dirty.add(k); else dirty.delete(k);
-        } else if (dirty.has(k) || r == null) {
+        if (k === TOTAL || k === SESSIONS) return;   // total is worked out below
+        if (dirty.has(k) || r == null) {
           if (l != null) dirty.add(k);               // local-only or edited offline: send it up
         } else if (r !== l) {
           lsSet(k, r); changed = true; dirty.delete(k);
@@ -95,21 +125,21 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
       // returns counted across all sittings: remote total plus returns from sessions only this device had
       var rt = parseInt(remote[TOTAL] || "0", 10) || 0, lt = parseInt(local[TOTAL] || "0", 10) || 0, total;
       if (firstLink) {
-        var remoteStarts = {}; parse(remote[SESSIONS], []).forEach(function (r) { remoteStarts[r.start] = 1; });
-        var extra = 0; parse(local[SESSIONS], []).forEach(function (r) { if (!remoteStarts[r.start]) extra += r.returns || 0; });
-        total = snap.exists() ? rt + extra : lt;
+        var extra = 0; L.forEach(function (r) { if (r && !R[r.start]) extra += r.returns || 0; });
+        total = snap.exists() && remote[TOTAL] != null ? rt + extra : lt;
       } else total = dirty.has(TOTAL) ? lt : (remote[TOTAL] == null ? lt : rt);
       if (String(total) !== local[TOTAL]) { lsSet(TOTAL, String(total)); changed = true; }
       if (String(total) !== remote[TOTAL]) dirty.add(TOTAL); else dirty.delete(TOTAL);
       lsSet(K_UID, user.uid);
       dirtySave(dirty);
       pulling = false;
-      if (dirty.size) pushNow(); else say("Backed up to " + user.email, true);
-      if (changed) {
-        // the app reads storage once at start-up; reload so everything shows the synced data (not mid-sit)
-        if (window.CB_APP && window.CB_APP.busy && window.CB_APP.busy()) window.CB_PENDING_RELOAD = true;
-        else location.reload();
-      }
+      return pushNow().then(function () {
+        if (changed) {
+          // the app reads storage once at start-up; reload so everything shows the synced data (not mid-sit)
+          if (window.CB_APP && window.CB_APP.busy && window.CB_APP.busy()) window.CB_PENDING_RELOAD = true;
+          else location.reload();
+        }
+      });
     }).catch(function () { pulling = false; say("Couldn't reach the cloud. Your data is safe on this device.", true); });
   }
 

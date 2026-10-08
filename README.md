@@ -31,4 +31,4 @@ The site stays on GitHub Pages; only your data lives in Firebase (Auth + Firesto
 4. **Project settings > Your apps > Web app**, copy the config into `firebase-config.js`.
 5. Push to `master`. Until the config is filled in, the Account panel is hidden and the app stays local-only.
 
-Data is one document per user (`users/{uid}`). `cloud.js` mirrors every `come-back:*` localStorage key into it, so the app itself still reads and writes locally.
+Settings live in one document per user (`users/{uid}`) and each sit is its own document (`users/{uid}/sessions/{start}`), so history can grow without limit. `cloud.js` mirrors every `come-back:*` localStorage key into it, so the app itself still reads and writes locally.
