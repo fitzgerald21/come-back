@@ -713,16 +713,12 @@
       </div>
     </fieldset>
 
-    <fieldset>
-      <legend>When you notice</legend>
-      <div class="pills">
-        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also tag what pulled you away. Choose the buttons under Settings, Remote buttons, or from the menu during a sit."><span>Just tap</span></label>
-        <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
-        <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
-      </div>
-      <p class="subnote mode-note" id="modeNote" aria-live="polite"></p>
-      <span id="voiceNote" hidden></span>
-    </fieldset>
+    <!-- There's only one way to mark a return now (tap, or a remote); the old typing and voice modes are no longer offered. -->
+    <div hidden>
+      <input type="radio" name="mode" value="tap" checked data-desc="">
+      <p id="modeNote"></p>
+      <span id="voiceNote"></span>
+    </div>
 
     <div class="begin-bar"><button class="btn begin" id="begin" type="button">Begin</button></div>
 
