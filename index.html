@@ -711,7 +711,7 @@
     <fieldset>
       <legend>When you notice</legend>
       <div class="pills">
-        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also say what pulled you away: next is worrying about the future, previous is ruminating, hold is a physical sensation, double click is lost in thought, and a single click is just a return."><span>Just tap</span></label>
+        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also say what pulled you away: next is worrying about the future, previous is ruminating, the centre button twice is lost in thought, next twice is a physical sensation, and the centre button once is just a return."><span>Just tap</span></label>
         <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
         <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
       </div>
@@ -1067,8 +1067,8 @@
   // buttons (play, pause, next, previous) to whichever page is playing audio, which the silent element above makes us.
   var remoteHooked = false;
   // In Just tap mode the buttons say what pulled you away: next = worrying about the future, previous = ruminating,
-  // the main button once = just a return, twice quickly = lost in thought, held = physical sensation.
-  // The return is counted at the first press, so a second press or a hold re-tags it instead of waiting to find out.
+  // the centre button (or the phone button) once = just a return, twice quickly = lost in thought, next twice quickly = physical sensation.
+  // The return is counted at the first press, so a quick second press re-tags it instead of waiting to find out.
   function tagEntry(entry, kind) {
     entry.kind = kind;
     var k = kindById(kind);
@@ -1084,8 +1084,10 @@
     if (S.listening) stopListening();
     else if (els.panel.hidden && els.menu.hidden) {
       var now = Date.now(), tagging = S.mode === "tap" && !gameOn(), last = S.entries[S.entries.length - 1];
-      if (tagging && btn === "main" && S.mainAt && now - S.mainAt < 450 && last && last === S.mainEntry && !last.kind) {
-        tagEntry(last, "lost"); S.mainAt = 0;
+      // the same button twice in quick succession re-tags the return it just made: centre twice = lost in thought, next twice = physical sensation
+      var twice = tagging && S.btnAt && now - S.btnAt < 500 && btn === S.btnLast && last && last === S.btnEntry && (btn === "main" || btn === "next");
+      if (twice) {
+        tagEntry(last, btn === "main" ? "lost" : "body"); S.btnAt = 0;
         touchRing();
       } else {
         var before = S.entries.length;
@@ -1093,7 +1095,7 @@
         if (tagging && S.entries.length > before) {
           var e = S.entries[before];
           if (btn === "next") tagEntry(e, "future"); else if (btn === "prev") tagEntry(e, "ruminating");
-          S.mainEntry = btn === "main" ? e : null; S.mainAt = btn === "main" ? now : 0;
+          S.btnEntry = e; S.btnLast = btn; S.btnAt = now;
         }
       }
     }
@@ -4367,19 +4369,7 @@
       if (tt === "INPUT" || tt === "TEXTAREA" || tt === "SELECT" || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if ((tag === "BUTTON" || tt === "BUTTON") && e.key === "Enter") return;
       e.preventDefault();
-      if (!e.repeat) {
-        var btn = e.key === "MediaTrackNext" ? "next" : e.key === "MediaTrackPrevious" ? "prev" : "main";
-        remotePress(btn);
-        clearTimeout(S.holdTimer);
-        if (btn === "main" && S.mode === "tap") {
-          // holding the button re-tags the return it just made as a physical sensation
-          S.holdTimer = setTimeout(function () {
-            var le = S.entries[S.entries.length - 1];
-            if (!S.active || S.paused || !le || Date.now() - S.startWall - le.at > 1500) return;
-            tagEntry(le, "body"); S.mainAt = 0;
-          }, 650);
-        }
-      }
+      if (!e.repeat) remotePress(e.key === "MediaTrackNext" ? "next" : e.key === "MediaTrackPrevious" ? "prev" : "main");
       return;
     }
     if (e.code === "Space" || e.key === " ") {
@@ -4391,8 +4381,6 @@
       else if (els.panel.hidden) catchIt();
     }
   });
-
-  document.addEventListener("keyup", function () { clearTimeout(S.holdTimer); });
 
   els.input.addEventListener("input", function () {
     var v = els.input.value.replace(/^\s+/, "");
