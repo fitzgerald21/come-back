@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remote test</title>
+<style>body{font:16px/1.4 -apple-system,system-ui,sans-serif;margin:0;padding:1rem;background:#111;color:#ddd}button{font-size:1.1rem;padding:.7rem 1.2rem;border-radius:10px;border:0;background:#4a7;color:#fff}li{margin:.2rem 0;font-variant-numeric:tabular-nums}ol{padding-left:1.4rem}small{color:#999}</style></head>
+<body>
+<h2>Remote test</h2>
+<p>Tap Start, then press each button on your remote one at a time (single, double, triple, hold, the call button). Every event the page receives shows up below. Tell me what each button printed.</p>
+<button id="go">Start</button>
+<ol id="log"></ol>
+<script>
+var t0 = 0, n = 0;
+function add(s) { var li = document.createElement("li"); li.textContent = ((Date.now() - t0) / 1000).toFixed(2) + "s  " + s; document.getElementById("log").prepend(li); }
+document.getElementById("go").onclick = function () {
+  t0 = Date.now();
+  // a silent looping sound, so the phone sends remote buttons to this page
+  var rate = 8000, len = rate, buf = new Uint8Array(44 + len), dv = new DataView(buf.buffer);
+  function str(o, s) { for (var i = 0; i < s.length; i++) buf[o + i] = s.charCodeAt(i); }
+  str(0, "RIFF"); dv.setUint32(4, 36 + len, true); str(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); str(36, "data"); dv.setUint32(40, len, true);
+  for (var i = 0; i < len; i++) buf[44 + i] = 128;
+  var a = new Audio(URL.createObjectURL(new Blob([buf], { type: "audio/wav" }))); a.loop = true;
+  a.play().then(function () { add("listening"); }, function (e) { add("audio failed: " + e); });
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: "Remote test" });
+    ["play", "pause", "stop", "nexttrack", "previoustrack", "seekforward", "seekbackward", "seekto", "skipad"].forEach(function (act) {
+      try { navigator.mediaSession.setActionHandler(act, function (d) { add("MEDIA ACTION: " + act + (d && d.seekOffset ? " " + d.seekOffset : "")); a.play(); }); } catch (e) {}
+    });
+  }
+  a.addEventListener("pause", function () { add("audio element paused by the phone"); });
+  document.addEventListener("keydown", function (e) { add("KEYDOWN key=" + e.key + " code=" + e.code + (e.repeat ? " (repeat)" : "")); e.preventDefault(); });
+  document.addEventListener("keyup", function (e) { add("KEYUP   key=" + e.key); });
+  document.addEventListener("visibilitychange", function () { add("page " + document.visibilityState); });
+};
+</script></body></html>
