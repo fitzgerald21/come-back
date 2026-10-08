@@ -294,7 +294,7 @@
       if (!LOADING[id]) {
         var def = Lab.SAMPLE_DEFS[id];
         LOADING[id] = Promise.all(def.notes.map(function (nt) {
-          return fetchBuf(Lab.sampleBase + nt.f).then(decode).then(function (buf) { return { m: nt.m, ls: nt.ls, xf: nt.xf, cc: nt.cc, buf: buf }; });
+          return fetchBuf(Lab.sampleBase + nt.f).then(decode).then(function (buf) { return { m: nt.m, ls: nt.ls, le: nt.le, xf: nt.xf, cc: nt.cc, buf: buf }; });
         })).then(function (notes) { SAMP[id] = { notes: notes, def: def }; })
           .catch(function (e) { console.warn("Could not load " + id + ", using the synthesized version.", e); });
       }
@@ -314,7 +314,10 @@
       midi = Lab.actualMidi(id, midi);
       var best = S.notes[0];
       S.notes.forEach(function (x) { if (Math.abs(x.m - midi) < Math.abs(best.m - midi)) best = x; });
-      var rate = Math.pow(2, (midi - best.m) / 12), buf = best.buf, d = buf.duration;
+      // Where the sound really ends, as the file was built. Not the decoded length: some decoders (Apple's, so every iPhone) add
+      // padding and shift the sound a little later, and the loop must not depend on that. Everything is timed from the start of
+      // the file, so a uniform shift cancels out and the two halves of a crossfade still line up.
+      var rate = Math.pow(2, (midi - best.m) / 12), buf = best.buf, d = best.le || buf.duration;
       function src(at, offset, g0) {
         var s = AC.createBufferSource(), g = gainNode(g0 == null ? 1 : g0);
         s.buffer = buf; s.playbackRate.value = rate; if (n.bus) n.bus.connect(s.detune);

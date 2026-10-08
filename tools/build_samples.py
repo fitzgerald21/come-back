@@ -241,7 +241,7 @@ def main():
                     x, ls, cc = find_loop(x0, ls0_, xf)
             rel = "%s/%s.mp3" % (iid, note.replace("#", "s"))
             total += encode(x, os.path.join(OUT, rel))
-            out.append({"f": rel, "m": round(float(m), 2), "d": round(len(x) / SR, 2), "ls": None if ls is None else round(ls, 4), "xf": None if xf is None else round(xf, 3), "cc": None if cc is None else round(cc, 2)})
+            out.append({"f": rel, "m": round(float(m), 2), "d": round(len(x) / SR, 2), "le": round(len(x) / SR, 5), "ls": None if ls is None else round(ls, 4), "xf": None if xf is None else round(xf, 3), "cc": None if cc is None else round(cc, 2)})
         manifest[iid] = {"name": name, "kind": kind, "level": target, "notes": out}
         print("%-11s %2d notes  pitch error (cents) max %3.0f" % (iid, len(out), max(abs(o["m"] - midi(r[0])) for o, r in zip(out, rows)) * 100))
 
@@ -263,7 +263,7 @@ def main():
         m = 69 + 12 * np.log2(k * SR / n / 440)
         total += encode(x, os.path.join(OUT, "bowl/bowl.mp3"))
         manifest["bowl"] = {"name": "Singing bowl", "kind": "sustained", "octave": True, "power": True, "level": 0.12,
-                            "notes": [{"f": "bowl/bowl.mp3", "m": round(float(m), 2), "d": round(len(x) / SR, 2), "ls": round((pk + 2 * SR) / SR, 3)}]}
+                            "notes": [{"f": "bowl/bowl.mp3", "m": round(float(m), 2), "d": round(len(x) / SR, 2), "le": round(len(x) / SR, 5), "ls": round((pk + 2 * SR) / SR, 3)}]}
         print("bowl        pitch %.2f (%s)  %.1fs, loops %.1fs-%.1fs" % (m, name_of(int(round(m))), len(x) / SR, (pk + 2 * SR) / SR, len(x) / SR))
     except Exception as e:
         print("bowl failed:", e)
