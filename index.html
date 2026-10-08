@@ -757,6 +757,13 @@
       <div id="homeRemote"></div>
     </details>
 
+    <details class="panel" id="cloudBox">
+      <summary>Account and backup<span class="sum-val" id="sumCloud"></span></summary>
+      <p id="cloudStatus">Sign in with Google to keep your sits safe and use them on any device.</p>
+      <button class="link-btn" id="cloudSignIn" type="button">Sign in with Google</button>
+      <button class="link-btn" id="cloudSignOut" type="button" hidden>Sign out</button>
+    </details>
+
     <details class="panel">
       <summary>Look<span class="sum-val" id="sumTheme"></span></summary>
       <p>The colours for these screens. Scenes stay dark so they're easy on your eyes.</p>
@@ -966,6 +973,7 @@
 <script src="samples/manifest.js?v=14"></script>
 <script src="instruments.js?v=14"></script>
 <script src="tones.js?v=14"></script>
+<script type="module" src="cloud.js?v=14"></script>
 <script>
 (function () {
   "use strict";
@@ -1040,7 +1048,11 @@
 
   /* ---------- storage (guarded) ---------- */
   function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
-  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+  function lsSet(k, v) {
+    try { window.localStorage.setItem(k, v); } catch (e) {}
+    try { if (window.CB_CLOUD) window.CB_CLOUD.changed(k); } catch (e) {}   // cloud.js mirrors saves to Firebase when signed in
+  }
+  window.CB_APP = { busy: function () { return !!S.active; } };
   function loadReminders() {
     var saved = lsGet(KEY_REM);
     els.reminders.value = saved && saved.trim() ? saved : DEFAULTS.join("\n");
