@@ -464,6 +464,9 @@
   .tl-legend i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--muted); display: inline-block; }
   .tl-legend b { color: var(--ink); font-weight: 600; }
   .tl-shape { margin: 0.5rem 0 0; }
+  .rgroup { margin: 0.9rem 0 0.1rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .rrow { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; font-size: 0.93rem; }
+  .rrow select { font: inherit; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.4rem 0.6rem; max-width: 58%; }
 
   /* ---------- Trends ---------- */
   .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0 0 1.5rem; }
@@ -711,7 +714,7 @@
     <fieldset>
       <legend>When you notice</legend>
       <div class="pills">
-        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also say what pulled you away: next is worrying about the future, previous is ruminating, next twice is lost in thought, previous twice is a physical sensation, and the centre button once is just a return."><span>Just tap</span></label>
+        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also tag what pulled you away. Choose the buttons under Settings, Remote buttons."><span>Just tap</span></label>
         <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
         <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
       </div>
@@ -748,6 +751,13 @@
       <p>One per line. A different one appears each time you catch yourself.</p>
       <textarea id="reminders" aria-label="Your reminders, one per line"></textarea>
       <button class="link-btn" id="resetRem" type="button">Restore the starter set</button>
+    </details>
+
+    <details class="panel">
+      <summary>Remote buttons<span class="sum-val" id="sumRemote"></span></summary>
+      <p>For a handheld remote or earbuds in Just tap mode. Every press counts as a return right away, and a quick follow-up press (within half a second) can say what it was. "Twice" means two quick presses; a "then" pair means one button right after the other. Leave a row on "Just a return" to keep it plain.</p>
+      <div id="remoteMap"></div>
+      <button class="link-btn" id="resetRemote" type="button">Restore the suggested set</button>
     </details>
 
     <details class="panel">
@@ -977,6 +987,7 @@
   var KEY_THEME = "come-back:theme";
   var KEY_SCENE = "come-back:scene";
   var KEY_PREFS = "come-back:prefs";
+  var KEY_REMOTE = "come-back:remote";
   var PRESET_DEFAULTS = ["Physical discomfort", "Planning", "Worry", "Sounds", "Memory", "Sleepy"];
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
@@ -1069,6 +1080,44 @@
   // In Just tap mode the buttons say what pulled you away: next = worrying about the future, previous = ruminating,
   // the centre button (or the phone button) = just a return, next twice quickly = lost in thought, previous twice quickly = physical sensation.
   // The return is counted at the first press, so a quick second press re-tags it instead of waiting to find out.
+  // Which sequence of presses means what. C = centre (pause/play, or the phone button), N = next (right), P = previous (left).
+  var REMOTE_DEFAULT = { N: "lost", NN: "future", P: "body", PP: "ruminating" };
+  var REMOTE_ROWS = [
+    ["One press", [["C", "Centre"], ["N", "Next (right)"], ["P", "Previous (left)"]]],
+    ["Twice", [["CC", "Centre twice"], ["NN", "Next twice"], ["PP", "Previous twice"]]],
+    ["Three times", [["CCC", "Centre three times"], ["NNN", "Next three times"], ["PPP", "Previous three times"]]],
+    ["One then the other", [["CN", "Centre, then next"], ["CP", "Centre, then previous"], ["NP", "Next, then previous"], ["PN", "Previous, then next"], ["NC", "Next, then centre"], ["PC", "Previous, then centre"]]]
+  ];
+  var remoteMap = {};
+  function loadRemote() {
+    var raw = lsGet(KEY_REMOTE), m = null;
+    if (raw !== null) { try { m = JSON.parse(raw); } catch (e) {} }
+    if (!m || typeof m !== "object" || Array.isArray(m)) m = REMOTE_DEFAULT;
+    remoteMap = {};
+    Object.keys(m).forEach(function (k) { if (/^[CNP]{1,3}$/.test(k) && kindById(m[k])) remoteMap[k] = m[k]; });
+  }
+  function saveRemote() { lsSet(KEY_REMOTE, JSON.stringify(remoteMap)); }
+  function renderRemote() {
+    var box = $("remoteMap"); box.innerHTML = "";
+    REMOTE_ROWS.forEach(function (g) {
+      box.appendChild(el("p", "rgroup", g[0]));
+      g[1].forEach(function (r) {
+        var row = el("label", "rrow"), sel = el("select");
+        row.appendChild(el("span", "", r[1]));
+        sel.setAttribute("aria-label", r[1]);
+        var o0 = el("option", "", "Just a return"); o0.value = ""; sel.appendChild(o0);
+        KINDS.forEach(function (k) { var o = el("option", "", k.name); o.value = k.id; sel.appendChild(o); });
+        sel.value = remoteMap[r[0]] || "";
+        sel.addEventListener("change", function () {
+          if (sel.value) remoteMap[r[0]] = sel.value; else delete remoteMap[r[0]];
+          saveRemote(); syncRemoteSum();
+        });
+        row.appendChild(sel); box.appendChild(row);
+      });
+    });
+    syncRemoteSum();
+  }
+  function syncRemoteSum() { var n = Object.keys(remoteMap).length; $("sumRemote").textContent = n ? plural(n, "button set", "buttons set") : "None set"; }
   function tagEntry(entry, kind) {
     entry.kind = kind;
     var k = kindById(kind);
@@ -1084,18 +1133,21 @@
     if (S.listening) stopListening();
     else if (els.panel.hidden && els.menu.hidden) {
       var now = Date.now(), tagging = S.mode === "tap" && !gameOn(), last = S.entries[S.entries.length - 1];
-      // the same button twice in quick succession re-tags the return it just made: next twice = lost in thought, previous twice = physical sensation
-      var twice = tagging && S.btnAt && now - S.btnAt < 500 && btn === S.btnLast && last && last === S.btnEntry && (btn === "next" || btn === "prev");
-      if (twice) {
-        tagEntry(last, btn === "next" ? "lost" : "body"); S.btnAt = 0;
+      // A press that continues a quick chain (within half a second, up to three presses) re-tags the return the chain began with,
+      // as long as that sequence has a meaning. Otherwise it's a new return that starts its own chain.
+      var ch = btn === "next" ? "N" : btn === "prev" ? "P" : "C";
+      var seq = tagging && S.chainAt && now - S.chainAt < 500 && S.chain.length < 3 && last && last === S.chainEntry ? S.chain + ch : "";
+      if (seq && remoteMap[seq]) {
+        S.chain = seq; S.chainAt = now;
+        tagEntry(last, remoteMap[seq]);
         touchRing();
       } else {
         var before = S.entries.length;
         catchIt(true);
         if (tagging && S.entries.length > before) {
           var e = S.entries[before];
-          if (btn === "next") tagEntry(e, "future"); else if (btn === "prev") tagEntry(e, "ruminating");
-          S.btnEntry = e; S.btnLast = btn; S.btnAt = now;
+          S.chain = ch; S.chainEntry = e; S.chainAt = now;
+          if (remoteMap[ch]) tagEntry(e, remoteMap[ch]);
         }
       }
     }
@@ -4301,6 +4353,8 @@
   $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") closeNote(false); });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
+  loadRemote(); renderRemote();
+  $("resetRemote").addEventListener("click", function () { lsSet(KEY_REMOTE, JSON.stringify(REMOTE_DEFAULT)); loadRemote(); renderRemote(); });
   buildControls($("homeSound"));
   buildControls($("menuSound"));
   $("noteSave").addEventListener("click", function () { closeNote(true); });
