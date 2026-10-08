@@ -265,7 +265,8 @@
   .bar-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
   /* after a few quiet seconds the controls fade back, so there's less to look at; they still work while faded */
   #session.idle .bar { opacity: 0.32; }
-  #session.idle[data-anchor="dark"] .bar { opacity: 0.16; }
+  #session.idle[data-anchor="dark"] .bar { opacity: 0.5; }
+  #session[data-anchor="dark"] .bar .finish, #session[data-anchor="dark"] .bar .clock { color: #8C999C; border-color: #3A4548; }
   #session.idle .dots { opacity: 0.3; }
   .icon-btn { width: 2.35rem; height: 2.35rem; padding: 0; display: inline-grid; place-items: center; }
   .icon-btn svg { width: 1.05rem; height: 1.05rem; }
@@ -1457,7 +1458,7 @@
   }
   function applyAudio() {
     if (!AC || !MASTER) return;
-    if (AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
+    if (AC.state === "suspended" && !(S.active && S.paused)) { try { AC.resume(); } catch (e) {} }
     setMaster();
     var name = S.active && ambWanted() && AMBIENT[S.anchor] ? S.anchor : "";
     if (name !== ambName) {
@@ -1482,7 +1483,7 @@
           if (tok !== toneTok || !AC) return;
           var L = Lab.layer();
           if (mode === "dual") T.duo(L, snap);
-          else T.hidden(L, snap, { preview: trying, miss: function () { if (!(S.active && S.paused)) { SC.missed++; renderScore(); } } });
+          else T.hidden(L, snap, { preview: trying, miss: function () { if (!(S.active && (S.paused || S.menuAt))) { SC.missed++; renderScore(); } } });
           Lab.fadeIn(L, 1.5); curTones = L; T.last = L;
           syncControls();
         });
@@ -1834,7 +1835,7 @@
     if (S.active && document.visibilityState === "visible") {
       lockScreen();
       // phones suspend audio when the page is backgrounded or the screen locks
-      if (AC && AC.state !== "running") { try { AC.resume(); } catch (e) {} }
+      if (AC && AC.state !== "running" && !(S.active && S.paused)) { try { AC.resume(); } catch (e) {} }
       if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
     }
   });
@@ -3160,7 +3161,7 @@
     return h ? h + ":" + pad(m) + ":" + pad(r) : m + ":" + pad(r);
   }
   function updateClock() {
-    var el = (S.paused ? S.pausedAt : Date.now()) - S.startWall;
+    var el = (S.paused ? S.pausedAt : S.menuAt || Date.now()) - S.startWall;
     els.clock.textContent = S.limit ? fmtTime(S.limit - el, true) : fmtTime(el, false);
   }
 
@@ -3263,7 +3264,7 @@
 
   function startSession() {
     S.entries = []; S.notes = []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
-    S.listening = false; S.heardText = ""; S.paused = false; S.swipedAt = 0; S.hintDone = false;
+    S.listening = false; S.heardText = ""; S.paused = false; S.menuAt = 0; S.swipedAt = 0; S.hintDone = false;
     els.countNum.textContent = "0"; els.countWord.textContent = "returns";
     els.count.classList.toggle("off", !$("showCount").checked);
     els.clock.classList.toggle("off", !$("showClock").checked);
@@ -3292,7 +3293,7 @@
     wakeChrome();
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
-      if (S.paused) return;
+      if (S.paused || S.menuAt) return;
       if (S.limit && Date.now() - S.startWall >= S.limit) finish(); else updateClock();
     }, 250);
   }
@@ -3431,11 +3432,13 @@
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
     cancelEndBell();
+    if (AC && AC.state === "running") { try { AC.suspend(); } catch (e) {} }   // the sounds rest too
   }
   function endPause() {
     var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
     S.startWall += gap; S.startPerf += gap;
     S.paused = false;
+    if (AC && AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
     blurActive();
     updateClock();
     scheduleEndBell();
@@ -4045,9 +4048,25 @@
   }
 
   /* ---------- sound menu ---------- */
-  function closeMenu() { els.menu.hidden = true; $("menuScrim").hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); wakeChrome(); }
+  // Time spent in the settings menu isn't meditating, so the timer waits (the sounds keep going so you can hear your changes).
+  function menuPause() {
+    if (!S.active || S.paused || S.menuAt) return;
+    S.menuAt = Date.now();
+    cancelEndBell();
+  }
+  function menuResume() {
+    if (!S.menuAt) return;
+    var gap = Date.now() - S.menuAt;
+    S.menuAt = 0;
+    if (!S.active) return;
+    S.startWall += gap; S.startPerf += gap;
+    updateClock();
+    scheduleEndBell();
+  }
+  function closeMenu() { menuResume(); els.menu.hidden = true; $("menuScrim").hidden = true; $("soundBtn").setAttribute("aria-expanded", "false"); wakeChrome(); }
   function toggleMenu() {
     var open = els.menu.hidden;
+    if (open) menuPause(); else menuResume();
     els.menu.hidden = !open;
     $("menuScrim").hidden = !open;
     $("soundBtn").setAttribute("aria-expanded", open ? "true" : "false");
