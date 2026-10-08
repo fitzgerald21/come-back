@@ -452,6 +452,19 @@
   #session[data-anchor="dark"] .bar .count { visibility: hidden; }   /* the big number in the middle is the count */
   .darkcount.nocount .dim-num, .darkcount.nocount .dim-word { visibility: hidden; }
 
+  /* ---------- Timeline of a sit: a line, with a tick wherever you came back ---------- */
+  .tl { margin: 0.5rem 0 0.4rem; }
+  .tl-track { position: relative; height: 3.6rem; }
+  .tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 1px; background: rgba(127, 127, 127, 0.4); }
+  .tl-tick { position: absolute; top: 10%; bottom: 10%; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--muted); opacity: 0.8; }
+  .tl.sm .tl-track { height: 2.4rem; }
+  .tl-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; margin-top: 0.1rem; }
+  .tl-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; margin: 0.5rem 0 0; font-size: 0.88rem; color: var(--muted); }
+  .tl-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .tl-legend i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .tl-legend b { color: var(--ink); font-weight: 600; }
+  .tl-shape { margin: 0.5rem 0 0; }
+
   /* ---------- Trends ---------- */
   .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0 0 1.5rem; }
   .tile { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 0.65rem 0.9rem; }
@@ -698,7 +711,7 @@
     <fieldset>
       <legend>When you notice</legend>
       <div class="pills">
-        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all."><span>Just tap</span></label>
+        <label class="choice"><input type="radio" name="mode" value="tap" checked data-desc="Tap the screen or press space. That's all. With a handheld remote you can also say what pulled you away: next is worrying about the future, previous is ruminating, hold is a physical sensation, double click is lost in thought, and a single click is just a return."><span>Just tap</span></label>
         <label class="choice"><input type="radio" name="mode" value="label" data-desc="Tap, then type one or two words for where your mind went, or pick one of your presets."><span>Tap + type</span></label>
         <label class="choice"><input type="radio" name="mode" value="voice" data-desc="Tap, then say a word or two out loud, eyes closed if you like. Needs your microphone, and most browsers send the audio to their speech service to turn it into text."><span>Tap + say</span></label>
       </div>
@@ -884,6 +897,11 @@
     <h2 id="endHead"></h2>
     <p class="sub" id="endSub"></p>
     <div class="tiles end-tiles" id="endTiles"></div>
+    <div id="tlBlock" hidden>
+      <p class="list-head">How your sit went</p>
+      <div id="tlWrap"></div>
+      <p class="often tl-shape" id="tlShape"></p>
+    </div>
     <div id="logBlock" hidden>
       <p class="list-head">Where your mind went</p>
       <p class="often" id="often"></p>
@@ -969,6 +987,14 @@
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   var ORDER = ["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars", "aurora", "snow", "koi"];
+  // What a return can be tagged with from a handheld remote in Just tap mode.
+  var KINDS = [
+    { id: "future", name: "Worrying about the future", short: "Future", color: "#E0954F" },
+    { id: "ruminating", name: "Ruminating", short: "Ruminating", color: "#7F8FE0" },
+    { id: "body", name: "Physical sensation", short: "Sensation", color: "#5FB58A" },
+    { id: "lost", name: "Lost in thought", short: "Lost", color: "#D07AAE" }
+  ];
+  function kindById(id) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i].id === id) return KINDS[i]; return null; }
   var NAMES = {
     circle: "Breathing circle", flame: "Candle flame", daytree: "Tree by day", tree: "Tree at night", rain: "Rain",
     ocean: "Night ocean", stars: "Starry sky", dark: "Eyes closed", aurora: "Northern lights", snow: "Snowy cabin", koi: "Koi pond"
@@ -1040,10 +1066,37 @@
   // A handheld clicker, camera shutter or earbud button counts as a "come back". Phones send those as media
   // buttons (play, pause, next, previous) to whichever page is playing audio, which the silent element above makes us.
   var remoteHooked = false;
-  function remotePress() {
+  // In Just tap mode the buttons say what pulled you away: next = worrying about the future, previous = ruminating,
+  // the main button once = just a return, twice quickly = lost in thought, held = physical sensation.
+  // The return is counted at the first press, so a second press or a hold re-tags it instead of waiting to find out.
+  function tagEntry(entry, kind) {
+    entry.kind = kind;
+    var k = kindById(kind);
+    if (k) {
+      els.sceneName.textContent = k.name; els.sceneName.classList.add("show");
+      clearTimeout(S.nameTimer);
+      S.nameTimer = setTimeout(function () { els.sceneName.classList.remove("show"); }, 1600);
+    }
+    try { if (navigator.vibrate) navigator.vibrate(kind === "lost" ? [10, 60, 10] : kind === "body" ? 30 : 12); } catch (e) {}
+  }
+  function remotePress(btn) {
     if (!S.active || S.paused) return;
     if (S.listening) stopListening();
-    else if (els.panel.hidden && els.menu.hidden) catchIt(true);
+    else if (els.panel.hidden && els.menu.hidden) {
+      var now = Date.now(), tagging = S.mode === "tap" && !gameOn(), last = S.entries[S.entries.length - 1];
+      if (tagging && btn === "main" && S.mainAt && now - S.mainAt < 450 && last && last === S.mainEntry && !last.kind) {
+        tagEntry(last, "lost"); S.mainAt = 0;
+        touchRing();
+      } else {
+        var before = S.entries.length;
+        catchIt(true);
+        if (tagging && S.entries.length > before) {
+          var e = S.entries[before];
+          if (btn === "next") tagEntry(e, "future"); else if (btn === "prev") tagEntry(e, "ruminating");
+          S.mainEntry = btn === "main" ? e : null; S.mainAt = btn === "main" ? now : 0;
+        }
+      }
+    }
     // the phone has just paused or skipped our silent element, so start it again to keep receiving presses
     if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
     try { navigator.mediaSession.playbackState = "playing"; } catch (e) {}
@@ -1053,7 +1106,8 @@
     remoteHooked = true;
     try { navigator.mediaSession.metadata = new MediaMetadata({ title: "Come back", artist: "Press to mark a return" }); } catch (e) {}
     ["play", "pause", "stop", "nexttrack", "previoustrack", "seekforward", "seekbackward"].forEach(function (a) {
-      try { navigator.mediaSession.setActionHandler(a, remotePress); } catch (e) {}
+      var btn = a === "nexttrack" || a === "seekforward" ? "next" : a === "previoustrack" || a === "seekbackward" ? "prev" : "main";
+      try { navigator.mediaSession.setActionHandler(a, function () { remotePress(btn); }); } catch (e) {}
     });
   }
   function initAudio() {
@@ -3522,6 +3576,16 @@
       var d = el("div", "tile"); d.appendChild(el("b", "", t[0])); d.appendChild(el("span", "", t[1])); tiles.appendChild(d);
     });
 
+    var tlb = $("tlBlock");
+    if (n > 0 && dur > 0) {
+      var tw = $("tlWrap"); tw.innerHTML = "";
+      tw.appendChild(drawTimeline(S.entries, dur, false));
+      var lg = kindLegend(S.entries); if (lg) tw.appendChild(lg);
+      $("tlShape").textContent = shapeLine(S.entries, dur);
+      $("tlShape").hidden = !$("tlShape").textContent;
+      tlb.hidden = false;
+    } else tlb.hidden = true;
+
     var block = $("logBlock");
     if (S.mode !== "tap" && n > 0) {
       var log = $("log"); log.innerHTML = "";
@@ -3626,6 +3690,52 @@
     var m = Math.floor(sec / 60), r = sec % 60;
     return m + " min" + (r >= 10 && m < 10 ? " " + r + " sec" : "");
   }
+  // A line for the whole sit with a tick wherever you came back, coloured by what pulled you away when that was tagged.
+  function kindColor(kind) { var k = kindById(kind); return k ? k.color : ""; }
+  function drawTimeline(entries, dur, small) {
+    var wrap = el("div", "tl" + (small ? " sm" : "")), track = el("div", "tl-track");
+    (entries || []).forEach(function (e) {
+      if (!e || typeof e.at !== "number" || !(dur > 0)) return;
+      var t = el("i", "tl-tick");
+      t.style.left = Math.max(0, Math.min(100, e.at / dur * 100)) + "%";
+      var c = kindColor(e.kind); if (c) t.style.background = c;
+      var k = kindById(e.kind);
+      t.title = fmtClock(e.at) + (k ? " · " + k.name : "");
+      track.appendChild(t);
+    });
+    wrap.appendChild(track);
+    var ax = el("div", "tl-axis"); ax.appendChild(el("span", "", "0:00")); ax.appendChild(el("span", "", fmtClock(dur))); wrap.appendChild(ax);
+    return wrap;
+  }
+  function kindCounts(entries) {
+    var c = { none: 0 }, any = false;
+    KINDS.forEach(function (k) { c[k.id] = 0; });
+    (entries || []).forEach(function (e) {
+      if (e && kindById(e.kind)) { c[e.kind]++; any = true; } else c.none++;
+    });
+    c.any = any;
+    return c;
+  }
+  function kindLegend(entries) {
+    var c = kindCounts(entries);
+    if (!c.any) return null;
+    var lg = el("div", "tl-legend");
+    KINDS.concat([{ id: "none", name: "Just a return", color: "" }]).forEach(function (k) {
+      if (!c[k.id]) return;
+      var sp = el("span"), dot = el("i"); if (k.color) dot.style.background = k.color;
+      sp.appendChild(dot); sp.appendChild(document.createTextNode(k.name + " ")); sp.appendChild(el("b", "", "×" + c[k.id]));
+      lg.appendChild(sp);
+    });
+    return lg;
+  }
+  function shapeLine(entries, dur) {
+    var n = (entries || []).length;
+    if (n < 3 || !(dur > 0)) return "";
+    var th = [0, 0, 0];
+    entries.forEach(function (e) { th[Math.max(0, Math.min(2, Math.floor(e.at / dur * 3)))]++; });
+    var mx = th.indexOf(Math.max.apply(null, th)), nm = ["first third", "middle third", "last third"];
+    return th[mx] / n >= 0.5 ? th[mx] + " of your " + n + " returns came in the " + nm[mx] + " of the sit." : "Your returns were spread fairly evenly through the sit.";
+  }
   function renderHist() {
     var h = loadHist().slice().sort(function (a, b) { return (b.start || 0) - (a.start || 0); });
     var list = $("histList"); list.innerHTML = "";
@@ -3641,6 +3751,10 @@
       var a = el("span"); a.appendChild(el("b", "", String(r.returns || 0))); a.appendChild(document.createTextNode((r.returns === 1 ? "tap" : "taps")));
       var b = el("span"); b.appendChild(el("b", "", fmtDur(r.dur || 0)));
       st.appendChild(a); st.appendChild(b); card.appendChild(st);
+      if ((r.entries || []).length && r.dur > 0) {
+        card.appendChild(drawTimeline(r.entries, r.dur, true));
+        var lg = kindLegend(r.entries); if (lg) card.appendChild(lg);
+      }
       var tl = tally(r.entries);
       if (tl.length) {
         card.appendChild(el("h4", "", "Distractions"));
@@ -3966,7 +4080,41 @@
     if (n3 >= 6) {
       ["Early", "Middle", "Late"].forEach(function (nm, i) { b1.appendChild(irow(nm, thirds[i] / n3, Math.round(thirds[i] / n3 * 100) + "%")); });
     } else b1.appendChild(el("p", "tnote", "Needs a few more returns before a pattern means anything."));
+    if (n3 >= 6) {
+      var bins = [], nb = 10, fr = [];
+      for (var q = 0; q < nb; q++) bins.push(0);
+      all.forEach(function (r) {
+        (r.entries || []).forEach(function (e) {
+          if (!e || typeof e.at !== "number") return;
+          bins[Math.max(0, Math.min(nb - 1, Math.floor(e.at / r.dur * nb)))]++;
+        });
+        if (r.entries && r.entries.length && typeof r.entries[0].at === "number") fr.push(r.entries[0].at);
+      });
+      var cw = el("div"); b1.appendChild(cw);
+      drawChart(cw, bins.map(function (v, i) {
+        return { name: (i * 10) + "–" + ((i + 1) * 10) + "% of the way in", label: i === 0 ? "Start" : i === 4 ? "Middle" : i === 9 ? "End" : "", show: true,
+          value: v || null, text: Math.round(v / n3 * 100) + "% of your returns (" + v + ")" };
+      }), "Every return you've logged, laid over one sit from start to end. Tap a bar for a slice.");
+      if (fr.length >= 3) {
+        fr.sort(function (a, b) { return a - b; });
+        b1.appendChild(el("p", "often tl-shape", "Your first return usually comes about " + fmtClock(fr[Math.floor(fr.length / 2)]) + " in."));
+      }
+    }
     box.appendChild(b1);
+
+    var kt = {}, kn = 0, ksits = 0;
+    KINDS.forEach(function (k) { kt[k.id] = 0; });
+    all.forEach(function (r) {
+      var c = kindCounts(r.entries); if (!c.any) return;
+      ksits++;
+      KINDS.forEach(function (k) { kt[k.id] += c[k.id]; kn += c[k.id]; });
+    });
+    if (kn) {
+      var bk2 = insightBlock("What pulled you away", "From returns you tagged with the remote, across " + plural(ksits, "sit") + ".");
+      var kmax = Math.max.apply(null, KINDS.map(function (k) { return kt[k.id]; }));
+      KINDS.forEach(function (k) { bk2.appendChild(irow(k.short, kt[k.id] / kmax, kt[k.id] + " · " + Math.round(kt[k.id] / kn * 100) + "%")); });
+      box.appendChild(bk2);
+    }
 
     var parts = DAY_PARTS.map(function (p) { return { name: p[0], sits: 0, ms: 0, ret: 0 }; });
     all.forEach(function (r) {
@@ -4058,8 +4206,8 @@
     if (!S.menuAt) return;
     var gap = Date.now() - S.menuAt;
     S.menuAt = 0;
-    if (!S.active) return;
     S.startWall += gap; S.startPerf += gap;
+    if (!S.active) return;
     updateClock();
     scheduleEndBell();
   }
@@ -4219,7 +4367,19 @@
       if (tt === "INPUT" || tt === "TEXTAREA" || tt === "SELECT" || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if ((tag === "BUTTON" || tt === "BUTTON") && e.key === "Enter") return;
       e.preventDefault();
-      if (!e.repeat) remotePress();
+      if (!e.repeat) {
+        var btn = e.key === "MediaTrackNext" ? "next" : e.key === "MediaTrackPrevious" ? "prev" : "main";
+        remotePress(btn);
+        clearTimeout(S.holdTimer);
+        if (btn === "main" && S.mode === "tap") {
+          // holding the button re-tags the return it just made as a physical sensation
+          S.holdTimer = setTimeout(function () {
+            var le = S.entries[S.entries.length - 1];
+            if (!S.active || S.paused || !le || Date.now() - S.startWall - le.at > 1500) return;
+            tagEntry(le, "body"); S.mainAt = 0;
+          }, 650);
+        }
+      }
       return;
     }
     if (e.code === "Space" || e.key === " ") {
@@ -4231,6 +4391,8 @@
       else if (els.panel.hidden) catchIt();
     }
   });
+
+  document.addEventListener("keyup", function () { clearTimeout(S.holdTimer); });
 
   els.input.addEventListener("input", function () {
     var v = els.input.value.replace(/^\s+/, "");
