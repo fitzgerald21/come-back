@@ -420,8 +420,8 @@
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadein 0.3s ease both; }
   .sheet-card { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 22px; padding: 1.4rem 1.35rem; width: min(100%, 32rem);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); animation: popin 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  #pauseSheet .sheet-card { text-align: center; }
-  #pauseSheet .sheet-actions { justify-content: center; }
+  #pauseSheet .sheet-card, #timeSheet .sheet-card { text-align: center; }
+  #pauseSheet .sheet-actions, #timeSheet .sheet-actions { justify-content: center; }
   .pause-orb { width: 4.5rem; height: 4.5rem; margin: 0.25rem auto 1rem; border-radius: 50%; background: radial-gradient(circle at 38% 34%, var(--orb-hi), var(--orb-lo) 78%); box-shadow: 0 0 2.5rem var(--glow); animation: idlebreathe 10s ease-in-out infinite; }
   @keyframes idlebreathe { 0%, 100% { transform: scale(0.8); } 40% { transform: scale(1); } }
   .sheet-card h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1; margin: 0 0 0.4rem; }
@@ -705,8 +705,9 @@
       <legend>How long</legend>
       <div class="pills">
         <label class="choice"><input type="radio" name="len" value="300000"><span>5 min</span></label>
-        <label class="choice"><input type="radio" name="len" value="600000"><span>10 min</span></label>
-        <label class="choice"><input type="radio" name="len" value="1200000"><span>20 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="900000"><span>15 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="1800000"><span>30 min</span></label>
+        <label class="choice"><input type="radio" name="len" value="3600000"><span>60 min</span></label>
         <label class="choice"><input type="radio" name="len" value="custom"><span>Custom</span></label>
         <label class="choice"><input type="radio" name="len" value="0" checked><span>No limit</span></label>
       </div>
@@ -951,6 +952,18 @@
     <div class="sheet-actions">
       <button class="btn" id="cancelKeep" type="button">Keep sitting</button>
       <button class="btn ghost" id="cancelYes" type="button">Yes, cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIME'S UP SHEET -->
+<div id="timeSheet" class="sheet" hidden role="alertdialog" aria-modal="true" aria-labelledby="timeTitle">
+  <div class="sheet-card">
+    <h3 id="timeTitle">Your time is up</h3>
+    <p>Would you like to end the sit, or keep going?</p>
+    <div class="sheet-actions">
+      <button class="btn" id="timeEnd" type="button">End session</button>
+      <button class="btn ghost" id="timeGo" type="button">Continue sit</button>
     </div>
   </div>
 </div>
@@ -3476,7 +3489,7 @@
     els.clock.classList.toggle("off", !$("showClock").checked);
     els.slot.classList.remove("has-reminder");
     els.reminder.textContent = "";
-    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true; $("pauseSheet").hidden = true;
+    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true; $("pauseSheet").hidden = true; $("timeSheet").hidden = true; S.timeUpRung = false;
     els.hint.classList.remove("dim", "gone");
     S.preview = false; clearTimeout(S.pvTimer); updatePreviewBtn();
     closeMenu();
@@ -3500,7 +3513,7 @@
     S.raf = requestAnimationFrame(loop);
     S.tick = setInterval(function () {
       if (S.paused || S.menuAt) return;
-      if (S.limit && Date.now() - S.startWall >= S.limit) finish(); else updateClock();
+      if (S.limit && Date.now() - S.startWall >= S.limit) timeUp(); else updateClock();
     }, 250);
   }
 
@@ -3633,11 +3646,11 @@
   }
 
   /* ---------- notes (pause) ---------- */
-  function beginPause() {
+  function beginPause(keepBell) {
     if (S.listening) endListening(true);
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
-    cancelEndBell();
+    if (!keepBell) cancelEndBell();
     if (AC && AC.state === "running") { try { AC.suspend(); } catch (e) {} }   // the sounds rest too
   }
   function endPause() {
@@ -3650,6 +3663,22 @@
     scheduleEndBell();
     syncDim();
     wakeChrome();
+  }
+  // The chosen time has run out: pause the clock and let them end the sit or keep going.
+  function timeUp() {
+    if (!S.active || S.paused) return;
+    S.timeUpRung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
+    beginPause(true);
+    $("timeSheet").hidden = false;
+    $("timeGo").focus();
+  }
+  function timeUpClose(keepSitting) {
+    if (!S.paused || $("timeSheet").hidden) return;
+    $("timeSheet").hidden = true;
+    S.limit = 0;              // no limit from here on; the clock counts up
+    S.endBell = null;         // leave the closing bell that just rang alone
+    endPause();
+    if (!keepSitting) finish();
   }
   function openNote() {
     if (!S.active || S.paused) return;
@@ -3693,7 +3722,8 @@
     screens.session.classList.remove("idle");
     applyAudio();
     // if the scheduled closing bell has already rung (or is ringing now), don't ring it twice
-    var rung = !!(S.endBell && S.endBell.at <= Date.now() + 150);
+    var rung = !!(S.timeUpRung || (S.endBell && S.endBell.at <= Date.now() + 150));
+    S.timeUpRung = false;
     if (P.bells && !rung) bell(396, 0.12);
     if (rung) S.endBell = null; else cancelEndBell();
     document.documentElement.classList.remove("dark-session", "eyes-closed");
@@ -4450,6 +4480,9 @@
   $("cancelYes").addEventListener("click", function () { $("cancelSheet").hidden = true; finish(true); });
   $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") { $("cancelSheet").hidden = true; blurActive(); } });
   $("pauseBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openPause(); });
+  $("timeEnd").addEventListener("click", function () { timeUpClose(false); });
+  $("timeGo").addEventListener("click", function () { timeUpClose(true); });
+  $("timeSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") timeUpClose(true); });
   $("pauseResume").addEventListener("click", function () { closeNote(false); });
   $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") closeNote(false); });
   $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
