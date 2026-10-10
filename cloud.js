@@ -9,14 +9,14 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, 
 import { FIREBASE_CONFIG } from "./firebase-config.js";
 
 var PREFIX = "come-back:", SESSIONS = "come-back:sessions", TOTAL = "come-back:total";
-var K_UID = "come-back:cloud-uid", K_DIRTY = "come-back:cloud-dirty", K_SESS = "come-back:cloud-sess";   // K_SESS: starts of the sessions already in the cloud
+var K_UID = "come-back:cloud-uid", K_DIRTY = "come-back:cloud-dirty", K_SESS = "come-back:cloud-sess", K_SIG = "come-back:cloud-sig";   // K_SESS: starts of the sessions already in the cloud
 var el = function (id) { return document.getElementById(id); };
 var ui = { box: el("cloudBox"), status: el("cloudStatus"), signIn: el("cloudSignIn"), signOut: el("cloudSignOut"), sum: el("sumCloud") };
 
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
-function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_UID && k !== K_DIRTY && k !== K_SESS; }
+function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_UID && k !== K_DIRTY && k !== K_SESS && k !== K_SIG; }
 function say(msg, signedIn) {
   if (ui.status) ui.status.textContent = msg;
   if (ui.sum) ui.sum.textContent = signedIn ? "On" : "";
@@ -25,6 +25,7 @@ function say(msg, signedIn) {
 }
 function dirtySet() { try { return new Set(JSON.parse(lsGet(K_DIRTY) || "[]")); } catch (e) { return new Set(); } }
 function dirtySave(s) { if (s.size) lsSet(K_DIRTY, JSON.stringify(Array.from(s))); else lsDel(K_DIRTY); }
+function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return h; }
 function parse(s, d) { try { var v = JSON.parse(s); return v == null ? d : v; } catch (e) { return d; } }
 function esc(k) { return k.slice(PREFIX.length); }   // Firestore map keys can't contain every character; drop the shared prefix
 
@@ -52,13 +53,15 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
   // one document per sit: upload sits the cloud hasn't seen, delete ones removed on this device
   function pushSessions() {
     var local = parse(lsGet(SESSIONS), []), synced = syncedStarts() || new Set(), now = new Set(), ops = [];
+    var oldSig = parse(lsGet(K_SIG), {}), sig = {};   // sits edited after upload (feeling, note) are sent again
     local.forEach(function (r) {
       now.add(r.start);
-      if (!synced.has(r.start)) ops.push(function (b) { b.set(sessDoc(r.start), { rec: JSON.stringify(r) }); });
+      sig[r.start] = hash(JSON.stringify(r));
+      if (!synced.has(r.start) || oldSig[r.start] !== sig[r.start]) ops.push(function (b) { b.set(sessDoc(r.start), { rec: JSON.stringify(r) }); });
     });
     synced.forEach(function (st) { if (!now.has(st)) ops.push(function (b) { b.delete(sessDoc(st)); }); });
     return chunked(ops).then(function () {
-      lsSet(K_SESS, JSON.stringify(Array.from(now)));
+      lsSet(K_SESS, JSON.stringify(Array.from(now))); lsSet(K_SIG, JSON.stringify(sig));
       return updateDoc(ref(), { "data.sessions": deleteField() }).catch(function () {});   // clear the old single-document copy
     });
   }

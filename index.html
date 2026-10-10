@@ -532,6 +532,10 @@
   .end-wrap > :nth-child(4) { animation-delay: 0.45s; }
   .end-wrap > :nth-child(n+5) { animation-delay: 0.6s; }
   .end-tiles { margin-bottom: 2rem; }
+  #reflectBlock { margin-bottom: 1.5rem; }
+  #reflectBlock .chips { margin: 0.4rem 0 0.8rem; }
+  .sit-note { min-height: 5.5rem; }
+  #levelLine { margin: 0 0 1.5rem; }
   .end-tiles .tile b { font-size: 1.7rem; }
   .tnote { color: var(--muted); font-size: 0.88rem; margin: 0.3rem 0 0; }
 
@@ -926,6 +930,12 @@
       <p class="list-head">Notes to come back to</p>
       <ol class="log" id="noteLog"></ol>
     </div>
+    <div id="reflectBlock" hidden>
+      <p class="list-head">How did it feel?</p>
+      <div class="chips" id="feelChips" role="group" aria-label="How the sit went, pick any"></div>
+      <textarea id="sitNote" class="sit-note" aria-label="A note about this sit" placeholder="A note about this sit (optional)"></textarea>
+    </div>
+    <p class="often" id="levelLine" hidden></p>
     <div class="end-actions">
       <button class="btn" id="again" type="button">Sit again</button>
       <button class="btn ghost" id="home2" type="button">Back to start</button>
@@ -973,7 +983,7 @@
 <script src="samples/manifest.js?v=14"></script>
 <script src="instruments.js?v=14"></script>
 <script src="tones.js?v=14"></script>
-<script type="module" src="cloud.js?v=15"></script>
+<script type="module" src="cloud.js?v=16"></script>
 <script>
 (function () {
   "use strict";
@@ -1057,17 +1067,35 @@
     var saved = lsGet(KEY_REM);
     els.reminders.value = saved && saved.trim() ? saved : DEFAULTS.join("\n");
   }
+  // Levels are earned by total returns across all sittings.
+  var LEVELS = [500, 1000, 2000, 5000, 10000, 15000, 20000, 50000, 75000, 100000];
+  function levelOf(n) { var l = 0; while (l < LEVELS.length && n >= LEVELS[l]) l++; return l; }
+  function levelText(n) {
+    var l = levelOf(n), s = l ? "Level " + l + " of " + LEVELS.length : "Not yet level 1";
+    if (l < LEVELS.length) s += " · " + (LEVELS[l] - n).toLocaleString() + " more returns to level " + (l + 1);
+    else s += " · the top";
+    return s;
+  }
+  var FEELS = ["Calm", "Focused", "Distracted", "Anxious", "Tired", "Restless", "Uncomfortable", "Sleepy", "Peaceful", "Sad", "Frustrated"];
   function loadTotal() {
     var n = parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0;
-    els.total.textContent = n > 0 ? "Returns so far, across all sittings: " + n : "";
+    els.total.textContent = n > 0 ? "Returns so far, across all sittings: " + n.toLocaleString() + " · " + levelText(n) : "";
   }
-  // History is a list of { start, dur, returns, entries:[{at,label}], notes:[{at,text}], scene }.
+  // History is a list of { start, dur, returns, entries:[{at,label}], notes:[{at,text}], scene, feel:[string], note:string }.
   // Today it lives in this browser's localStorage; renderCalendar only reads through loadHist(),
   // so moving it to a real backend later means changing just these two functions.
   function loadHist() {
     try { var a = JSON.parse(lsGet(KEY_HIST) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
   }
   function saveSession(rec) { var h = loadHist(); h.push(rec); lsSet(KEY_HIST, JSON.stringify(h)); }
+  function patchSession(start, patch) {
+    var h = loadHist();
+    for (var i = h.length - 1; i >= 0; i--) if (h[i].start === start) {
+      Object.keys(patch).forEach(function (k) { if (patch[k] == null || patch[k] === "" || (Array.isArray(patch[k]) && !patch[k].length)) delete h[i][k]; else h[i][k] = patch[k]; });
+      lsSet(KEY_HIST, JSON.stringify(h));
+      return;
+    }
+  }
 
   function show(name) {
     Object.keys(screens).forEach(function (k) { screens[k].hidden = (k !== name); });
@@ -3673,6 +3701,7 @@
 
     var dur = Date.now() - S.startWall, n = S.entries.length;
     var counts_ = !discard && dur >= MIN_RECORD_MS;
+    var before = parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0;
     if (counts_) {
       var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
       lsSet(KEY_TOTAL, String(total));
@@ -3732,6 +3761,26 @@
     } else {
       block.hidden = true;
     }
+
+    var rb = $("reflectBlock"), lv = $("levelLine"), after = before + (counts_ ? n : 0);
+    if (counts_) {
+      var feel = [], chips = $("feelChips"), sn = $("sitNote"), start = S.startedAt;
+      chips.innerHTML = ""; sn.value = "";
+      FEELS.forEach(function (f) {
+        var c = el("button", "chip", f); c.type = "button"; c.setAttribute("aria-pressed", "false");
+        c.addEventListener("click", function () {
+          var i = feel.indexOf(f);
+          if (i < 0) feel.push(f); else feel.splice(i, 1);
+          c.setAttribute("aria-pressed", String(i < 0));
+          patchSession(start, { feel: feel.slice() });
+        });
+        chips.appendChild(c);
+      });
+      sn.oninput = function () { patchSession(start, { note: sn.value.trim() }); };
+      rb.hidden = false;
+      lv.textContent = (levelOf(after) > levelOf(before) ? "You reached level " + levelOf(after) + "! " : "") + levelText(after) + ".";
+      lv.hidden = false;
+    } else { rb.hidden = true; lv.hidden = true; }
 
     var nb = $("noteBlock");
     if (S.notes.length) {
@@ -3875,6 +3924,13 @@
         tl.forEach(function (x) { var t = el("span", "tag", x.name); if (x.n > 1) t.appendChild(el("i", "", "×" + x.n)); tags.appendChild(t); });
         card.appendChild(tags);
       }
+      if ((r.feel || []).length) {
+        card.appendChild(el("h4", "", "How it felt"));
+        var ft = el("div", "tags");
+        r.feel.forEach(function (f) { ft.appendChild(el("span", "tag", String(f))); });
+        card.appendChild(ft);
+      }
+      if (r.note) { card.appendChild(el("h4", "", "Reflection")); card.appendChild(el("p", "", String(r.note))); }
       var notes = (r.notes || []).filter(function (n) { return n && n.text; });
       if (notes.length) {
         card.appendChild(el("h4", "", "Notes"));
