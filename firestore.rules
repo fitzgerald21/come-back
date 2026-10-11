@@ -1,12 +1,21 @@
 rules_version = '2';
+// SHARED FILE: this database serves every app in the come-back-fitz21 Firebase project (Come back and Little Bites).
+// Firestore has one ruleset per database, so keep this file IDENTICAL in both repos; deploying from either one is then safe.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // each signed-in user can read and write only their own document
+
+    // --- Come back: each signed-in user can read and write only their own document ---
     match /users/{uid} {
       match /sessions/{sid} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
       allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // --- Little Bites: only the owner's own babies, logs and custom foods, and only for the allowed account ---
+    match /users/{uid}/babies/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+        && request.auth.token.email == 'fitzgeraldryan21@gmail.com' && request.auth.token.email_verified == true;
     }
   }
 }
