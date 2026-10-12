@@ -7,20 +7,53 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4AB84CACAE1F397919F438A9 /* SitCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7CD4F7BD6F2CF3CA5DCF5EC /* SitCoordinator.swift */; };
+		4B09697FBB211747EA90F5F1 /* ComeBackWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 17178ACFBC1C6454605728D4 /* ComeBackWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		668E5B84E932376FC4C176DA /* ComeBackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE0DB1F452CA260B14428C1 /* ComeBackApp.swift */; };
+		95FE64176B3DF133DD48B782 /* SitActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4860782F1EAB324297EBBDD6 /* SitActivity.swift */; };
 		ABD434FEADB60213CAA01C2E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A2262CD0D982B93F33722CC /* Assets.xcassets */; };
+		CC3A26225B0F9FE5EC5C22CB /* ComeBackWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10C7BE0E385ECA3B991FFC3 /* ComeBackWidgets.swift */; };
+		D6EA616742E062A702AA9FFB /* SitActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4860782F1EAB324297EBBDD6 /* SitActivity.swift */; };
 		E61859CD2994C5489BD1CEC7 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79AE9A593627E4F87AA23FBE /* WebViewController.swift */; };
 		EBA9B77CC9359478CE5E41CC /* AppSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC671FB18104B8865BD1AAF /* AppSchemeHandler.swift */; };
 		FB377200C16AC353ECD88ACC /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC45A61618FD156030861727 /* GoogleSignIn */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		CEBA85CF518BE05F047CBE57 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0B5DF8741CD4BAFBA34DA41 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C4C8A0216FF8DE47D2846323;
+			remoteInfo = ComeBackWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F54E0D75FBD7264AB17ACE86 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4B09697FBB211747EA90F5F1 /* ComeBackWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		17178ACFBC1C6454605728D4 /* ComeBackWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ComeBackWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		27A239D03226D5CED952376A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3001F81C37D12E545E162621 /* ComeBack.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ComeBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4860782F1EAB324297EBBDD6 /* SitActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitActivity.swift; sourceTree = "<group>"; };
 		5CC671FB18104B8865BD1AAF /* AppSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSchemeHandler.swift; sourceTree = "<group>"; };
 		5DE0DB1F452CA260B14428C1 /* ComeBackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComeBackApp.swift; sourceTree = "<group>"; };
 		79AE9A593627E4F87AA23FBE /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		8A2262CD0D982B93F33722CC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B7CD4F7BD6F2CF3CA5DCF5EC /* SitCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitCoordinator.swift; sourceTree = "<group>"; };
+		C10C7BE0E385ECA3B991FFC3 /* ComeBackWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComeBackWidgets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				3001F81C37D12E545E162621 /* ComeBack.app */,
+				17178ACFBC1C6454605728D4 /* ComeBackWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -47,6 +81,8 @@
 			isa = PBXGroup;
 			children = (
 				55C9DCB014EEAAFD8B3D0E89 /* ComeBack */,
+				85F8C5EF7CBEA9A538756729 /* ComeBackWidgets */,
+				DA0AEA39B560B1982555935D /* Shared */,
 				176F590F224AFE57298B48C9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,9 +94,26 @@
 				8A2262CD0D982B93F33722CC /* Assets.xcassets */,
 				5DE0DB1F452CA260B14428C1 /* ComeBackApp.swift */,
 				27A239D03226D5CED952376A /* Info.plist */,
+				B7CD4F7BD6F2CF3CA5DCF5EC /* SitCoordinator.swift */,
 				79AE9A593627E4F87AA23FBE /* WebViewController.swift */,
 			);
 			path = ComeBack;
+			sourceTree = "<group>";
+		};
+		85F8C5EF7CBEA9A538756729 /* ComeBackWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				C10C7BE0E385ECA3B991FFC3 /* ComeBackWidgets.swift */,
+			);
+			path = ComeBackWidgets;
+			sourceTree = "<group>";
+		};
+		DA0AEA39B560B1982555935D /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				4860782F1EAB324297EBBDD6 /* SitActivity.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -74,10 +127,12 @@
 				65A697FE8BFF20640598A25B /* Sources */,
 				978F61E9CDC18B0EF3FC9AC5 /* Resources */,
 				284BAE47D1CD0D10C9C67816 /* Frameworks */,
+				F54E0D75FBD7264AB17ACE86 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5596F303B32576662D61084C /* PBXTargetDependency */,
 			);
 			name = ComeBack;
 			packageProductDependencies = (
@@ -86,6 +141,23 @@
 			productName = ComeBack;
 			productReference = 3001F81C37D12E545E162621 /* ComeBack.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C4C8A0216FF8DE47D2846323 /* ComeBackWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D1F312EEC89D7D2618F5F74 /* Build configuration list for PBXNativeTarget "ComeBackWidgets" */;
+			buildPhases = (
+				4795CA76BEF90CD4F61627EC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ComeBackWidgets;
+			packageProductDependencies = (
+			);
+			productName = ComeBackWidgets;
+			productReference = 17178ACFBC1C6454605728D4 /* ComeBackWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -97,6 +169,10 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					09AA2164B3A76F46202AAF40 = {
+						DevelopmentTeam = GTK9G9EVU8;
+						ProvisioningStyle = Automatic;
+					};
+					C4C8A0216FF8DE47D2846323 = {
 						DevelopmentTeam = GTK9G9EVU8;
 						ProvisioningStyle = Automatic;
 					};
@@ -120,6 +196,7 @@
 			projectRoot = "";
 			targets = (
 				09AA2164B3A76F46202AAF40 /* ComeBack */,
+				C4C8A0216FF8DE47D2846323 /* ComeBackWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -158,19 +235,61 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4795CA76BEF90CD4F61627EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC3A26225B0F9FE5EC5C22CB /* ComeBackWidgets.swift in Sources */,
+				D6EA616742E062A702AA9FFB /* SitActivity.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		65A697FE8BFF20640598A25B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				EBA9B77CC9359478CE5E41CC /* AppSchemeHandler.swift in Sources */,
 				668E5B84E932376FC4C176DA /* ComeBackApp.swift in Sources */,
+				95FE64176B3DF133DD48B782 /* SitActivity.swift in Sources */,
+				4AB84CACAE1F397919F438A9 /* SitCoordinator.swift in Sources */,
 				E61859CD2994C5489BD1CEC7 /* WebViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5596F303B32576662D61084C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C4C8A0216FF8DE47D2846323 /* ComeBackWidgets */;
+			targetProxy = CEBA85CF518BE05F047CBE57 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		0A026BB10877F5609C13FF17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GTK9G9EVU8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ComeBackWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ryanfitzgerald.comeback.widgets;
+				PRODUCT_NAME = ComeBackWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		0FBB204F713E82D95C4EF02D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -314,6 +433,29 @@
 			};
 			name = Debug;
 		};
+		491959ECDC8266E9F38A68FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GTK9G9EVU8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ComeBackWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ryanfitzgerald.comeback.widgets;
+				PRODUCT_NAME = ComeBackWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		86DF55141E0221CBD0F1CDF8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -346,6 +488,15 @@
 			buildConfigurations = (
 				440B414319F237388E673AD4 /* Debug */,
 				0FBB204F713E82D95C4EF02D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3D1F312EEC89D7D2618F5F74 /* Build configuration list for PBXNativeTarget "ComeBackWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				491959ECDC8266E9F38A68FC /* Debug */,
+				0A026BB10877F5609C13FF17 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

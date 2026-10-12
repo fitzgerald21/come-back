@@ -264,12 +264,15 @@
   .bar .count { min-width: 0; }
   .bar-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
   /* after a few quiet seconds the controls fade back, so there's less to look at; they still work while faded */
-  #session.idle .bar { opacity: 0.32; }
+  #session.idle .bar { opacity: 0.45; }
   #session.idle[data-anchor="dark"] .bar { opacity: 0.5; }
   #session[data-anchor="dark"] .bar .finish, #session[data-anchor="dark"] .bar .clock { color: #8C999C; border-color: #3A4548; }
+  #session[data-anchor="dark"] .bar .icon-btn.big { color: #C4CED0; border-color: #5A686B; background: rgba(255, 255, 255, 0.06); }
   #session.idle .dots { opacity: 0.3; }
   .icon-btn { width: 2.35rem; height: 2.35rem; padding: 0; display: inline-grid; place-items: center; }
   .icon-btn svg { width: 1.05rem; height: 1.05rem; }
+  .icon-btn.big { width: 3.25rem; height: 3.25rem; color: var(--ink); border-color: var(--muted); background: var(--card); }   /* the one control you reach for mid-sit, so it's easy to see and press */
+  .icon-btn.big svg { width: 1.4rem; height: 1.4rem; }
   .touch-ring { position: fixed; z-index: 2; width: 9rem; height: 9rem; margin: -4.5rem 0 0 -4.5rem; border-radius: 50%; pointer-events: none;
     background: radial-gradient(circle, rgba(255, 240, 210, 0.22), rgba(255, 240, 210, 0) 65%); border: 1.5px solid rgba(255, 240, 210, 0.45);
     animation: touchring 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
@@ -422,6 +425,8 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); animation: popin 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   #pauseSheet .sheet-card, #timeSheet .sheet-card { text-align: center; }
   #pauseSheet .sheet-actions, #timeSheet .sheet-actions { justify-content: center; }
+  #pauseSheet .sheet-actions { flex-direction: column; align-items: stretch; }
+  #pauseSheet .sheet-actions .link-btn { align-self: center; margin-top: 0.3rem; }
   .pause-orb { width: 4.5rem; height: 4.5rem; margin: 0.25rem auto 1rem; border-radius: 50%; background: radial-gradient(circle at 38% 34%, var(--orb-hi), var(--orb-lo) 78%); box-shadow: 0 0 2.5rem var(--glow); animation: idlebreathe 10s ease-in-out infinite; }
   @keyframes idlebreathe { 0%, 100% { transform: scale(0.8); } 40% { transform: scale(1); } }
   .sheet-card h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.9rem; line-height: 1; margin: 0 0 0.4rem; }
@@ -823,9 +828,8 @@
     <div class="count" id="count" aria-live="polite"><b id="countNum">0</b><span id="countWord">returns</span></div>
     <div class="clock" id="clock" aria-label="Timer">0:00</div>
     <div class="bar-actions">
-      <button class="finish icon-btn" id="pauseBtn" type="button" aria-label="Pause" title="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
+      <button class="finish icon-btn big" id="pauseBtn" type="button" aria-label="Pause" title="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
       <button class="finish icon-btn" id="soundBtn" type="button" aria-label="Sound and options" title="Sound and options" aria-expanded="false" aria-controls="soundMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/><circle cx="9" cy="8" r="2.2" fill="currentColor"/><circle cx="15" cy="16" r="2.2" fill="currentColor"/></svg></button>
-      <button class="finish" id="finish" type="button">Finish</button>
     </div>
   </div>
   <div class="scene-name" id="sceneName" aria-live="polite"></div>
@@ -834,7 +838,6 @@
     <div class="grab" aria-hidden="true"></div>
     <div class="menu-actions">
       <button class="menu-act" id="noteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19h4L19 9l-4-4L5 15v4z"/></svg>Jot a note</button>
-      <button class="menu-act" id="cancel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>Cancel sit</button>
     </div>
     <div id="menuSound"></div>
     <details class="snd-adv remote-adv"><summary>Remote buttons</summary><div id="menuRemote"></div></details>
@@ -995,6 +998,8 @@
     <p>The timer is stopped. Take your time.</p>
     <div class="sheet-actions">
       <button class="btn" id="pauseResume" type="button">Resume</button>
+      <button class="btn ghost" id="pauseFinish" type="button">Finish sit</button>
+      <button class="link-btn" id="pauseCancel" type="button">Cancel sit</button>
     </div>
   </div>
 </div>
@@ -1096,7 +1101,38 @@
     try { if (window.CB_CLOUD) window.CB_CLOUD.changed(k); } catch (e) {}   // cloud.js mirrors saves to Firebase when signed in
   }
   // Deliberately not lsSet: an unfinished sit is per-device and shouldn't be mirrored to the cloud.
+  // In the iOS app, tell the native side where the sit stands so the lock screen can show it (and its pause button).
+  var nativeSig = "";
+  function pushNative(ack) {
+    if (!window.CB_NATIVE) return;
+    var o = S.active
+      ? { active: true, paused: !!S.paused, start: S.startWall, at: S.paused ? S.pausedAt : 0, count: S.entries.length, limit: S.limit || 0 }
+      : { active: false };
+    var sig = JSON.stringify(o);
+    if (sig === nativeSig && !ack) return;
+    nativeSig = sig;
+    o.type = "sit"; if (ack) o.ack = true;
+    try { window.webkit.messageHandlers.native.postMessage(o); } catch (e) {}
+  }
+  // The lock screen asked to pause or resume (`at` is when the button was pressed; the page may only be hearing about it now).
+  window.CB_NATIVE_PAUSE = function (wantPaused, at) {
+    try {
+      if (S.active && !S.listening) {
+        if (wantPaused && !S.paused) {
+          closeMenu(); openPause();
+          if (at > S.startWall && at < S.pausedAt) S.pausedAt = at;
+          updateClock();
+        } else if (!wantPaused && S.paused && $("timeSheet").hidden) {
+          $("cancelSheet").hidden = true;
+          if (at > S.pausedAt) S.resumeAt = at;
+          closeNote(false);
+        }
+      }
+    } catch (e) {}
+    pushNative(true);
+  };
   function saveLive() {
+    pushNative();
     if (!S.active) return;
     try {
       window.localStorage.setItem(KEY_LIVE, JSON.stringify({
@@ -1107,7 +1143,7 @@
       }));
     } catch (e) {}
   }
-  function clearLive() { try { window.localStorage.removeItem(KEY_LIVE); } catch (e) {} }
+  function clearLive() { try { window.localStorage.removeItem(KEY_LIVE); } catch (e) {} pushNative(); }
   function loadLive() {
     try {
       var o = JSON.parse(window.localStorage.getItem(KEY_LIVE) || "null");
@@ -3736,7 +3772,8 @@
     saveLive();
   }
   function endPause() {
-    var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
+    var gap = (S.resumeAt || Date.now()) - S.pausedAt;   // paused time doesn't count toward the sit
+    S.resumeAt = 0;
     S.startWall += gap; S.startPerf += gap;
     S.paused = false;
     if (!AC) { initAudio(); applyAudio(); }   // a sit restored after a reload has no audio yet, and this is the tap that's allowed to start it
@@ -3774,6 +3811,7 @@
   function closeNote(save) {
     if (!S.paused) return;
     var txt = els.noteText.value.trim();
+    els.noteText.value = "";
     if (save && txt) S.notes.push({ at: S.pausedAt - S.startWall, text: txt });
     els.sheet.hidden = true;
     $("pauseSheet").hidden = true;
@@ -4553,17 +4591,22 @@
   $("begin").addEventListener("click", begin);
   $("again").addEventListener("click", begin);
   $("home2").addEventListener("click", function () { show("home"); });
-  $("finish").addEventListener("click", function (e) { e.stopPropagation(); finish(); });
-  $("cancel").addEventListener("click", function (e) {
-    e.stopPropagation();
+  // Finish and Cancel live on the pause popup. Cancel asks again, since it throws the sit away.
+  $("pauseFinish").addEventListener("click", function () { finish(); });
+  $("pauseCancel").addEventListener("click", function () {
     if (!S.active) return;
-    closeMenu();
+    $("pauseSheet").hidden = true;
     $("cancelSheet").hidden = false;
     $("cancelKeep").focus();
   });
-  $("cancelKeep").addEventListener("click", function () { $("cancelSheet").hidden = true; blurActive(); });
+  function cancelKeep() {
+    $("cancelSheet").hidden = true;
+    if (S.active && S.paused && $("timeSheet").hidden) { $("pauseSheet").hidden = false; $("pauseResume").focus(); }
+    else blurActive();
+  }
+  $("cancelKeep").addEventListener("click", cancelKeep);
   $("cancelYes").addEventListener("click", function () { $("cancelSheet").hidden = true; finish(true); });
-  $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") { $("cancelSheet").hidden = true; blurActive(); } });
+  $("cancelSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") cancelKeep(); });
   $("pauseBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openPause(); });
   $("timeEnd").addEventListener("click", function () { timeUpClose(false); });
   $("timeGo").addEventListener("click", function () { timeUpClose(true); });
@@ -4680,6 +4723,7 @@
     S.order = shuffle(S.list); S.oi = 0; S.voiceOK = false;
     startSession(live);
   }
+  if (window.CB_NATIVE) { try { window.webkit.messageHandlers.native.postMessage({ type: "ready" }); } catch (e) {} }
   try { ORDER.forEach(function (n) { tryFile(n, ["mp3", "ogg"]); }); } catch (e) {}
   // offline support and "add to home screen"
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {

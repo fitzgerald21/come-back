@@ -13,6 +13,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
 
+        SitCoordinator.shared.start()
+
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = WebViewController()
         window.backgroundColor = UIColor(red: 0.051, green: 0.102, blue: 0.122, alpha: 1)

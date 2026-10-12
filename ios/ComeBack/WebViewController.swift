@@ -43,6 +43,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
         webView.allowsLinkPreview = false
         if #available(iOS 16.4, *) { webView.isInspectable = true }
         view = webView
+        SitCoordinator.shared.web = self
         webView.load(URLRequest(url: URL(string: "\(AppSchemeHandler.scheme)://localhost/index.html")!))
     }
 
@@ -60,6 +61,10 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             signIn()
         case "signOut":
             GIDSignIn.sharedInstance.signOut()
+        case "ready":
+            SitCoordinator.shared.pageIsReady()
+        case "sit":
+            SitCoordinator.shared.sit(body)
         default:
             break
         }
@@ -77,6 +82,10 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             self.call("window.CB_NATIVE_SIGNIN && window.CB_NATIVE_SIGNIN(idToken, accessToken)",
                       ["idToken": idToken, "accessToken": user.accessToken.tokenString])
         }
+    }
+
+    func evaluate(_ js: String) {
+        webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
     private func call(_ js: String, _ args: [String: Any]) {
@@ -99,6 +108,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
     /// the page restores an unfinished sit from its saved state.
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         UIApplication.shared.isIdleTimerDisabled = false
+        SitCoordinator.shared.pageTerminated()
         webView.load(URLRequest(url: URL(string: "\(AppSchemeHandler.scheme)://localhost/index.html")!))
     }
 
