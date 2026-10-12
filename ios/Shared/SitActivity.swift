@@ -27,6 +27,8 @@ enum SitCommandHub {
 struct SitPauseIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Pause or resume the sit"
     static let isDiscoverable = false
+    /// Pausing a sit isn't sensitive; don't make anyone unlock the phone to do it from the lock screen.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
     @Parameter(title: "Pause") var pause: Bool
 
