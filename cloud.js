@@ -16,7 +16,8 @@ var ui = { box: el("cloudBox"), status: el("cloudStatus"), signIn: el("cloudSign
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
-function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_UID && k !== K_DIRTY && k !== K_SESS && k !== K_SIG; }
+var K_LIVE = "come-back:live";   // a sit in progress belongs to this device only; syncing it brought finished sits back to life
+function syncKey(k) { return k.indexOf(PREFIX) === 0 && k !== K_LIVE && k !== K_UID && k !== K_DIRTY && k !== K_SESS && k !== K_SIG; }
 function say(msg, signedIn) {
   if (ui.status) ui.status.textContent = msg;
   if (ui.sum) ui.sum.textContent = signedIn ? "On" : "";
@@ -118,7 +119,7 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
       var keys = {}; Object.keys(remote).concat(Object.keys(local)).forEach(function (k) { keys[k] = 1; });
       Object.keys(keys).forEach(function (k) {
         var r = remote[k], l = local[k];
-        if (k === TOTAL || k === SESSIONS) return;   // total is worked out below
+        if (k === TOTAL || k === SESSIONS || !syncKey(k)) return;   // total is worked out below
         if (dirty.has(k) || r == null) {
           if (l != null) dirty.add(k);               // local-only or edited offline: send it up
         } else if (r !== l) {
@@ -133,6 +134,7 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
       } else total = dirty.has(TOTAL) ? lt : (remote[TOTAL] == null ? lt : rt);
       if (String(total) !== local[TOTAL]) { lsSet(TOTAL, String(total)); changed = true; }
       if (String(total) !== remote[TOTAL]) dirty.add(TOTAL); else dirty.delete(TOTAL);
+      if (remote[K_LIVE] != null) updateDoc(ref(), { "data.live": deleteField() }).catch(function () {});   // clear the copy an earlier version uploaded
       lsSet(K_UID, user.uid);
       dirtySave(dirty);
       pulling = false;

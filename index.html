@@ -1020,7 +1020,7 @@
 <script src="samples/manifest.js?v=14"></script>
 <script src="instruments.js?v=14"></script>
 <script src="tones.js?v=14"></script>
-<script type="module" src="cloud.js?v=17"></script>
+<script type="module" src="cloud.js?v=18"></script>
 <script>
 (function () {
   "use strict";
@@ -1200,7 +1200,24 @@
   function loadHist() {
     try { var a = JSON.parse(lsGet(KEY_HIST) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
   }
-  function saveSession(rec) { var h = loadHist(); h.push(rec); lsSet(KEY_HIST, JSON.stringify(h)); }
+  function saveSession(rec) {
+    var h = loadHist().filter(function (r) { return r && r.start !== rec.start; });   // a sit is saved once, however many times it's finished
+    h.push(rec); lsSet(KEY_HIST, JSON.stringify(h));
+  }
+  // Clears out copies of the same sit (an earlier bug saved some more than once) and takes their returns back out of the total.
+  function dedupeHist() {
+    var h = loadHist(), seen = {}, out = [], extra = 0;
+    for (var i = h.length - 1; i >= 0; i--) {
+      var r = h[i];
+      if (!r) continue;
+      if (seen[r.start]) { extra += r.returns || 0; continue; }
+      seen[r.start] = 1; out.unshift(r);
+    }
+    if (out.length === h.length) return;
+    lsSet(KEY_HIST, JSON.stringify(out));
+    var t = parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0;
+    lsSet(KEY_TOTAL, String(Math.max(0, t - extra)));
+  }
   function patchSession(start, patch) {
     var h = loadHist();
     for (var i = h.length - 1; i >= 0; i--) if (h[i].start === start) {
@@ -4726,7 +4743,9 @@
   syncHome();
   loadTotal();
   renderCalendar();
+  dedupeHist();
   var live = loadLive();
+  if (live && loadHist().some(function (r) { return r && r.start === live.startedAt; })) { clearLive(); live = null; }   // that sit was already finished
   if (live) {
     S.mode = live.mode === "voice" ? "label" : live.mode; S.anchor = live.anchor; S.limit = live.limit || 0;
     S.list = Array.isArray(live.list) && live.list.length ? live.list : DEFAULTS.slice();
