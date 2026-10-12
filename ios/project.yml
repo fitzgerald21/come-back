@@ -58,3 +58,14 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: GTK9G9EVU8
         SKIP_INSTALL: YES
+# Only the app gets a scheme. The widget extension is Live Activity only, so Xcode can't "show" it on its own
+# (running it directly fails with "Failed to get descriptors for extensionBundleID"); it's built and embedded with the app.
+schemes:
+  ComeBack:
+    build:
+      targets:
+        ComeBack: all
+    run:
+      config: Debug
+    archive:
+      config: Release
