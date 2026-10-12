@@ -32,3 +32,12 @@ The site stays on GitHub Pages; only your data lives in Firebase (Auth + Firesto
 5. Push to `master`. Until the config is filled in, the Account panel is hidden and the app stays local-only.
 
 Settings live in one document per user (`users/{uid}`) and each sit is its own document (`users/{uid}/sessions/{start}`), so history can grow without limit. `cloud.js` mirrors every `come-back:*` localStorage key into it, so the app itself still reads and writes locally.
+
+## iOS app
+
+`ios/` wraps the same web files in a small native shell (a WKWebView serving the bundled files, so it works offline). The web files stay the single source of truth; a build step copies them into the app.
+
+- Open `ios/ComeBack.xcodeproj` in Xcode, pick your team under Signing & Capabilities, and run. After editing `ios/project.yml`, regenerate the project with `xcodegen generate`.
+- Google refuses sign-in inside web views, so the app signs in natively (GoogleSignIn) and hands the tokens to `cloud.js`, which signs in to the same Firebase user. Your existing sits sync down as on any other device. The iOS app is registered in the Firebase project as `com.ryanfitzgerald.comeback`.
+- Audio keeps playing with the screen locked, and the screen stays awake during a sit.
+- The minimum iOS version is 18.4 (Xcode 26's WebKit links a library older runtimes don't ship).

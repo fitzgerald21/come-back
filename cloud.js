@@ -3,7 +3,7 @@
    The app keeps working from localStorage, so it is still fast and offline-friendly; this file only syncs it.
    Fill in firebase-config.js (see README) to turn it on. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signInWithCredential, getRedirectResult, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { FIREBASE_CONFIG } from "./firebase-config.js";
@@ -154,7 +154,15 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
   document.addEventListener("visibilitychange", function () { if (!document.hidden && user) pull(); });
   window.addEventListener("online", function () { if (user) pull(); });
 
+  // In the iOS app, Google refuses sign-in inside a web view, so the native side signs in and hands back the tokens.
+  var native = window.CB_NATIVE && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.native;
+  window.CB_NATIVE_SIGNIN = function (idToken, accessToken) {
+    signInWithCredential(auth, GoogleAuthProvider.credential(idToken, accessToken)).catch(function () { say("Sign-in didn't work. Try again.", false); });
+  };
+  window.CB_NATIVE_SIGNIN_FAILED = function (cancelled) { if (!cancelled) say("Sign-in didn't work. Try again.", false); };
+
   if (ui.signIn) ui.signIn.addEventListener("click", function () {
+    if (native) { native.postMessage({ type: "signIn" }); return; }
     var p = new GoogleAuthProvider();
     signInWithPopup(auth, p).catch(function (e) {
       if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) signInWithRedirect(auth, p);
@@ -162,6 +170,6 @@ if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || /YOUR_/.test(FIREBASE_CONFIG.
     });
   });
   if (ui.signOut) ui.signOut.addEventListener("click", function () {
-    signOut(auth).then(function () { lsDel(K_UID); say("Signed out. Your data stays on this device.", false); });
+    signOut(auth).then(function () { if (native) native.postMessage({ type: "signOut" }); lsDel(K_UID); say("Signed out. Your data stays on this device.", false); });
   });
 }

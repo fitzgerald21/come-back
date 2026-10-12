@@ -1,1 +1,6 @@
 .DS_Store
+ios/build/
+ios/ComeBack/GoogleService-Info.plist
+*.xcuserdata
+xcuserdata/
+ios/build-device/
