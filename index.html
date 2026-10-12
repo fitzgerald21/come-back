@@ -1015,7 +1015,7 @@
 <script src="samples/manifest.js?v=14"></script>
 <script src="instruments.js?v=14"></script>
 <script src="tones.js?v=14"></script>
-<script type="module" src="cloud.js?v=16"></script>
+<script type="module" src="cloud.js?v=17"></script>
 <script>
 (function () {
   "use strict";
@@ -1036,6 +1036,7 @@
   var KEY_SCENE = "come-back:scene";
   var KEY_PREFS = "come-back:prefs";
   var KEY_REMOTE = "come-back:remote";
+  var KEY_LIVE = "come-back:live";   // the sit in progress, so it survives the OS unloading the page while you're in another app
   var PRESET_DEFAULTS = ["Physical discomfort", "Planning", "Worry", "Sounds", "Memory", "Sleepy"];
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
@@ -1093,6 +1094,25 @@
   function lsSet(k, v) {
     try { window.localStorage.setItem(k, v); } catch (e) {}
     try { if (window.CB_CLOUD) window.CB_CLOUD.changed(k); } catch (e) {}   // cloud.js mirrors saves to Firebase when signed in
+  }
+  // Deliberately not lsSet: an unfinished sit is per-device and shouldn't be mirrored to the cloud.
+  function saveLive() {
+    if (!S.active) return;
+    try {
+      window.localStorage.setItem(KEY_LIVE, JSON.stringify({
+        mode: S.mode, anchor: S.anchor, limit: S.limit, list: S.list, entries: S.entries, notes: S.notes,
+        startWall: S.startWall, startedAt: S.startedAt,
+        at: S.paused ? S.pausedAt : S.menuAt || Date.now(),   // the moment the clock stopped, or now if it's running
+        savedAt: Date.now()
+      }));
+    } catch (e) {}
+  }
+  function clearLive() { try { window.localStorage.removeItem(KEY_LIVE); } catch (e) {} }
+  function loadLive() {
+    try {
+      var o = JSON.parse(window.localStorage.getItem(KEY_LIVE) || "null");
+      return o && o.startWall && o.startedAt && Array.isArray(o.entries) ? o : null;
+    } catch (e) { return null; }
   }
   window.CB_APP = { busy: function () { return !!S.active; } };
   function loadReminders() {
@@ -2094,6 +2114,9 @@
     try { if (navigator.wakeLock && navigator.wakeLock.request) { navigator.wakeLock.request("screen").then(function (l) { S.wake = l; }, function () {}); } } catch (e) {}
   }
   function unlockScreen() { try { if (S.wake) { S.wake.release(); S.wake = null; } } catch (e) {} }
+  // The OS can unload the page while it's in the background, so write the sit down every time it leaves the foreground.
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") saveLive(); });
+  window.addEventListener("pagehide", saveLive);
   document.addEventListener("visibilitychange", function () {
     if (S.active && document.visibilityState === "visible") {
       lockScreen();
@@ -3525,8 +3548,9 @@
     }
   }
 
-  function startSession() {
-    S.entries = []; S.notes = []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
+  // `saved` is a sit picked back up after the page was unloaded; it comes back paused, where it left off.
+  function startSession(saved) {
+    S.entries = saved ? saved.entries : []; S.notes = saved && Array.isArray(saved.notes) ? saved.notes : []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
     S.listening = false; S.heardText = ""; S.paused = false; S.menuAt = 0; S.swipedAt = 0; S.hintDone = false;
     els.countNum.textContent = "0"; els.countWord.textContent = "returns";
     els.count.classList.toggle("off", !$("showCount").checked);
@@ -3539,14 +3563,15 @@
     closeMenu();
 
     show("session");
-    S.startWall = Date.now(); S.startPerf = performance.now(); S.startedAt = S.startWall; S.active = true;
+    S.startWall = saved ? saved.startWall : Date.now(); S.startPerf = performance.now(); S.startedAt = saved ? saved.startedAt : S.startWall; S.active = true;
     resetScore(); syncCount(); syncControls();   // in a sit the real thing is playing, so the "try it" buttons go away
     setScene(S.anchor, true);
     updateClock();
     lockScreen();
-    if (P.bells) bell(396, 0.12);
-    scheduleEndBell();
-    $("dimNum").textContent = "0"; $("dimWord").textContent = "returns";
+    if (!saved) { if (P.bells) bell(396, 0.12); scheduleEndBell(); }
+    var n0 = S.entries.length, w0 = n0 === 1 ? "return" : "returns";
+    els.countNum.textContent = n0; els.countWord.textContent = w0;
+    $("dimNum").textContent = n0; $("dimWord").textContent = w0;
     clearTimeout(S.hintTimer);
     S.hintTimer = setTimeout(function () {
       if (!S.active) return;
@@ -3558,8 +3583,18 @@
     S.tick = setInterval(function () {
       if (S.paused || S.menuAt) return;
       if (S.limit && Date.now() - S.startWall >= S.limit) timeUp(); else updateClock();
+      if (Date.now() - liveSavedAt > 2000) { liveSavedAt = Date.now(); saveLive(); }
     }, 250);
+    if (saved) {
+      beginPause();
+      S.pausedAt = saved.at || saved.savedAt || Date.now();
+      updateClock();
+      if (S.limit && S.pausedAt - S.startWall >= S.limit) { S.timeUpRung = true; $("timeSheet").hidden = false; $("timeGo").focus(); }
+      else { $("pauseSheet").hidden = false; $("pauseResume").focus(); }
+    }
+    saveLive();
   }
+  var liveSavedAt = 0;
 
   function restHint() {
     if (!S.active) return;
@@ -3591,6 +3626,7 @@
     ambReact();
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
     commitLabel();
+    saveLive();
 
     if (S.mode === "voice" && S.voiceOK) {
       startListening(entry); // the reminder arrives once you've spoken
@@ -3617,6 +3653,7 @@
   function commitLabel() {
     if (S.current && !S.listening) { S.current.label = els.input.value.trim(); S.current = null; }
     if (!els.panel.hidden) { els.panel.hidden = true; blurActive(); restHint(); syncDim(); }
+    saveLive();
   }
 
   /* ---------- listening ---------- */
@@ -3696,17 +3733,20 @@
     S.paused = true; S.pausedAt = Date.now();
     if (!keepBell) cancelEndBell();
     if (AC && AC.state === "running") { try { AC.suspend(); } catch (e) {} }   // the sounds rest too
+    saveLive();
   }
   function endPause() {
     var gap = Date.now() - S.pausedAt;   // paused time doesn't count toward the sit
     S.startWall += gap; S.startPerf += gap;
     S.paused = false;
+    if (!AC) { initAudio(); applyAudio(); }   // a sit restored after a reload has no audio yet, and this is the tap that's allowed to start it
     if (AC && AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
     blurActive();
     updateClock();
     scheduleEndBell();
     syncDim();
     wakeChrome();
+    saveLive();
   }
   // The chosen time has run out: pause the clock and let them end the sit or keep going.
   function timeUp() {
@@ -3759,6 +3799,7 @@
     if (S.listening) endListening(true);
     commitLabel();
     S.active = false;
+    clearLive();
     syncControls();   // the "try it" buttons come back now that the sit is over
     cancelAnimationFrame(S.raf); clearInterval(S.tick); clearTimeout(S.remTimer); clearTimeout(S.hintTimer); clearTimeout(S.nameTimer);
     unlockScreen();
@@ -4632,6 +4673,13 @@
   syncHome();
   loadTotal();
   renderCalendar();
+  var live = loadLive();
+  if (live) {
+    S.mode = live.mode === "voice" ? "label" : live.mode; S.anchor = live.anchor; S.limit = live.limit || 0;
+    S.list = Array.isArray(live.list) && live.list.length ? live.list : DEFAULTS.slice();
+    S.order = shuffle(S.list); S.oi = 0; S.voiceOK = false;
+    startSession(live);
+  }
   try { ORDER.forEach(function (n) { tryFile(n, ["mp3", "ogg"]); }); } catch (e) {}
   // offline support and "add to home screen"
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
