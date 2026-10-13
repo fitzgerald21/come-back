@@ -1256,6 +1256,7 @@
         KEEP = document.createElement("audio");
         KEEP.setAttribute("playsinline", ""); KEEP.loop = true; KEEP.preload = "auto";
         KEEP.src = silentWav(600);
+        KEEP.addEventListener("pause", function () { if (S.active) setTimeout(function () { if (S.active && KEEP.paused) keepMediaAlive(); }, 50); });
       }
       var p = KEEP.play(); if (p && p.catch) p.catch(function () {});
     } catch (e) {}
@@ -1366,8 +1367,16 @@
     S.nameTimer = setTimeout(function () { els.sceneName.classList.remove("show"); }, 1600);
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
   }
+  // The phone treats the silent element as the "now playing" track. If it ends up paused, the lock-screen buttons stop reaching us
+  // (or just pause the sound), so every press, pause and resume puts it back to playing.
+  function keepMediaAlive() {
+    if (KEEP) { try { var p = KEEP.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+    try { navigator.mediaSession.playbackState = "playing"; } catch (e) {}
+  }
   function remotePress(btn) {
+    keepMediaAlive();   // first, even while paused: the press may have paused the silent track
     if (!S.active || S.paused) return;
+    if (AC && AC.state !== "running") { try { AC.resume(); } catch (e) {} }
     if (S.listening) stopListening();
     else if (els.panel.hidden && els.menu.hidden) {
       var now = Date.now(), tagging = S.mode === "tap" && !gameOn(), last = S.entries[S.entries.length - 1];
@@ -1389,9 +1398,7 @@
         }
       }
     }
-    // the phone has just paused or skipped our silent element, so start it again to keep receiving presses
-    if (KEEP) { try { KEEP.play().catch(function () {}); } catch (e) {} }
-    try { navigator.mediaSession.playbackState = "playing"; } catch (e) {}
+    keepMediaAlive();   // and again after, since catching a return can take a moment
   }
   function hookRemote() {
     if (remoteHooked || !("mediaSession" in navigator)) return;
@@ -3794,6 +3801,7 @@
     if (S.listening) endListening(true);
     commitLabel();
     S.paused = true; S.pausedAt = Date.now();
+    keepMediaAlive();
     if (!keepBell) cancelEndBell();
     if (AC && AC.state === "running") { try { AC.suspend(); } catch (e) {} }   // the sounds rest too
     saveLive();
@@ -3805,6 +3813,9 @@
     S.paused = false;
     if (!AC) { initAudio(); applyAudio(); }   // a sit restored after a reload has no audio yet, and this is the tap that's allowed to start it
     if (AC && AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
+    keepMediaAlive();
+    // resuming from the lock screen isn't a tap in the page, so the phone may refuse the first try
+    setTimeout(function () { if (S.active && !S.paused) { if (AC && AC.state !== "running") { try { AC.resume(); } catch (e) {} } keepMediaAlive(); } }, 400);
     blurActive();
     updateClock();
     scheduleEndBell();
