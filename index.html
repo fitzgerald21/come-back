@@ -316,21 +316,25 @@
   .gamescore b, .snd-game b { color: var(--ink); font-weight: 600; }
   .scene-name { position: absolute; top: 3.6rem; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.04em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 1; }
   .scene-name.show { opacity: 1; }
-  .bottom { min-height: 6.5rem; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.25rem; }
+  .bottom { min-height: 6.5rem; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.6rem; padding-top: 0.25rem; }
+  .tagbar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; max-width: 30rem; padding: 0 0.5rem 0.5rem; }
+  .tagbar .chip { color: var(--ink); background: var(--card); border-color: var(--muted); padding: 0.55rem 1rem; font-size: 0.95rem; }
+  .tagbar .chip:active { transform: scale(0.96); }
+  #session[data-anchor="dark"] .tagbar .chip { color: #C4CED0; border-color: #5A686B; background: rgba(255, 255, 255, 0.06); }
+  .back-arrow { display: inline-grid; place-items: center; width: 2.6rem; height: 2.6rem; margin: 0 0 0.9rem; padding: 0; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; transition: transform 0.15s, border-color 0.25s; }
+  .back-arrow:active { transform: scale(0.94); }
+  .back-arrow:hover { border-color: var(--muted); }
+  .back-arrow svg { width: 1.2rem; height: 1.2rem; }
+  .rem-row { display: flex; gap: 0.5rem; align-items: center; margin: 0 0 0.5rem; }
+  .rem-row input { flex: 1; min-width: 0; }
+  .rem-row .link-btn { flex: none; }
   .hint { color: var(--muted); font-size: 0.93rem; text-align: center; max-width: 25rem; transition: opacity 1.6s; }
   .hint.dim { opacity: 0.45; }
   .hint.gone { opacity: 0; }
   .panel { width: min(100%, 30rem); cursor: default; }
   .panel label { display: block; font-size: 0.93rem; color: var(--muted); margin-bottom: 0.4rem; }
-  .panel .row { display: flex; gap: 0.5rem; }
   .panel .btn { padding: 0.6rem 1.2rem; }
   .panel small { display: block; color: var(--muted); margin-top: 0.35rem; font-size: 0.82rem; }
-  .listen { display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--muted); font-size: 0.95rem; }
-  .pulse { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 0%, 100% { transform: scale(0.8); opacity: 0.6; } 50% { transform: scale(1.3); opacity: 1; } }
-  .heard { font-family: "Instrument Serif", Georgia, serif; font-size: 1.6rem; line-height: 1.15; min-height: 1.9rem; text-align: center; margin: 0.5rem 0 0.75rem; }
-  #voicePanel { text-align: center; }
-  #voicePanel .btn { padding: 0.5rem 1.4rem; }
   .finish { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.75rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 
   /* ---------- Sound controls (home + in-session menu) ---------- */
@@ -740,13 +744,6 @@
       </div>
     </fieldset>
 
-    <!-- There's only one way to mark a return now (tap, or a remote); the old typing and voice modes are no longer offered. -->
-    <div hidden>
-      <input type="radio" name="mode" value="tap" checked data-desc="">
-      <p id="modeNote"></p>
-      <span id="voiceNote"></span>
-    </div>
-
     <div class="begin-bar"><button class="btn begin" id="begin" type="button">Begin</button></div>
 
     <h2 class="sect">Settings</h2>
@@ -756,31 +753,29 @@
     </details>
 
     <details class="panel">
-      <summary>Display<span class="sum-val" id="sumDisplay"></span></summary>
+      <summary>Remoteless mode<span class="sum-val" id="sumRemoteless"></span></summary>
       <label class="check">
-        <input type="checkbox" id="showClock" checked>
-        <span>Show the timer while I sit
-          <small>Counts down if you set a length, up if not.</small>
-        </span>
-      </label>
-      <label class="check">
-        <input type="checkbox" id="showCount" checked>
-        <span>Show the count while I sit
-          <small>Turn this off if the number starts to feel like a score. You'll still see it at the end.</small>
+        <input type="checkbox" id="remoteless">
+        <span>Show distractions on the screen
+          <small>No handheld remote? Your distractions appear as buttons while you sit. Tap one to mark a return and say what pulled you away. Tapping anywhere else still marks a plain return.</small>
         </span>
       </label>
     </details>
 
     <details class="panel">
       <summary>Your reminders<span class="sum-val" id="sumRem"></span></summary>
-      <p>One per line. A different one appears each time you catch yourself.</p>
-      <textarea id="reminders" aria-label="Your reminders, one per line"></textarea>
+      <p>A different one appears each time you catch yourself.</p>
+      <div id="remList"></div>
+      <div class="addrow">
+        <input type="text" id="remInput" maxlength="80" autocomplete="off" placeholder="Add a reminder" aria-label="New reminder">
+        <button class="btn" id="remAdd" type="button">Add</button>
+      </div>
       <button class="link-btn" id="resetRem" type="button">Restore the starter set</button>
     </details>
 
     <details class="panel">
       <summary>Remote buttons<span class="sum-val" id="sumRemote"></span></summary>
-      <p>For a handheld remote or earbuds in Just tap mode. Pick what each button means. You can change these during a sit too, from the menu.</p>
+      <p>For a handheld remote or earbuds. Pick what each button means. You can change these during a sit too, from the menu.</p>
       <div id="homeRemote"></div>
     </details>
 
@@ -836,9 +831,6 @@
   <div class="scrim" id="menuScrim" hidden></div>
   <div class="soundmenu" id="soundMenu" role="dialog" aria-label="Sound and options" hidden>
     <div class="grab" aria-hidden="true"></div>
-    <div class="menu-actions">
-      <button class="menu-act" id="noteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19h4L19 9l-4-4L5 15v4z"/></svg>Jot a note</button>
-    </div>
     <div id="menuSound"></div>
     <details class="snd-adv remote-adv"><summary>Remote buttons</summary><div id="menuRemote"></div></details>
   </div>
@@ -862,27 +854,14 @@
   <div class="dots" id="dots" role="group" aria-label="Scenes"></div>
   <div class="bottom">
     <div class="hint" id="hint"></div>
-    <div class="panel" id="panel" hidden>
-      <label for="labelInput" id="labelText">What pulled you away? One or two words.</label>
-      <div class="row">
-        <input type="text" id="labelInput" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. email, dinner">
-        <button class="btn" id="saveLabel" type="button">Save</button>
-      </div>
-      <div class="chips" id="chips"></div>
-      <small>Enter saves. Blank is fine.</small>
-    </div>
-    <div class="panel" id="voicePanel" hidden>
-      <div class="listen"><span class="pulse"></span><span>Listening. Say a word or two.</span></div>
-      <div class="heard" id="heard" aria-live="polite"></div>
-      <button class="btn ghost" id="doneListen" type="button">Done</button>
-      <small>Or tap anywhere, or press space, to finish.</small>
-    </div>
+    <div class="tagbar" id="tagBar" role="group" aria-label="What pulled you away" hidden></div>
   </div>
 </section>
 
 <!-- TRENDS -->
 <section id="trends" class="screen" hidden>
   <div class="sub-wrap">
+    <button class="back-arrow" id="trBack" type="button" aria-label="Back to start" title="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
     <h2>Trends</h2>
     <p class="sub" id="trSub"></p>
     <div id="trBody">
@@ -901,25 +880,25 @@
       <div class="tsec"><p class="list-head">Which days you sit</p><div id="chDow"></div></div>
       <div id="trInsights"></div>
     </div>
-    <button class="btn ghost" id="trBack" type="button">Back to start</button>
   </div>
 </section>
 
 <!-- PAST SESSIONS -->
 <section id="hist" class="screen" hidden>
   <div class="sub-wrap">
+    <button class="back-arrow" id="histBack" type="button" aria-label="Back to start" title="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
     <h2>Past sessions</h2>
     <p class="sub" id="histSub"></p>
     <div id="histList"></div>
-    <button class="btn ghost" id="histBack" type="button">Back to start</button>
   </div>
 </section>
 
 <!-- DISTRACTIONS -->
 <section id="dist" class="screen" hidden>
   <div class="sub-wrap">
+    <button class="back-arrow" id="distBack" type="button" aria-label="Back to start" title="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
     <h2>Distractions</h2>
-    <p class="sub">Presets show up as one-tap buttons when you catch yourself, so you don't have to type.</p>
+    <p class="sub">Presets show up as one-tap buttons on the screen during a sit when Remoteless mode is on.</p>
     <p class="list-head">Presets</p>
     <div class="dlist" id="presetList"></div>
     <div class="addrow">
@@ -928,7 +907,6 @@
     </div>
     <p class="list-head">Everything you've logged</p>
     <div class="dlist" id="allList"></div>
-    <button class="btn ghost" id="distBack" type="button">Back to start</button>
   </div>
 </section>
 
@@ -944,15 +922,6 @@
       <div id="tlWrap"></div>
       <p class="often tl-shape" id="tlShape"></p>
     </div>
-    <div id="logBlock" hidden>
-      <p class="list-head">Where your mind went</p>
-      <p class="often" id="often"></p>
-      <ol class="log" id="log"></ol>
-    </div>
-    <div id="noteBlock" hidden>
-      <p class="list-head">Notes to come back to</p>
-      <ol class="log" id="noteLog"></ol>
-    </div>
     <div id="reflectBlock" hidden>
       <p class="list-head">How did it feel?</p>
       <div class="chips" id="feelChips" role="group" aria-label="How the sit went, pick any"></div>
@@ -960,8 +929,7 @@
     </div>
     <div id="levelLine" hidden></div>
     <div class="end-actions">
-      <button class="btn" id="again" type="button">Sit again</button>
-      <button class="btn ghost" id="home2" type="button">Back to start</button>
+      <button class="btn" id="home2" type="button">Back to start</button>
     </div>
   </div>
 </section>
@@ -1004,15 +972,14 @@
   </div>
 </div>
 
-<!-- NOTE SHEET (pauses the sit) -->
-<div id="noteSheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="noteTitle">
+<!-- DELETE A PAST SESSION CONFIRM -->
+<div id="deleteSheet" class="sheet" hidden role="alertdialog" aria-modal="true" aria-labelledby="deleteTitle">
   <div class="sheet-card">
-    <h3 id="noteTitle">Paused</h3>
-    <p>Jot down what's tugging at you so you can come back to it later. Your timer is stopped until you resume.</p>
-    <textarea id="noteText" aria-label="Your note" placeholder="e.g. email Sam about Friday"></textarea>
+    <h3 id="deleteTitle">Delete this session?</h3>
+    <p>It will be removed from your history and your total. This can't be undone.</p>
     <div class="sheet-actions">
-      <button class="btn" id="noteSave" type="button">Save and resume</button>
-      <button class="btn ghost" id="noteSkip" type="button">Resume without saving</button>
+      <button class="btn" id="deleteKeep" type="button">Keep it</button>
+      <button class="btn ghost" id="deleteYes" type="button">Yes, delete</button>
     </div>
   </div>
 </div>
@@ -1045,11 +1012,9 @@
   var PRESET_DEFAULTS = ["Physical discomfort", "Planning", "Worry", "Sounds", "Memory", "Sleepy"];
   var IN_MS = 4000, OUT_MS = 6000, CYCLE = IN_MS + OUT_MS;
   var MIN_SCALE = 0.55;
-  var LISTEN_MS = 7000;
   var MIN_RECORD_MS = 20000;  // shorter sits aren't saved or counted
   var CAL_WEEKS = 17;
   var CAL_FULL_MIN = 60;      // a day at this many minutes gets the deepest orange
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   var ORDER = ["dark", "circle", "flame", "daytree", "tree", "rain", "ocean", "stars", "aurora", "snow", "koi"];
   // What a return can be tagged with from a handheld remote in Just tap mode.
@@ -1078,19 +1043,17 @@
   var $ = function (id) { return document.getElementById(id); };
   var screens = { home: $("home"), session: $("session"), end: $("end"), hist: $("hist"), dist: $("dist"), trends: $("trends") };
   var els = {
-    reminders: $("reminders"), total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
+    total: $("total"), count: $("count"), countNum: $("countNum"), countWord: $("countWord"),
     clock: $("clock"), orb: $("orb"), orbWrap: $("orbWrap"), spacer: $("spacer"), canvas: $("scene"),
     slot: $("slot"), phase: $("phase"), reminder: $("reminder"), dots: $("dots"), sceneName: $("sceneName"),
-    hint: $("hint"), panel: $("panel"), voicePanel: $("voicePanel"), heard: $("heard"),
-    input: $("labelInput"), labelText: $("labelText"), begin: $("begin"),
-    sheet: $("noteSheet"), noteText: $("noteText"), menu: $("soundMenu")
+    hint: $("hint"), begin: $("begin"), menu: $("soundMenu"), tagBar: $("tagBar")
   };
 
   var S = {
-    mode: "tap", anchor: "circle", limit: 0, voiceOK: false, voiceReason: "", micDenied: false,
-    entries: [], notes: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0, current: null,
+    mode: "tap", anchor: "circle", limit: 0, remoteless: false,
+    entries: [], startWall: 0, startPerf: 0, startedAt: 0, active: false, paused: false, pausedAt: 0,
     list: [], order: [], oi: 0, lastCatch: 0, raf: 0, tick: 0, remTimer: 0, lastPhase: "",
-    listening: false, rec: null, heardText: "", listenTimer: 0, stopSafety: 0, hintTimer: 0, hintDone: false,
+    hintTimer: 0, hintDone: false,
     nameTimer: 0, swipedAt: 0, wake: null, preview: false, pvTimer: 0, endBell: null
   };
 
@@ -1117,7 +1080,7 @@
   // The lock screen asked to pause or resume (`at` is when the button was pressed; the page may only be hearing about it now).
   window.CB_NATIVE_PAUSE = function (wantPaused, at) {
     try {
-      if (S.active && !S.listening) {
+      if (S.active) {
         if (wantPaused && !S.paused) {
           closeMenu(); openPause();
           if (at > S.startWall && at < S.pausedAt) S.pausedAt = at;
@@ -1125,7 +1088,7 @@
         } else if (!wantPaused && S.paused && $("timeSheet").hidden) {
           $("cancelSheet").hidden = true;
           if (at > S.pausedAt) S.resumeAt = at;
-          closeNote(false);
+          resumeSit();
         }
       }
     } catch (e) {}
@@ -1136,7 +1099,7 @@
     if (!S.active) return;
     try {
       window.localStorage.setItem(KEY_LIVE, JSON.stringify({
-        mode: S.mode, anchor: S.anchor, limit: S.limit, list: S.list, entries: S.entries, notes: S.notes,
+        mode: S.mode, anchor: S.anchor, limit: S.limit, list: S.list, entries: S.entries,
         startWall: S.startWall, startedAt: S.startedAt,
         at: S.paused ? S.pausedAt : S.menuAt || Date.now(),   // the moment the clock stopped, or now if it's running
         savedAt: Date.now()
@@ -1151,9 +1114,36 @@
     } catch (e) { return null; }
   }
   window.CB_APP = { busy: function () { return !!S.active; } };
+  // The reminders are kept as one string, a line each, so they stay compatible with what's already saved (and in the cloud).
+  var REMS = [];
   function loadReminders() {
     var saved = lsGet(KEY_REM);
-    els.reminders.value = saved && saved.trim() ? saved : DEFAULTS.join("\n");
+    REMS = (saved && saved.trim() ? saved : DEFAULTS.join("\n")).split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
+    renderReminders();
+  }
+  function saveReminders() { lsSet(KEY_REM, REMS.join("\n")); syncHome(); }
+  function renderReminders() {
+    var box = $("remList"); box.innerHTML = "";
+    REMS.forEach(function (t, i) {
+      var row = el("div", "rem-row"), inp = el("input"), rm = el("button", "link-btn", "Remove");
+      inp.type = "text"; inp.maxLength = 80; inp.value = t; inp.setAttribute("autocomplete", "off"); inp.setAttribute("aria-label", "Reminder " + (i + 1));
+      inp.addEventListener("change", function () {
+        var v = inp.value.trim();
+        if (v) REMS[i] = v; else REMS.splice(i, 1);
+        saveReminders(); renderReminders();
+      });
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+      rm.type = "button"; rm.setAttribute("aria-label", "Remove reminder " + (i + 1));
+      rm.addEventListener("click", function () { REMS.splice(i, 1); saveReminders(); renderReminders(); });
+      row.appendChild(inp); row.appendChild(rm); box.appendChild(row);
+    });
+    if (!REMS.length) box.appendChild(el("p", "subnote", "None yet. The starter set is used until you add your own."));
+  }
+  function addReminder() {
+    var inp = $("remInput"), t = inp.value.trim().replace(/\s+/g, " ");
+    if (!t) return;
+    REMS.push(t); inp.value = "";
+    saveReminders(); renderReminders();
   }
   // Levels are earned by total returns across all sittings. LEVELS[i] is what level i + 1 needs.
   var LEVELS = [500, 1000, 2000, 5000, 10000, 15000, 20000, 50000, 75000, 100000];
@@ -1377,8 +1367,7 @@
     keepMediaAlive();   // first, even while paused: the press may have paused the silent track
     if (!S.active || S.paused) return;
     if (AC && AC.state !== "running") { try { AC.resume(); } catch (e) {} }
-    if (S.listening) stopListening();
-    else if (els.panel.hidden && els.menu.hidden) {
+    if (els.menu.hidden) {
       var now = Date.now(), tagging = S.mode === "tap" && !gameOn(), last = S.entries[S.entries.length - 1];
       // A press that continues a quick chain (within half a second, up to three presses) re-tags the return the chain began with,
       // as long as that sequence has a meaning. Otherwise it's a new return that starts its own chain.
@@ -1455,8 +1444,6 @@
       S.endBell = { gain: g, at: Date.now() + left };
     } catch (e) { S.endBell = null; }
   }
-  function tListenStart() { ping(523, 0.08, 0.5); ping(784, 0.08, 0.7, 0.12); }
-  function tListenEnd() { ping(784, 0.06, 0.4); ping(523, 0.06, 0.7, 0.12); }
 
   /* ---------- scene sounds ---------- */
   // Everything is synthesized, so there are no audio files. Looped noise is the raw material.
@@ -1869,7 +1856,7 @@
   function syncCount() {
     var hide = gameOn();
     $("gameScore").hidden = !hide;
-    els.count.classList.toggle("off", !$("showCount").checked || hide);
+    els.count.classList.toggle("off", hide);
     $("dim").classList.toggle("nocount", hide);
   }
 
@@ -1891,7 +1878,6 @@
       var o = JSON.parse(lsGet(KEY_SND) || "{}") || {};
       P.mode = (o.mode === "scene" || o.mode === "dual" || o.mode === "hidden" || o.mode === "off") ? o.mode : (o.dual ? "dual" : o.amb === false ? "off" : "scene");
       applyMode();
-      if (typeof o.bells === "boolean") P.bells = o.bells;
       if (typeof o.real === "boolean") P.real = o.real;
       if (typeof o.vol === "number" && o.vol >= 0 && o.vol <= 1) P.vol = o.vol;
       var num = function (k, lo, hi) { if (typeof o[k] === "number" && o[k] >= lo && o[k] <= hi) P[k] = o[k]; };
@@ -2006,8 +1992,7 @@
           selRow("hSide", "Where it sits", opts(SIDES)) +
         "</details>" +
       "</div>" +
-      '<div class="snd-h">Bells</div>' +
-      '<label class="check"><input type="checkbox" data-k="bells"><span>Bells and tones<small>A bell to begin and end, and a soft tone each time you come back.</small></span></label>';
+      "";
     root.addEventListener("input", onSoundChange);
     root.addEventListener("change", onSoundChange);
     root.addEventListener("click", function (e) {
@@ -2074,7 +2059,6 @@
     else P[k] = NUMERIC[k] ? parseFloat(el.value) : el.value;
     if (KIND_OF[k]) markCustom(KIND_OF[k]);
     persist();
-    if (k === "bells" && S.active) { if (P.bells) scheduleEndBell(); else cancelEndBell(); }
     afterSoundChange(el.type === "range");
   }
 
@@ -2121,7 +2105,7 @@
   var MODE_NAMES = { scene: "Scene sounds", dual: "Two voices", hidden: "Hidden overtone", off: "Silent" };
   function syncControls() {
     var anyFile = Object.keys(FILES).length > 0;
-    $("sumSound").textContent = MODE_NAMES[P.mode] + (P.bells ? " · bells" : "");
+    $("sumSound").textContent = MODE_NAMES[P.mode];
     var hearing = wantTones() === "hidden";
     controls.forEach(function (root) {
       Array.prototype.forEach.call(root.querySelectorAll("[data-k]"), function (el) {
@@ -3463,8 +3447,7 @@
       return game + " Swipe to change scene.";
     }
     var extra = "";
-    if (S.mode === "label") extra = " Then type where it went.";
-    if (S.mode === "voice") extra = S.voiceOK ? " Then say a word or two about where it went." : " Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so you'll type where it went.";
+    if (S.remoteless) extra = " Or tap what pulled you away.";
     if (P.dual) extra += " Listen for two separate sounds. When one slips away, or both do, tap.";
     return base + extra + " Swipe to change scene.";
   }
@@ -3480,7 +3463,7 @@
     els.canvas.hidden = !isCanvas;
     if (isCanvas) { V.last = 0; V.nextWind = 0; V.pulse = 0; sizeCanvas(); }
     els.hint.textContent = hintText();
-    if (S.hintDone && els.panel.hidden && els.voicePanel.hidden) restHint();
+    if (S.hintDone) restHint();
     Array.prototype.forEach.call(els.dots.children, function (b) {
       var on = b.getAttribute("data-scene") === name;
       b.classList.toggle("on", on);
@@ -3522,41 +3505,6 @@
   }
 
   /* ---------- session control ---------- */
-  function describeErr(code) {
-    if (code === "not-allowed" || code === "service-not-allowed") return "the microphone is blocked for this page";
-    if (code === "audio-capture") return "no microphone was found";
-    if (code === "network") return "the speech service couldn't be reached";
-    if (code === "language-not-supported") return "your language isn't supported";
-    return code ? "error: " + code : "unknown problem";
-  }
-
-  // Asks the browser for the microphone up front by briefly starting speech recognition.
-  function probeMic() {
-    return new Promise(function (resolve) {
-      if (!SR) { resolve({ ok: false, reason: "this browser has no speech recognition" }); return; }
-      var done = false, rec = null, timer = 0;
-      function end(ok, reason) {
-        if (done) return; done = true; clearTimeout(timer);
-        if (rec) { rec.onaudiostart = rec.onerror = rec.onend = null; try { rec.abort(); } catch (e) {} }
-        resolve({ ok: ok, reason: reason || "" });
-      }
-      timer = setTimeout(function () { end(false, "no response from the microphone prompt"); }, 20000);
-      try {
-        rec = new SR();
-        rec.lang = navigator.language || "en-US";
-        rec.continuous = false; rec.interimResults = false;
-        rec.onaudiostart = function () { end(true); };
-        rec.onerror = function (e) {
-          var c = e && e.error;
-          if (c === "no-speech" || c === "aborted") return;
-          end(false, describeErr(c));
-        };
-        rec.onend = function () { end(false, "speech recognition stopped before it started"); };
-        rec.start();
-      } catch (err) { end(false, (err && err.name) ? "error: " + err.name : "couldn't start"); }
-    });
-  }
-
   // Begin opens into the sit with a soft bloom of the scene's colour, growing from the button you pressed.
   var blooming = false;
   function bloomThen(fn, from) {
@@ -3584,8 +3532,7 @@
   function begin(e) {
     if (blooming || S.active) return;
     var from = e && e.currentTarget;
-    var lines = els.reminders.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!lines.length) { lines = DEFAULTS.slice(); els.reminders.value = lines.join("\n"); }
+    var lines = REMS.length ? REMS.slice() : DEFAULTS.slice();
 
     var lenVal = document.querySelector('input[name="len"]:checked').value;
     if (lenVal === "custom") {
@@ -3597,37 +3544,23 @@
     }
     $("customErr").hidden = true;
 
-    lsSet(KEY_REM, els.reminders.value);
     S.list = lines;
     S.order = shuffle(lines); S.oi = 0;
-    S.mode = document.querySelector('input[name="mode"]:checked').value;
     S.anchor = document.querySelector('input[name="anchor"]:checked').value;
-    initAudio(); // must run inside the click gesture, even if the bells are off (scene sounds still need it)
-
-    if (S.mode === "voice") {
-      els.begin.disabled = true;
-      els.begin.textContent = "Allow the microphone if asked…";
-      probeMic().then(function (r) {
-        S.voiceOK = r.ok; S.voiceReason = r.reason;
-        els.begin.disabled = false; els.begin.textContent = "Begin";
-        bloomThen(startSession, from);
-      });
-    } else {
-      S.voiceOK = false; S.voiceReason = "";
-      bloomThen(startSession, from);
-    }
+    initAudio(); // must run inside the click gesture (scene sounds need it too)
+    bloomThen(startSession, from);
   }
 
   // `saved` is a sit picked back up after the page was unloaded; it comes back paused, where it left off.
   function startSession(saved) {
-    S.entries = saved ? saved.entries : []; S.notes = saved && Array.isArray(saved.notes) ? saved.notes : []; S.current = null; S.lastCatch = 0; S.lastPhase = ""; S.micDenied = false;
-    S.listening = false; S.heardText = ""; S.paused = false; S.menuAt = 0; S.swipedAt = 0; S.hintDone = false;
+    S.entries = saved ? saved.entries : []; S.lastCatch = 0; S.lastPhase = "";
+    S.paused = false; S.menuAt = 0; S.swipedAt = 0; S.hintDone = false;
     els.countNum.textContent = "0"; els.countWord.textContent = "returns";
-    els.count.classList.toggle("off", !$("showCount").checked);
-    els.clock.classList.toggle("off", !$("showClock").checked);
+    S.remoteless = $("remoteless").checked;
+    renderTagBar();
     els.slot.classList.remove("has-reminder");
     els.reminder.textContent = "";
-    els.panel.hidden = true; els.voicePanel.hidden = true; els.hint.hidden = false; els.sheet.hidden = true; $("pauseSheet").hidden = true; $("timeSheet").hidden = true; S.timeUpRung = false;
+    els.hint.hidden = false; $("pauseSheet").hidden = true; $("timeSheet").hidden = true; S.timeUpRung = false;
     els.hint.classList.remove("dim", "gone");
     S.preview = false; clearTimeout(S.pvTimer); updatePreviewBtn();
     closeMenu();
@@ -3638,7 +3571,7 @@
     setScene(S.anchor, true);
     updateClock();
     lockScreen();
-    if (!saved) { if (P.bells) bell(396, 0.12); scheduleEndBell(); }
+    if (!saved) { bell(396, 0.12); scheduleEndBell(); }
     var n0 = S.entries.length, w0 = n0 === 1 ? "return" : "returns";
     els.countNum.textContent = n0; els.countWord.textContent = w0;
     $("dimNum").textContent = n0; $("dimWord").textContent = w0;
@@ -3695,111 +3628,32 @@
     V.tap = { x: tp ? tp.x : window.innerWidth / 2, y: tp ? tp.y : window.innerHeight * 0.45, t: performance.now() / 1000 };
     ambReact();
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
-    commitLabel();
     saveLive();
-
-    if (S.mode === "voice" && S.voiceOK) {
-      startListening(entry); // the reminder arrives once you've spoken
-    } else {
-      if (remote) tRemote(); else tCatch();
-      showReminder();
-      if (S.mode === "label" || S.mode === "voice") openType(entry, S.mode === "voice");
-      else restHint();
-    }
+    if (remote) tRemote(); else tCatch();
+    showReminder();
+    restHint();
   }
 
-  /* ---------- typing ---------- */
-  function openType(entry, fallback) {
-    S.current = entry;
-    els.labelText.textContent = fallback
-      ? "Voice isn't working here (" + (S.voiceReason || "unknown reason") + "), so type it. One or two words."
-      : "What pulled you away? One or two words.";
-    els.hint.hidden = true; els.voicePanel.hidden = true; els.panel.hidden = false;
-    syncDim();
-    els.input.value = "";
-    renderChips();
-    els.input.focus({ preventScroll: true });
+  // Remoteless mode: the distractions sit on the screen as buttons, and a tap on one marks a return with that label.
+  function renderTagBar() {
+    var bar = els.tagBar; bar.innerHTML = "";
+    bar.hidden = !S.remoteless;
+    if (!S.remoteless) return;
+    loadPresets().forEach(function (t) {
+      var b = el("button", "chip", t); b.type = "button";
+      b.addEventListener("click", function (e) { e.stopPropagation(); tagReturn(t); });
+      bar.appendChild(b);
+    });
   }
-  function commitLabel() {
-    if (S.current && !S.listening) { S.current.label = els.input.value.trim(); S.current = null; }
-    if (!els.panel.hidden) { els.panel.hidden = true; blurActive(); restHint(); syncDim(); }
-    saveLive();
-  }
-
-  /* ---------- listening ---------- */
-  function cleanHeard(s) {
-    s = (s || "").trim().replace(/[.,!?;:]+$/, "");
-    var words = s.split(/\s+/).filter(Boolean);
-    if (words.length > 8) words = words.slice(0, 8);
-    return words.join(" ").toLowerCase();
+  function tagReturn(label) {
+    if (!S.active || S.paused || !els.menu.hidden) return;
+    var before = S.entries.length;
+    catchIt(true);
+    if (S.entries.length > before) { tagEntry(S.entries[before], label); saveLive(); }
   }
 
-  function startListening(entry) {
-    S.current = entry; S.listening = true; S.heardText = "";
-    els.heard.textContent = "";
-    els.hint.hidden = true; els.panel.hidden = true; els.voicePanel.hidden = false;
-    var cued = false;
-    function cue() { if (cued) return; cued = true; tListenStart(); }
-    setTimeout(cue, 700); // fallback if the browser never reports audio start
-    try {
-      var rec = new SR();
-      rec.lang = navigator.language || "en-US";
-      rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
-      rec.onaudiostart = cue;
-      rec.onresult = function (e) {
-        var txt = "";
-        for (var i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript + " ";
-        S.heardText = txt.trim();
-        els.heard.textContent = S.heardText;
-      };
-      rec.onerror = function (e) {
-        var c = e && e.error;
-        if (c && c !== "no-speech" && c !== "aborted") { S.voiceOK = false; S.micDenied = true; S.voiceReason = describeErr(c); }
-      };
-      rec.onend = function () { endListening(false); };
-      S.rec = rec;
-      rec.start();
-    } catch (err) {
-      S.voiceOK = false; S.micDenied = true; S.rec = null;
-      S.voiceReason = (err && err.name) ? "error: " + err.name : "couldn't start";
-      setTimeout(function () { endListening(false); }, 0);
-    }
-    clearTimeout(S.listenTimer);
-    S.listenTimer = setTimeout(stopListening, LISTEN_MS);
-  }
-
-  function stopListening() {
-    if (!S.listening) return;
-    if (S.rec) {
-      try { S.rec.stop(); } catch (e) {}
-      clearTimeout(S.stopSafety);
-      S.stopSafety = setTimeout(function () { endListening(false); }, 1500);
-    } else {
-      endListening(false);
-    }
-  }
-
-  function endListening(silent) {
-    if (!S.listening) return;
-    S.listening = false;
-    clearTimeout(S.listenTimer); clearTimeout(S.stopSafety);
-    var rec = S.rec; S.rec = null;
-    if (rec) { rec.onend = rec.onresult = rec.onerror = null; try { rec.abort(); } catch (e) {} }
-    var entry = S.current; S.current = null;
-    var txt = cleanHeard(S.heardText);
-    if (entry) entry.label = txt;
-    els.voicePanel.hidden = true; blurActive();
-    if (silent) return;
-    tListenEnd();
-    setTimeout(showReminder, 400);
-    if (S.micDenied && !txt && S.active) { openType(entry, true); }
-    else restHint();
-  }
-
-  /* ---------- notes (pause) ---------- */
+  /* ---------- pause ---------- */
   function beginPause(keepBell) {
-    if (S.listening) endListening(true);
-    commitLabel();
     S.paused = true; S.pausedAt = Date.now();
     keepMediaAlive();
     if (!keepBell) cancelEndBell();
@@ -3839,19 +3693,8 @@
     endPause();
     if (!keepSitting) finish();
   }
-  function openNote() {
-    if (!S.active || S.paused) return;
-    beginPause();
-    els.noteText.value = "";
-    els.sheet.hidden = false;
-    els.noteText.focus();
-  }
-  function closeNote(save) {
+  function resumeSit() {
     if (!S.paused) return;
-    var txt = els.noteText.value.trim();
-    els.noteText.value = "";
-    if (save && txt) S.notes.push({ at: S.pausedAt - S.startWall, text: txt });
-    els.sheet.hidden = true;
     $("pauseSheet").hidden = true;
     endPause();
   }
@@ -3871,9 +3714,7 @@
   function finish(discard) {
     if (!S.active) return;
     $("cancelSheet").hidden = true;
-    if (S.paused) closeNote(true);
-    if (S.listening) endListening(true);
-    commitLabel();
+    if (S.paused) resumeSit();
     S.active = false;
     clearLive();
     syncControls();   // the "try it" buttons come back now that the sit is over
@@ -3885,7 +3726,7 @@
     // if the scheduled closing bell has already rung (or is ringing now), don't ring it twice
     var rung = !!(S.timeUpRung || (S.endBell && S.endBell.at <= Date.now() + 150));
     S.timeUpRung = false;
-    if (P.bells && !rung) bell(396, 0.12);
+    if (!rung) bell(396, 0.12);
     if (rung) S.endBell = null; else cancelEndBell();
     document.documentElement.classList.remove("dark-session", "eyes-closed");
     $("dim").hidden = true;
@@ -3896,7 +3737,7 @@
     if (counts_) {
       var total = (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) + n;
       lsSet(KEY_TOTAL, String(total));
-      saveSession({ start: S.startedAt, dur: dur, returns: n, entries: S.entries, notes: S.notes, scene: S.anchor });
+      saveSession({ start: S.startedAt, dur: dur, returns: n, entries: S.entries, scene: S.anchor });
     }
     if (discard) { loadTotal(); renderCalendar(); show("home"); return; }
 
@@ -3930,29 +3771,6 @@
       tlb.hidden = false;
     } else tlb.hidden = true;
 
-    var block = $("logBlock");
-    if (S.mode !== "tap" && n > 0) {
-      var log = $("log"); log.innerHTML = "";
-      var counts = {};
-      S.entries.forEach(function (e) {
-        var li = document.createElement("li");
-        var t = document.createElement("time"); t.textContent = fmtClock(e.at);
-        var d = document.createElement("span");
-        if (e.label) { d.textContent = e.label; var k = e.label.toLowerCase(); counts[k] = (counts[k] || 0) + 1; }
-        else { d.textContent = "unnamed"; d.className = "none"; }
-        li.appendChild(t); li.appendChild(d); log.appendChild(li);
-      });
-      var top = Object.keys(counts).filter(function (k) { return counts[k] > 1; })
-        .sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 3);
-      $("often").textContent = top.length
-        ? "Where you found yourself most: " + top.map(function (k) { return k + " (" + counts[k] + ")"; }).join(", ") + "."
-        : "";
-      $("often").hidden = !top.length;
-      block.hidden = false;
-    } else {
-      block.hidden = true;
-    }
-
     var rb = $("reflectBlock"), lv = $("levelLine"), after = before + (counts_ ? n : 0);
     if (counts_) {
       var feel = [], chips = $("feelChips"), sn = $("sitNote"), start = S.startedAt;
@@ -3973,22 +3791,8 @@
       lv.hidden = false;
     } else { rb.hidden = true; lv.hidden = true; }
 
-    var nb = $("noteBlock");
-    if (S.notes.length) {
-      var nl = $("noteLog"); nl.innerHTML = "";
-      S.notes.forEach(function (nt) {
-        var li = document.createElement("li");
-        var t = document.createElement("time"); t.textContent = fmtClock(nt.at);
-        var d = document.createElement("span"); d.textContent = nt.text;
-        li.appendChild(t); li.appendChild(d); nl.appendChild(li);
-      });
-      nb.hidden = false;
-    } else {
-      nb.hidden = true;
-    }
-
     var same = document.querySelector('input[name="anchor"][value="' + S.anchor + '"]');
-    if (same) { same.checked = true; lsSet(KEY_SCENE, S.anchor); }   // "Sit again" starts on the scene you ended on
+    if (same) { same.checked = true; lsSet(KEY_SCENE, S.anchor); }   // the start screen opens on the scene you ended on
     refreshScene(true);
     loadTotal();
     renderCalendar();
@@ -4019,18 +3823,6 @@
   }
   function savePresets(a) { lsSet(KEY_PRE, JSON.stringify(a)); }
   function hasPreset(a, t) { return a.some(function (x) { return x.toLowerCase() === t.toLowerCase(); }); }
-  function renderChips() {
-    var box = $("chips"); box.innerHTML = "";
-    loadPresets().forEach(function (t) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.textContent = t;
-      b.addEventListener("click", function (e) {
-        e.stopPropagation();
-        els.input.value = t; commitLabel();
-      });
-      box.appendChild(b);
-    });
-  }
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -4089,6 +3881,19 @@
     var mx = th.indexOf(Math.max.apply(null, th)), nm = ["first third", "middle third", "last third"];
     return th[mx] / n >= 0.5 ? th[mx] + " of your " + n + " returns came in the " + nm[mx] + " of the sit." : "Your returns were spread fairly evenly through the sit.";
   }
+  var delTarget = null;
+  function deleteKeep() { delTarget = null; $("deleteSheet").hidden = true; blurActive(); }
+  function deleteYes() {
+    var r = delTarget;
+    delTarget = null; $("deleteSheet").hidden = true;
+    if (!r) return;
+    var all = loadHist(), i = -1;
+    for (var j = 0; j < all.length; j++) { if (all[j].start === r.start && all[j].dur === r.dur) { i = j; break; } }
+    if (i < 0) return;
+    all.splice(i, 1); lsSet(KEY_HIST, JSON.stringify(all));
+    lsSet(KEY_TOTAL, String(Math.max(0, (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) - (r.returns || 0))));
+    loadTotal(); renderCalendar(); renderHist();
+  }
   function renderHist() {
     var h = loadHist().slice().sort(function (a, b) { return (b.start || 0) - (a.start || 0); });
     var list = $("histList"); list.innerHTML = "";
@@ -4130,15 +3935,8 @@
         card.appendChild(ul);
       }
       var del = el("button", "link-btn", "Delete this session"); del.type = "button";
-      del.addEventListener("click", function () {
-        if (!window.confirm("Delete this session? This can't be undone.")) return;
-        var all = loadHist(), i = -1;
-        for (var j = 0; j < all.length; j++) { if (all[j].start === r.start && all[j].dur === r.dur) { i = j; break; } }
-        if (i < 0) return;
-        all.splice(i, 1); lsSet(KEY_HIST, JSON.stringify(all));
-        lsSet(KEY_TOTAL, String(Math.max(0, (parseInt(lsGet(KEY_TOTAL) || "0", 10) || 0) - (r.returns || 0))));
-        loadTotal(); renderCalendar(); renderHist();
-      });
+      // asked with our own popup: the browser's confirm() is silently refused inside the iPhone app
+      del.addEventListener("click", function () { delTarget = r; $("deleteSheet").hidden = false; $("deleteKeep").focus(); });
       card.appendChild(del);
       list.appendChild(card);
     });
@@ -4157,7 +3955,7 @@
     loadHist().forEach(function (r) { all = all.concat(r.entries || []); });
     var tl = tally(all);
     var al = $("allList"); al.innerHTML = "";
-    if (!tl.length) al.appendChild(el("p", "empty", "Nothing yet. Distractions you type or say during a sit are collected here."));
+    if (!tl.length) al.appendChild(el("p", "empty", "Nothing yet. Distractions you tag during a sit are collected here."));
     tl.forEach(function (x) {
       var row = el("div", "drow"); row.appendChild(el("span", "name", x.name)); row.appendChild(el("span", "n", "×" + x.n));
       if (!hasPreset(pre, x.name)) {
@@ -4588,17 +4386,15 @@
   /* ---------- the choices on the start screen are remembered ---------- */
   function checked(name) { return document.querySelector('input[name="' + name + '"]:checked'); }
   function savePrefs() {
-    lsSet(KEY_PREFS, JSON.stringify({ len: checked("len").value, custom: $("customMin").value, mode: checked("mode").value,
-      clock: $("showClock").checked, count: $("showCount").checked }));
+    lsSet(KEY_PREFS, JSON.stringify({ len: checked("len").value, custom: $("customMin").value, remoteless: $("remoteless").checked }));
   }
   function loadPrefs() {
     var o = {};
     try { o = JSON.parse(lsGet(KEY_PREFS) || "{}") || {}; } catch (e) {}
     function pick(name, v) { var r = v != null && document.querySelector('input[name="' + name + '"][value="' + String(v).replace(/"/g, "") + '"]'); if (r) r.checked = true; }
-    pick("len", o.len); pick("mode", o.mode);
+    pick("len", o.len);
     if (typeof o.custom === "string") $("customMin").value = o.custom;
-    if (typeof o.clock === "boolean") $("showClock").checked = o.clock;
-    if (typeof o.count === "boolean") $("showCount").checked = o.count;
+    $("remoteless").checked = o.remoteless === true;
     $("customRow").hidden = checked("len").value !== "custom";
   }
   function syncPills() {   // where the sliding highlight sits
@@ -4610,24 +4406,16 @@
   }
   function syncHome() {
     syncPills();
-    var m = checked("mode");
-    $("modeNote").textContent = m.getAttribute("data-desc") + (m.value === "voice" ? $("voiceNote").textContent : "");
-    var on = [];
-    if ($("showClock").checked) on.push("timer"); if ($("showCount").checked) on.push("count");
-    $("sumDisplay").textContent = on.length ? "Show " + on.join(" and ") : "Just the scene";
-    var n = els.reminders.value.split("\n").filter(function (x) { return x.trim(); }).length;
-    $("sumRem").textContent = n ? plural(n, "reminder") : "Starter set";
+    $("sumRemoteless").textContent = $("remoteless").checked ? "On" : "Off";
+    $("sumRem").textContent = REMS.length ? plural(REMS.length, "reminder") : "Starter set";
   }
   screens.home.addEventListener("change", function (e) {
     var nm = e.target && e.target.name, id = e.target && e.target.id;
-    if (nm === "len" || nm === "mode" || id === "showClock" || id === "showCount" || id === "customMin") { savePrefs(); syncHome(); }
+    if (nm === "len" || id === "remoteless" || id === "customMin") { savePrefs(); syncHome(); }
   });
-  els.reminders.addEventListener("input", syncHome);
-  els.reminders.addEventListener("change", function () { lsSet(KEY_REM, els.reminders.value); });
 
   /* ---------- events ---------- */
   $("begin").addEventListener("click", begin);
-  $("again").addEventListener("click", begin);
   $("home2").addEventListener("click", function () { show("home"); });
   // Finish and Cancel live on the pause popup. Cancel asks again, since it throws the sit away.
   $("pauseFinish").addEventListener("click", function () { finish(); });
@@ -4649,23 +4437,20 @@
   $("timeEnd").addEventListener("click", function () { timeUpClose(false); });
   $("timeGo").addEventListener("click", function () { timeUpClose(true); });
   $("timeSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") timeUpClose(true); });
-  $("pauseResume").addEventListener("click", function () { closeNote(false); });
-  $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") closeNote(false); });
-  $("noteBtn").addEventListener("click", function (e) { e.stopPropagation(); closeMenu(); openNote(); });
+  $("pauseResume").addEventListener("click", resumeSit);
+  $("pauseSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") resumeSit(); });
+  $("deleteKeep").addEventListener("click", deleteKeep);
+  $("deleteYes").addEventListener("click", deleteYes);
+  $("deleteSheet").addEventListener("keydown", function (e) { if (e.key === "Escape") deleteKeep(); });
   $("soundBtn").addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
   seedTags(); loadRemote();
   buildRemote($("homeRemote"));
   buildRemote($("menuRemote"));
   buildControls($("homeSound"));
   buildControls($("menuSound"));
-  $("noteSave").addEventListener("click", function () { closeNote(true); });
-  $("noteSkip").addEventListener("click", function () { closeNote(false); });
-  els.noteText.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { e.preventDefault(); closeNote(false); }
-    else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); closeNote(true); }
-  });
-  $("doneListen").addEventListener("click", function () { stopListening(); });
-  $("resetRem").addEventListener("click", function () { els.reminders.value = DEFAULTS.join("\n"); lsSet(KEY_REM, els.reminders.value); syncHome(); });
+  $("resetRem").addEventListener("click", function () { REMS = DEFAULTS.slice(); saveReminders(); renderReminders(); });
+  $("remAdd").addEventListener("click", addReminder);
+  $("remInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addReminder(); } });
 
   Array.prototype.forEach.call(document.querySelectorAll('input[name="len"]'), function (r) {
     r.addEventListener("change", function () {
@@ -4689,16 +4474,14 @@
     if (Date.now() - S.swipedAt < 400) return;
     if (e.target.closest("input, select, .soundmenu")) return;
     if (!els.menu.hidden) { closeMenu(); return; }
-    if (S.listening) { stopListening(); return; }
-    if (e.target.closest("button, .panel")) return;
-    if (!els.panel.hidden) { els.input.focus({ preventScroll: true }); return; }
+    if (e.target.closest("button")) return;
     S.tapAt = { x: e.clientX, y: e.clientY, t: Date.now() };
     catchIt();
   });
 
   var touch = null;
   screens.session.addEventListener("touchstart", function (e) {
-    if (!S.active || S.paused || S.listening || !els.menu.hidden || e.touches.length !== 1 || e.target.closest("input, select, .soundmenu")) { touch = null; return; }
+    if (!S.active || S.paused || !els.menu.hidden || e.touches.length !== 1 || e.target.closest("input, select, .soundmenu")) { touch = null; return; }
     touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }, { passive: true });
   screens.session.addEventListener("touchend", function (e) {
@@ -4729,26 +4512,13 @@
     }
     if (e.code === "Space" || e.key === " ") {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (tag === "BUTTON" && !S.listening) return;
+      if (tag === "BUTTON") return;
       e.preventDefault();
       if (e.repeat) return;
-      if (S.listening) stopListening();
-      else if (els.panel.hidden) catchIt();
+      catchIt();
     }
   });
 
-  els.input.addEventListener("input", function () {
-    var v = els.input.value.replace(/^\s+/, "");
-    var parts = v.split(/\s+/);
-    if (parts.length > 2) v = parts.slice(0, 2).join(" ");
-    if (v !== els.input.value) els.input.value = v;
-  });
-  els.input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); commitLabel(); }
-  });
-  $("saveLabel").addEventListener("click", function (e) { e.stopPropagation(); commitLabel(); });
-
-  if (!SR) { $("voiceNote").textContent = " Not supported in this browser, so you'd type instead."; }
   loadReminders();
   loadPrefs();
   syncHome();
@@ -4758,9 +4528,9 @@
   var live = loadLive();
   if (live && loadHist().some(function (r) { return r && r.start === live.startedAt; })) { clearLive(); live = null; }   // that sit was already finished
   if (live) {
-    S.mode = live.mode === "voice" ? "label" : live.mode; S.anchor = live.anchor; S.limit = live.limit || 0;
+    S.mode = "tap"; S.anchor = live.anchor; S.limit = live.limit || 0;
     S.list = Array.isArray(live.list) && live.list.length ? live.list : DEFAULTS.slice();
-    S.order = shuffle(S.list); S.oi = 0; S.voiceOK = false;
+    S.order = shuffle(S.list); S.oi = 0;
     startSession(live);
   }
   if (window.CB_NATIVE) { try { window.webkit.messageHandlers.native.postMessage({ type: "ready" }); } catch (e) {} }
